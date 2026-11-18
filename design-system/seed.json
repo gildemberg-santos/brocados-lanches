@@ -1,0 +1,125 @@
+{
+  "_meta": {
+    "fonte": "brocados-lanches-design-system-v2.5.html",
+    "extraido_em": "2026-11-18",
+    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders e precisam de confirmação."
+  },
+  "store": {
+    "name": "Brocados Lanches",
+    "isOpen": true,
+    "deliveryTime": "35-50 min",
+    "whatsapp": "(85) 99999-9999",
+    "instagram": "@brocadoslanches",
+    "address": "Av. Principal, 1200 - Centro, Aquiraz - CE"
+  },
+  "categories": [
+    {
+      "id": "cat_1",
+      "name": "Hambúrgueres",
+      "active": true
+    },
+    {
+      "id": "cat_2",
+      "name": "Combos",
+      "active": true
+    },
+    {
+      "id": "cat_3",
+      "name": "Petiscos",
+      "active": true
+    },
+    {
+      "id": "cat_4",
+      "name": "Bebidas",
+      "active": true
+    }
+  ],
+  "products": [
+    {
+      "id": "prod_1",
+      "catId": "cat_1",
+      "name": "Brocado's Burguer Cheddar",
+      "price": 23,
+      "desc": "Blend artesanal 160g, muito cheddar derretido e pão brioche selado.",
+      "icon": "burger",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "prod_2",
+      "catId": "cat_1",
+      "name": "Brocadão Duplo Cheddar",
+      "price": 30,
+      "desc": "Dois blends artesanais 160g, cheddar duplo cremoso e bacon crocante.",
+      "icon": "burger",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "prod_3",
+      "catId": "cat_2",
+      "name": "Combo Casal Brocado",
+      "price": 54.9,
+      "desc": "2 Brocados Cheddar + Batata Rústica Grande + 2 Refris Lata.",
+      "icon": "combo",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "prod_4",
+      "catId": "cat_3",
+      "name": "Batata Cheddar & Bacon",
+      "price": 22,
+      "desc": "Porção generosa de batatas crocantes cobertas com cheddar e bacon.",
+      "icon": "fries",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_5",
+      "catId": "cat_4",
+      "name": "Coca-Cola Lata 350ml",
+      "price": 6,
+      "desc": "Lata trincando de gelada 350ml.",
+      "icon": "drink",
+      "available": true,
+      "featured": false
+    }
+  ],
+  "delivery_zones": [
+    {
+      "id": "z1",
+      "name": "Centro",
+      "fee": 5,
+      "active": true
+    },
+    {
+      "id": "z2",
+      "name": "Prainha",
+      "fee": 8,
+      "active": true
+    },
+    {
+      "id": "z3",
+      "name": "Porto das Dunas",
+      "fee": 12,
+      "active": true
+    }
+  ],
+  "recent_orders": [
+    {
+      "id": "#1042",
+      "customer": "Lucas M.",
+      "items": "2x Brocadão Duplo",
+      "total": 65,
+      "status": "Em Preparo"
+    },
+    {
+      "id": "#1041",
+      "customer": "Mariana S.",
+      "items": "1x Combo Casal",
+      "total": 62.9,
+      "status": "Saiu p/ Entrega"
+    }
+  ]
+}

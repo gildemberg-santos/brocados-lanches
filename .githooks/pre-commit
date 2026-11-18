@@ -1,0 +1,52 @@
+#!/usr/bin/env sh
+# Gate obrigatório executado antes de cada commit.
+# Ative com: git config core.hooksPath .githooks
+
+set -eu
+
+fail() {
+  printf 'pre-commit: %s\n' "$1" >&2
+  exit 1
+}
+
+staged_file=$(mktemp)
+trap 'rm -f "$staged_file"' EXIT INT TERM
+git diff --cached --name-only --diff-filter=ACM > "$staged_file"
+
+# 1. Bloqueia arquivos de ambiente e material potencialmente secreto.
+while IFS= read -r file; do
+  [ -n "$file" ] || continue
+  case "$file" in
+    .env|.env.*|*/.env|*/.env.*)
+      case "$file" in
+        *.example) ;;
+        *) fail "arquivo de ambiente não pode ser commitado: $file" ;;
+      esac
+      ;;
+    *.pem|*.key|*.p12|*.pfx)
+      fail "arquivo potencialmente secreto: $file"
+      ;;
+  esac
+done < "$staged_file"
+
+# 2. Whitespace e marcadores de conflito fora de Markdown.
+# Markdown pode usar dois espaços no fim da linha como quebra intencional.
+git diff --cached --check -- . ':(exclude)*.md' \
+  || fail "corrija espaços em branco ou conflitos no diff"
+
+# 3. Documentação: links relativos e cercas de código.
+if [ -f scripts/check_docs.py ]; then
+  python3 scripts/check_docs.py || fail "validação de documentação falhou"
+fi
+
+# 4. Testes automatizados disponíveis neste estágio do projeto.
+if [ -f Makefile ]; then
+  if grep -q '^lint:' Makefile; then
+    make lint || fail "make lint falhou"
+  fi
+  if grep -q '^test:' Makefile; then
+    make test || fail "make test falhou"
+  fi
+fi
+
+printf 'pre-commit: documentação e testes validados.\n'

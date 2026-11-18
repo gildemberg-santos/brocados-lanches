@@ -1,0 +1,53 @@
+/*
+ * Brocados Lanches — Design Tokens v2.5
+ * Extraído de brocados-lanches-design-system-v2.5.html
+ *
+ * Uso: importe este arquivo antes do CSS da aplicação.
+ * Os nomes seguem o protótipo original para facilitar a comparação.
+ */
+
+:root {
+  /* Cores de fundo */
+  --bg-primary: #0A0A0A;
+  --bg-surface: #161616;
+  --bg-input: #1F1F1F;
+  --bg-border: #2E2E2E;
+
+  /* Marca */
+  --brand-primary: #FF8C00;
+  --brand-hover: #E07B00;
+  --brand-neon: #FFB703;
+
+  /* Texto */
+  --text-main: #FFFFFF;
+  --text-sub: #A3A3A3;
+
+  /* Status */
+  --status-open: #22C55E;
+  --status-error: #EF4444;
+
+  /* Tipografia */
+  --font-display: "Bebas Neue", sans-serif;
+  --font-sans: "Inter", sans-serif;
+
+  /* Escala tipográfica documentada */
+  --font-size-display: 36px;
+  --line-height-display: 1;
+  --font-size-h1: 22px;
+  --font-size-h2: 16px;
+  --font-size-price: 16px;
+  --font-size-body: 14px;
+  --font-size-caption: 12px;
+}
+
+/* Extensão de tema para Tailwind (referência) */
+/*
+colors: {
+  brand: { primary: '#FF8C00', hover: '#E07B00', neon: '#FFB703' },
+  darkBg: { DEFAULT: '#0A0A0A', surface: '#161616', input: '#1F1F1F', border: '#2E2E2E' }
+}
+fontFamily: {
+  sans: ['Inter', 'sans-serif'],
+  display: ['Bebas Neue', 'sans-serif']
+}
+*/

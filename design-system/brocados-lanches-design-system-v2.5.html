@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brocados Lanches • Design System & Responsive Prototype Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: 'var(--brand-primary)',
+                            hover: 'var(--brand-hover)',
+                            neon: 'var(--brand-neon)',
+                        },
+                        darkBg: {
+                            DEFAULT: 'var(--bg-primary)',
+                            surface: 'var(--bg-surface)',
+                            input: '#1F1F1F',
+                            border: '#2E2E2E'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Bebas Neue', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --brand-primary: #FF8C00;
+            --brand-hover: #E07B00;
+            --brand-neon: #FFB703;
+            --bg-primary: #0A0A0A;
+            --bg-surface: #161616;
+        }
+
+        body {
+            background-color: #060606;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            background-image: radial-gradient(#1c1c1c 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow-x: hidden;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .neon-burger-glow {
+            filter: drop-shadow(0 0 10px var(--brand-neon));
+        }
+        .neon-text-glow {
+            text-shadow: 0 0 12px var(--brand-neon);
+        }
+        .brand-btn-shadow {
+            box-shadow: 0 4px 16px rgba(255, 140, 0, 0.32);
+        }
+
+        .ds-card {
+            background-color: #111111;
+            border: 1px solid #262626;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+        }
+
+        /* Mobile Frame (375x760) */
+        .mobile-shell {
+            width: 375px;
+            min-width: 375px;
+            height: 760px;
+            background-color: var(--bg-primary);
+            border: 8px solid #242424;
+            border-radius: 40px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.85);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Desktop Browser Frame (1280px logical width with dynamic scaling wrapper) */
+        .desktop-scale-outer {
+            width: 100%;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+        }
+        .desktop-shell {
+            width: 1280px;
+            min-width: 1280px;
+            min-height: 760px;
+            background-color: var(--bg-primary);
+            border: 3px solid #2A2A2A;
+            border-radius: 18px;
+            box-shadow: 0 24px 56px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform-origin: top center;
+            transition: transform 0.25s ease;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-primary selection:text-black">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 bg-[#161616] border border-brand-primary text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-semibold">
+        <span class="w-2.5 h-2.5 rounded-full bg-brand-neon animate-ping"></span>
+        <span id="toast-msg">Atualizado!</span>
+    </div>
+
+    <!-- Modal Exportar Tokens & JSON -->
+    <div id="export-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-[#161616] border border-[#2E2E2E] rounded-2xl max-w-2xl w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-[#2E2E2E] pb-4 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Exportar Tokens & Schema Sincronizado</h3>
+                    <p class="text-xs text-neutral-400">Copie variáveis CSS, configuração Tailwind ou o JSON completo da loja e admin</p>
+                </div>
+                <button onclick="toggleExportModal(false)" class="p-2 rounded-lg bg-[#1F1F1F] hover:bg-[#2E2E2E] text-neutral-300">✕</button>
+            </div>
+            <div class="flex gap-2 mb-3">
+                <button onclick="switchExportTab('css')" id="tab-export-css" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-primary text-black">CSS & Tailwind Config</button>
+                <button onclick="switchExportTab('json')" id="tab-export-json" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#1F1F1F] text-neutral-300">Storefront + Admin JSON</button>
+            </div>
+            <pre id="export-code-box" class="bg-[#0A0A0A] border border-[#2E2E2E] rounded-xl p-4 text-xs text-emerald-400 font-mono overflow-x-auto max-h-80"></pre>
+            <div class="mt-4 flex justify-end gap-3">
+                <button onclick="copyExportCode()" class="px-5 py-2.5 rounded-full bg-brand-primary text-black font-bold text-xs hover:opacity-90 transition">Copiar Código</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. TOP FIGMA-STYLE WORKSPACE TOOLBAR                                  -->
+    <!-- ===================================================================== -->
+    <header class="sticky top-0 z-40 bg-[#111111]/95 backdrop-blur-md border-b border-[#262626] px-4 py-3">
+        <div class="max-w-[1680px] mx-auto flex flex-wrap items-center justify-between gap-3">
+
+            <!-- Brand Identity -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-black border border-brand-neon/50 flex items-center justify-center neon-burger-glow">
+                    <svg class="w-6 h-6 text-brand-neon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M4 11h16a1 1 0 0 1 1 1v.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 12.5V12a1 1 0 0 1 1-1Z"/>
+                        <path d="M5 11V9a7 7 0 0 1 14 0v2"/>
+                        <path d="M3 13.5c2 1.5 4-1.5 6 0s4-1.5 6 0 4-1.5 6 0"/>
+                        <path d="M4 15v1.5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V15"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-display text-xl tracking-wider text-brand-primary">BROCADOS LANCHES</span>
+                        <span class="text-neutral-500">•</span>
+                        <span class="text-xs font-bold text-white">Design System v2.5</span>
+                        <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Live Sync</span>
+                    </div>
+                    <p class="text-[11px] text-neutral-400">Estúdio Responsivo Mobile (375px) & Desktop (1280px) • Cliente & Admin</p>
+                </div>
+            </div>
+
+            <!-- Primary Workspace Tabs -->
+            <nav class="flex flex-wrap bg-[#1A1A1A] p-1 rounded-xl border border-[#2E2E2E] text-xs font-bold gap-1">
+                <button onclick="setWorkspaceTab('ds')" id="ws-tab-ds" class="px-3 py-1.5 rounded-lg transition">1. Design System (6)</button>
+                <button onclick="setWorkspaceTab('client')" id="ws-tab-client" class="px-3 py-1.5 rounded-lg transition">2. Protótipo Cliente (6)</button>
+                <button onclick="setWorkspaceTab('admin')" id="ws-tab-admin" class="px-3 py-1.5 rounded-lg transition">3. Painel Admin (5)</button>
+                <button onclick="setWorkspaceTab('overview')" id="ws-tab-overview" class="px-3 py-1.5 rounded-lg bg-brand-primary text-black transition">4. Visão Geral</button>
+            </nav>
+
+            <!-- Viewport Switcher + Live Theme Customizer + Export -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Mobile / Desktop Switcher -->
+                <div class="flex items-center bg-[#1A1A1A] p-1 rounded-xl border border-[#2E2E2E] text-xs font-bold">
+                    <button onclick="setViewportMode('mobile')" id="vp-btn-mobile" class="px-2.5 py-1.5 rounded-lg bg-brand-primary text-black transition">📱 Mobile 375px</button>
+                    <button onclick="setViewportMode('desktop')" id="vp-btn-desktop" class="px-2.5 py-1.5 rounded-lg text-neutral-300 hover:text-white transition">🖥️ Desktop 1280px</button>
+                </div>
+
+                <!-- Desktop Scale Fit Toggle (visible when Desktop mode active) -->
+                <button onclick="toggleDesktopFit()" id="btn-desktop-fit" class="hidden px-2.5 py-1.5 rounded-xl bg-[#1A1A1A] border border-[#2E2E2E] text-[11px] font-semibold text-brand-neon hover:bg-[#222]">
+                    Ajustar à Tela: ON
+                </button>
+
+                <!-- Color Pickers -->
+                <div class="hidden xl:flex items-center gap-2 bg-[#1A1A1A] border border-[#2E2E2E] px-2.5 py-1 rounded-xl text-[11px]">
+                    <label class="flex items-center gap-1 cursor-pointer" title="Primary Brand (#FF8C00)">
+                        <input type="color" id="cp-primary" value="#FF8C00" onchange="updateCssVar('--brand-primary', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer">
+                        <span class="text-neutral-300">Primary</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer" title="Neon Accent (#FFB703)">
+                        <input type="color" id="cp-neon" value="#FFB703" onchange="updateCssVar('--brand-neon', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer">
+                        <span class="text-neutral-300">Neon</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer" title="Surface Dark (#161616)">
+                        <input type="color" id="cp-surface" value="#161616" onchange="updateCssVar('--bg-surface', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer">
+                        <span class="text-neutral-300">Surface</span>
+                    </label>
+                    <button onclick="resetColors()" class="text-brand-primary hover:underline font-semibold ml-1">Reset</button>
+                </div>
+
+                <!-- Export Button -->
+                <button onclick="toggleExportModal(true)" class="px-3.5 py-2 rounded-xl bg-brand-primary text-black font-extrabold text-xs hover:opacity-90 transition shadow-lg shadow-brand-primary/20">
+                    ⚡ Exportar Tokens & JSON
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- MAIN WORKSPACE CONTENT                                                -->
+    <!-- ===================================================================== -->
+    <main class="max-w-[1680px] mx-auto px-4 py-8 space-y-14">
+
+        <!-- ================================================================= -->
+        <!-- SECTION A: DESIGN SYSTEM DOCUMENTATION (6 COMPLETE FRAMES)        -->
+        <!-- ================================================================= -->
+        <section id="section-ds" class="space-y-6">
+            <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[#242424] pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-brand-neon">Documentação Oficial</span>
+                    <h2 class="text-2xl font-black text-white">Design System — 6 Frames de Especificação</h2>
+                </div>
+                <p class="text-xs text-neutral-400">Clique em qualquer amostra de cor para copiar o código HEX instantaneamente.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+
+                <!-- FRAME 01: IDENTIDADE & PALETA DE CORES -->
+                <div class="ds-card p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#242424] pb-3">
+                        <span class="text-xs font-mono font-bold text-brand-neon">FRAME 01</span>
+                        <span class="text-xs font-semibold text-neutral-400">Identidade & Paleta de Cores</span>
+                    </div>
+
+                    <!-- Logo Neon -->
+                    <div class="bg-[#0A0A0A] border border-[#262626] rounded-xl p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-12 h-12 text-brand-neon neon-burger-glow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M4 11h16a1 1 0 0 1 1 1v.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 12.5V12a1 1 0 0 1 1-1Z"/>
+                                <path d="M5 11V9a7 7 0 0 1 14 0v2"/>
+                                <path d="M3 13.5c2 1.5 4-1.5 6 0s4-1.5 6 0 4-1.5 6 0"/>
+                                <path d="M4 15v1.5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V15"/>
+                            </svg>
+                            <div>
+                                <div class="font-display text-3xl tracking-wider text-brand-primary leading-none">BROCADOS</div>
+                                <div class="text-[11px] tracking-[0.38em] text-brand-neon font-bold neon-text-glow">LANCHES</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] px-2.5 py-1 rounded-full bg-[#161616] border border-[#2E2E2E] text-neutral-300">Dark Mode Native</span>
+                    </div>
+
+                    <!-- 11 Swatches -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 text-[10px]">
+                        <button onclick="copyHex('#0A0A0A')" class="p-2 rounded-lg bg-[#0A0A0A] border border-[#2E2E2E] text-left hover:scale-105 transition">
+                            <div class="font-bold text-white">Bg Primary</div><div class="font-mono text-neutral-400">#0A0A0A</div>
+                        </button>
+                        <button onclick="copyHex('#161616')" class="p-2 rounded-lg bg-[#161616] border border-[#2E2E2E] text-left hover:scale-105 transition">
+                            <div class="font-bold text-white">Surface</div><div class="font-mono text-neutral-400">#161616</div>
+                        </button>
+                        <button onclick="copyHex('#1F1F1F')" class="p-2 rounded-lg bg-[#1F1F1F] border border-[#2E2E2E] text-left hover:scale-105 transition">
+                            <div class="font-bold text-white">Input Bg</div><div class="font-mono text-neutral-400">#1F1F1F</div>
+                        </button>
+                        <button onclick="copyHex('#2E2E2E')" class="p-2 rounded-lg bg-[#2E2E2E] border border-[#3E3E3E] text-left hover:scale-105 transition">
+                            <div class="font-bold text-white">Border</div><div class="font-mono text-neutral-300">#2E2E2E</div>
+                        </button>
+                        <button onclick="copyHex('#FF8C00')" class="p-2 rounded-lg bg-[#FF8C00] text-black text-left hover:scale-105 transition">
+                            <div class="font-bold">Primary</div><div class="font-mono opacity-85">#FF8C00</div>
+                        </button>
+                        <button onclick="copyHex('#E07B00')" class="p-2 rounded-lg bg-[#E07B00] text-black text-left hover:scale-105 transition">
+                            <div class="font-bold">Hover</div><div class="font-mono opacity-85">#E07B00</div>
+                        </button>
+                        <button onclick="copyHex('#FFB703')" class="p-2 rounded-lg bg-[#FFB703] text-black text-left hover:scale-105 transition">
+                            <div class="font-bold">Neon</div><div class="font-mono opacity-85">#FFB703</div>
+                        </button>
+                        <button onclick="copyHex('#FFFFFF')" class="p-2 rounded-lg bg-[#FFFFFF] text-black text-left hover:scale-105 transition">
+                            <div class="font-bold">Text Main</div><div class="font-mono opacity-85">#FFFFFF</div>
+                        </button>
+                        <button onclick="copyHex('#A3A3A3')" class="p-2 rounded-lg bg-[#A3A3A3] text-black text-left hover:scale-105 transition">
+                            <div class="font-bold">Text Sub</div><div class="font-mono opacity-85">#A3A3A3</div>
+                        </button>
+                        <button onclick="copyHex('#22C55E')" class="p-2 rounded-lg bg-[#22C55E] text-black text-left hover:scale-105 transition">
+                            <div class="font-bold">Aberto</div><div class="font-mono opacity-85">#22C55E</div>
+                        </button>
+                        <button onclick="copyHex('#EF4444')" class="p-2 rounded-lg bg-[#EF4444] text-white text-left hover:scale-105 transition">
+                            <div class="font-bold">Erro/Off</div><div class="font-mono opacity-90">#EF4444</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FRAME 02: ESCALA TIPOGRÁFICA -->
+                <div class="ds-card p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#242424] pb-3">
+                        <span class="text-xs font-mono font-bold text-brand-neon">FRAME 02</span>
+                        <span class="text-xs font-semibold text-neutral-400">Escala Tipográfica</span>
+                    </div>
+                    <div class="space-y-2.5 text-xs">
+                        <div class="flex items-baseline justify-between border-b border-[#222] pb-2">
+                            <span class="font-display text-3xl text-brand-primary tracking-wide">DISPLAY LOGO (BEBAS NEUE)</span>
+                            <span class="font-mono text-[10px] text-neutral-400">36px / 1.0</span>
+                        </div>
+                        <div class="flex items-baseline justify-between border-b border-[#222] pb-2">
+                            <span class="text-[22px] font-bold text-white">Heading H1 — Seções</span>
+                            <span class="font-mono text-[10px] text-neutral-400">22px Bold</span>
+                        </div>
+                        <div class="flex items-baseline justify-between border-b border-[#222] pb-2">
+                            <span class="text-[16px] font-semibold text-white">Heading H2 — Nome do Lanche</span>
+                            <span class="font-mono text-[10px] text-neutral-400">16px SemiBold</span>
+                        </div>
+                        <div class="flex items-baseline justify-between border-b border-[#222] pb-2">
+                            <span class="text-[16px] font-bold text-brand-neon">Price Tag — R$ 23,00</span>
+                            <span class="font-mono text-[10px] text-neutral-400">16px Bold</span>
+                        </div>
+                        <div class="flex items-baseline justify-between border-b border-[#222] pb-2">
+                            <span class="text-[14px] text-neutral-200">Body Regular — Opções e Checkout</span>
+                            <span class="font-mono text-[10px] text-neutral-400">14px Reg</span>
+                        </div>
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-[12px] text-neutral-400">Caption — Descrição de ingredientes</span>
+                            <span class="font-mono text-[10px] text-neutral-400">12px Reg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FRAME 03: BOTÕES & CONTROLES -->
+                <div class="ds-card p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#242424] pb-3">
+                        <span class="text-xs font-mono font-bold text-brand-neon">FRAME 03</span>
+                        <span class="text-xs font-semibold text-neutral-400">Botões & Controles</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <button class="py-2.5 px-3 rounded-full bg-brand-primary text-black font-bold brand-btn-shadow">Default</button>
+                        <button class="py-2.5 px-3 rounded-full bg-brand-hover text-black font-bold">Hover</button>
+                        <button disabled class="py-2.5 px-3 rounded-full bg-[#2E2E2E] text-neutral-500 font-bold cursor-not-allowed">Disabled</button>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-3.5 py-1.5 rounded-full bg-brand-primary text-black font-bold text-xs">Chip Ativo</span>
+                        <span class="px-3.5 py-1.5 rounded-full bg-[#161616] border border-[#2E2E2E] text-white text-xs">Chip Inativo</span>
+                        <button class="px-3 py-1.5 rounded-full bg-[#161616] border border-[#2E2E2E] text-brand-primary text-xs font-bold">← Voltar</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                        <div class="bg-[#161616] border border-[#2E2E2E] rounded-xl p-3 flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] text-neutral-400">Quick Add & Stepper</div>
+                                <div class="flex items-center gap-2 mt-1.5">
+                                    <button class="w-7 h-7 rounded-lg bg-brand-primary text-black font-black">-</button>
+                                    <span class="text-xs font-bold">1</span>
+                                    <button class="w-7 h-7 rounded-lg bg-brand-primary text-black font-black">+</button>
+                                </div>
+                            </div>
+                            <button class="w-8 h-8 rounded-lg bg-brand-primary text-black font-black text-sm">+</button>
+                        </div>
+                        <div class="bg-[#161616] border border-[#2E2E2E] rounded-xl p-3 space-y-1.5 text-xs">
+                            <label class="flex items-center gap-2"><input type="radio" checked class="accent-[#FF8C00]"> Radio Neon</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-[#FF8C00]"> Checkbox Neon</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FRAME 04: CARDS & INPUTS -->
+                <div class="ds-card p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#242424] pb-3">
+                        <span class="text-xs font-mono font-bold text-brand-neon">FRAME 04</span>
+                        <span class="text-xs font-semibold text-neutral-400">Cards & Inputs</span>
+                    </div>
+
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-3.5 flex items-center text-brand-primary text-xs">🔍</span>
+                        <input type="text" readonly value="Search Pill com foco neon (#FF8C00)" class="w-full bg-[#1F1F1F] border border-brand-primary/70 rounded-full py-2 pl-9 pr-4 text-xs text-neutral-200">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-[#161616] border border-[#2E2E2E] rounded-2xl p-2.5">
+                            <div class="h-16 rounded-xl bg-[#1F1F1F] flex items-center justify-center mb-2">
+                                <svg class="w-10 h-10 text-brand-neon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11h16a1 1 0 0 1 1 1v.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 12.5V12a1 1 0 0 1 1-1Z"/><path d="M5 11V9a7 7 0 0 1 14 0v2"/><path d="M4 15v1.5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V15"/></svg>
+                            </div>
+                            <div class="text-xs font-bold text-white">Card Produto 1:1</div>
+                            <div class="flex items-center justify-between mt-1.5">
+                                <span class="text-xs font-extrabold text-brand-neon">R$ 23,00</span>
+                                <span class="w-6 h-6 rounded-lg bg-brand-primary text-black font-black flex items-center justify-center text-xs">+</span>
+                            </div>
+                        </div>
+                        <div class="bg-[#161616] border border-[#2E2E2E] rounded-2xl p-3 text-[11px] space-y-1.5">
+                            <div class="font-bold text-white">Customizer Row</div>
+                            <div class="flex justify-between text-neutral-300 border-b border-[#242424] pb-1">
+                                <span>Bacon Crocante</span><span class="text-brand-neon">+R$ 5</span>
+                            </div>
+                            <div class="text-[10px] text-neutral-400">Grid 2 cols no Mobile e 3 cols + Sidebar Carrinho no Desktop.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FRAME 05: PLANEJAMENTO RESPONSIVO & RODAPÉ GLOBAL -->
+                <div class="ds-card p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#242424] pb-3">
+                        <span class="text-xs font-mono font-bold text-brand-neon">FRAME 05</span>
+                        <span class="text-xs font-semibold text-neutral-400">Responsivo & Rodapé Global</span>
+                    </div>
+
+                    <table class="w-full text-left text-[11px]">
+                        <thead>
+                            <tr class="border-b border-[#262626] text-neutral-400">
+                                <th class="py-1">Área</th>
+                                <th class="py-1 text-brand-neon">Mobile (375px)</th>
+                                <th class="py-1 text-brand-primary">Desktop (1280px)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#1F1F1F] text-neutral-300">
+                            <tr><td class="py-1 font-semibold">Cardápio</td><td>Grid 2 Colunas</td><td>Grid 3 Cols + Drawer Direito</td></tr>
+                            <tr><td class="py-1 font-semibold">Navegação</td><td>Rodapé Fixo + Abas</td><td>Top Navbar + Rodapé Global</td></tr>
+                            <tr><td class="py-1 font-semibold">Admin</td><td>Cards Empilhados</td><td>Sidebar + Tabelas Completas</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="bg-[#0A0A0A] border border-[#2E2E2E] rounded-xl p-2.5 space-y-1.5">
+                        <div class="py-1.5 px-3 rounded-full bg-brand-primary text-black font-extrabold text-[11px] flex justify-between">
+                            <span>Rodapé Global Persistente</span><span>R$ 23,00 🛒</span>
+                        </div>
+                        <div class="grid grid-cols-4 text-[10px] text-center text-neutral-400">
+                            <span class="text-brand-primary font-bold">Home</span><span>Cardápio</span><span>Carrinho</span><span>Créditos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FRAME 06: COMPONENTES EXCLUSIVOS DO ADMINISTRADOR -->
+                <div class="ds-card p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-[#242424] pb-3">
+                        <span class="text-xs font-mono font-bold text-brand-neon">FRAME 06</span>
+                        <span class="text-xs font-semibold text-neutral-400">Componentes Admin & Live Sync</span>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="flex items-center justify-between bg-[#161616] border border-[#2E2E2E] p-2.5 rounded-xl">
+                            <span>Master Switch Loja</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500 text-black font-extrabold text-[10px]">LOJA ABERTA</span>
+                        </div>
+                        <div class="flex items-center justify-between bg-[#161616] border border-[#2E2E2E] p-2.5 rounded-xl">
+                            <span>Status de Produto</span>
+                            <div class="flex gap-1">
+                                <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">Disponível</span>
+                                <span class="px-2 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold">Esgotado</span>
+                            </div>
+                        </div>
+                        <div class="bg-[#161616] border border-[#2E2E2E] p-2.5 rounded-xl text-[11px] text-neutral-300">
+                            <strong class="text-brand-neon">Arquitetura Live Sync:</strong> Admin → <code class="text-brand-primary">appState</code> → Atualiza instantaneamente Home, Cardápio, Carrinho, Checkout e Rodapé.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SECTION B: INTERACTIVE CUSTOMER PROTOTYPE (6 SCREENS)             -->
+        <!-- ================================================================= -->
+        <section id="section-client" class="space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-[#242424] pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-brand-primary">Protótipo Interativo do Consumidor</span>
+                    <h2 class="text-2xl font-black text-white">Visão do Cliente — 6 Telas Responsivas</h2>
+                </div>
+
+                <!-- Display Mode & Screen Navigation -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex bg-[#161616] p-1 rounded-xl border border-[#2E2E2E] text-xs font-bold">
+                        <button onclick="setClientLayoutMode('side-by-side')" id="client-mode-all" class="px-3 py-1.5 rounded-lg bg-brand-primary text-black transition">Ver Todas as 6 Telas Lado a Lado</button>
+                        <button onclick="setClientLayoutMode('focused')" id="client-mode-focused" class="px-3 py-1.5 rounded-lg text-neutral-300 hover:text-white transition">Modo Interativo Focado</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen Selector Pills (Always accessible to jump or focus a screen) -->
+            <div class="flex flex-wrap items-center gap-2 bg-[#121212] p-2 rounded-2xl border border-[#242424] text-xs">
+                <span class="text-neutral-400 font-semibold px-2">Navegar Telas:</span>
+                <button onclick="selectFocusedClientScreen('home')" class="c-nav-pill px-3 py-1.5 rounded-full bg-brand-primary text-black font-bold" data-cscreen="home">Tela 00: Home</button>
+                <button onclick="selectFocusedClientScreen('menu')" class="c-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-cscreen="menu">Tela 01: Cardápio</button>
+                <button onclick="selectFocusedClientScreen('customize')" class="c-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-cscreen="customize">Tela 02: Personalizar</button>
+                <button onclick="selectFocusedClientScreen('cart')" class="c-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-cscreen="cart">Tela 03: Carrinho</button>
+                <button onclick="selectFocusedClientScreen('checkout')" class="c-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-cscreen="checkout">Tela 04: Checkout</button>
+                <button onclick="selectFocusedClientScreen('credits')" class="c-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-cscreen="credits">Tela 05: Créditos</button>
+            </div>
+
+            <!-- Dynamic Container for Customer Screens (Rendered cleanly for Mobile 375px or Desktop 1280px) -->
+            <div id="client-prototype-stage" class="w-full"></div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- SECTION C: INTERACTIVE ADMIN PANEL (5 SCREENS)                    -->
+        <!-- ================================================================= -->
+        <section id="section-admin" class="space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-[#242424] pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-brand-neon">Gestão em Tempo Real</span>
+                    <h2 class="text-2xl font-black text-white">Painel Exclusivo do Administrador — 5 Telas Responsivas</h2>
+                </div>
+
+                <div class="flex bg-[#161616] p-1 rounded-xl border border-[#2E2E2E] text-xs font-bold">
+                    <button onclick="setAdminLayoutMode('side-by-side')" id="admin-mode-all" class="px-3 py-1.5 rounded-lg bg-brand-primary text-black transition">Ver Todas as 5 Telas Admin</button>
+                    <button onclick="setAdminLayoutMode('focused')" id="admin-mode-focused" class="px-3 py-1.5 rounded-lg text-neutral-300 hover:text-white transition">Painel Admin Interativo Focado</button>
+                </div>
+            </div>
+
+            <!-- Admin Screen Selector Pills -->
+            <div class="flex flex-wrap items-center gap-2 bg-[#121212] p-2 rounded-2xl border border-[#242424] text-xs">
+                <span class="text-neutral-400 font-semibold px-2">Módulos Admin:</span>
+                <button onclick="selectFocusedAdminScreen('dashboard')" class="a-nav-pill px-3 py-1.5 rounded-full bg-brand-primary text-black font-bold" data-ascreen="dashboard">Admin 01: Dashboard</button>
+                <button onclick="selectFocusedAdminScreen('products')" class="a-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-ascreen="products">Admin 02: Produtos</button>
+                <button onclick="selectFocusedAdminScreen('categories')" class="a-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-ascreen="categories">Admin 03: Categorias</button>
+                <button onclick="selectFocusedAdminScreen('zones')" class="a-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-ascreen="zones">Admin 04: Entregas</button>
+                <button onclick="selectFocusedAdminScreen('account')" class="a-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white" data-ascreen="account">Admin 05: Conta & Contato</button>
+            </div>
+
+            <!-- Dynamic Container for Admin Screens -->
+            <div id="admin-prototype-stage" class="w-full"></div>
+        </section>
+
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- APPLICATION LOGIC, INLINE SVG ASSETS & LIVE REACTIVE ENGINE           -->
+    <!-- ===================================================================== -->
+    <script>
+        // =================================================================
+        // 1. INLINE SVG ILLUSTRATIONS (ZERO EXTERNAL IMAGE DEPENDENCIES)
+        // =================================================================
+        const FOOD_SVGS = {
+            burger: `<svg class="w-12 h-12 text-brand-neon drop-shadow" viewBox="0 0 64 64" fill="none">
+                <path d="M12 28C12 17 21 12 32 12C43 12 52 17 52 28H12Z" fill="#D97706" stroke="#FFB703" stroke-width="2.5"/>
+                <circle cx="24" cy="20" r="1.5" fill="#FEF3C7"/><circle cx="33" cy="18" r="1.5" fill="#FEF3C7"/><circle cx="41" cy="21" r="1.5" fill="#FEF3C7"/>
+                <path d="M10 33C14 30 18 36 22 33C26 30 30 36 34 33C38 30 42 36 46 33C50 30 53 34 54 33" stroke="#22C55E" stroke-width="3.5" stroke-linecap="round"/>
+                <rect x="11" y="37" width="42" height="7" rx="3.5" fill="#78350F" stroke="#F59E0B" stroke-width="2"/>
+                <path d="M18 37L24 44L30 37" fill="#FBBF24"/>
+                <path d="M13 46H51V49C51 52.3 48.3 55 45 55H19C15.7 55 13 52.3 13 49V46Z" fill="#D97706" stroke="#FFB703" stroke-width="2.5"/>
+            </svg>`,
+            combo: `<svg class="w-12 h-12 text-brand-neon drop-shadow" viewBox="0 0 64 64" fill="none">
+                <rect x="14" y="22" width="18" height="28" rx="3" fill="#DC2626" stroke="#FFB703" stroke-width="2"/>
+                <path d="M17 22V14M21 22V12M25 22V13M29 22V15" stroke="#FACC15" stroke-width="3" stroke-linecap="round"/>
+                <path d="M34 36C34 29 39 26 45 26C51 26 56 29 56 36H34Z" fill="#D97706" stroke="#FFB703" stroke-width="2"/>
+                <rect x="33" y="39" width="24" height="5" rx="2.5" fill="#78350F"/>
+                <path d="M35 46H55V48C55 50.2 53.2 52 51 52H39C36.8 52 35 50.2 35 48V46Z" fill="#D97706" stroke="#FFB703" stroke-width="2"/>
+            </svg>`,
+            fries: `<svg class="w-12 h-12 text-brand-neon drop-shadow" viewBox="0 0 64 64" fill="none">
+                <path d="M18 26H46L42 52H22L18 26Z" fill="#EA580C" stroke="#FFB703" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M22 26V14M27 26V11M32 26V10M37 26V12M42 26V15" stroke="#FDE047" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="32" cy="39" r="5" fill="#FFB703"/>
+            </svg>`,
+            drink: `<svg class="w-12 h-12 text-brand-neon drop-shadow" viewBox="0 0 64 64" fill="none">
+                <path d="M36 10L32 22" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+                <rect x="20" y="22" width="24" height="32" rx="4" fill="#1F1F1F" stroke="#FF8C00" stroke-width="2.5"/>
+                <path d="M18 22H46" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="32" cy="38" r="6" fill="#FF8C00" fill-opacity="0.3" stroke="#FFB703" stroke-width="2"/>
+            </svg>`
+        };
+
+        const BRAND_LOGO_SVG = (size = 'w-11 h-11') => `
+            <svg class="${size} text-brand-neon neon-burger-glow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 11h16a1 1 0 0 1 1 1v.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 12.5V12a1 1 0 0 1 1-1Z"/>
+                <path d="M5 11V9a7 7 0 0 1 14 0v2"/>
+                <path d="M3 13.5c2 1.5 4-1.5 6 0s4-1.5 6 0 4-1.5 6 0"/>
+                <path d="M4 15v1.5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V15"/>
+            </svg>
+        `;
+
+        // =================================================================
+        // 2. LIVE SYNCHRONIZED APPLICATION STATE (CLIENT + ADMIN)
+        // =================================================================
+        const appState = {
+            workspaceTab: 'overview', // 'ds' | 'client' | 'admin' | 'overview'
+            viewport: 'mobile',       // 'mobile' | 'desktop'
+            desktopFit: true,
+            clientLayout: 'side-by-side', // 'side-by-side' | 'focused'
+            focusedClientScreen: 'home',  // 'home' | 'menu' | 'customize' | 'cart' | 'checkout' | 'credits'
+            adminLayout: 'side-by-side',  // 'side-by-side' | 'focused'
+            focusedAdminScreen: 'dashboard', // 'dashboard' | 'products' | 'categories' | 'zones' | 'account'
+
+            store: {
+                name: 'Brocados Lanches',
+                isOpen: true,
+                deliveryTime: '35-50 min',
+                whatsapp: '(85) 99999-9999',
+                instagram: '@brocadoslanches',
+                address: 'Av. Principal, 1200 - Centro, Aquiraz - CE'
+            },
+            selectedCategory: 'all',
+            searchQuery: '',
+            categories: [
+                { id: 'cat_1', name: 'Hambúrgueres', active: true },
+                { id: 'cat_2', name: 'Combos', active: true },
+                { id: 'cat_3', name: 'Petiscos', active: true },
+                { id: 'cat_4', name: 'Bebidas', active: true }
+            ],
+            products: [
+                {
+                    id: 'prod_1',
+                    catId: 'cat_1',
+                    name: "Brocado's Burguer Cheddar",
+                    price: 23.00,
+                    desc: 'Blend artesanal 160g, muito cheddar derretido e pão brioche selado.',
+                    icon: 'burger',
+                    available: true,
+                    featured: true
+                },
+                {
+                    id: 'prod_2',
+                    catId: 'cat_1',
+                    name: 'Brocadão Duplo Cheddar',
+                    price: 30.00,
+                    desc: 'Dois blends artesanais 160g, cheddar duplo cremoso e bacon crocante.',
+                    icon: 'burger',
+                    available: true,
+                    featured: true
+                },
+                {
+                    id: 'prod_3',
+                    catId: 'cat_2',
+                    name: 'Combo Casal Brocado',
+                    price: 54.90,
+                    desc: '2 Brocados Cheddar + Batata Rústica Grande + 2 Refris Lata.',
+                    icon: 'combo',
+                    available: true,
+                    featured: true
+                },
+                {
+                    id: 'prod_4',
+                    catId: 'cat_3',
+                    name: 'Batata Cheddar & Bacon',
+                    price: 22.00,
+                    desc: 'Porção generosa de batatas crocantes cobertas com cheddar e bacon.',
+                    icon: 'fries',
+                    available: true,
+                    featured: false
+                },
+                {
+                    id: 'prod_5',
+                    catId: 'cat_4',
+                    name: 'Coca-Cola Lata 350ml',
+                    price: 6.00,
+                    desc: 'Lata trincando de gelada 350ml.',
+                    icon: 'drink',
+                    available: true,
+                    featured: false
+                }
+            ],
+            zones: [
+                { id: 'z1', name: 'Centro', fee: 5.00, active: true },
+                { id: 'z2', name: 'Prainha', fee: 8.00, active: true },
+                { id: 'z3', name: 'Porto das Dunas', fee: 12.00, active: true }
+            ],
+            cart: [
+                { uid: 'c1', prodId: 'prod_1', name: "Brocado's Burguer Cheddar", price: 23.00, qty: 1, notes: 'Ao ponto' }
+            ],
+            customizingProdId: 'prod_1',
+            customDoneness: 'Ao ponto',
+            customAddons: [],
+            customNotes: '',
+            checkoutDeliveryType: 'delivery',
+            checkoutZoneId: 'z1',
+            checkoutStreet: 'Rua das Flores, 450',
+            checkoutPayment: 'Pix',
+            checkoutChangeFor: '',
+            recentOrders: [
+                { id: '#1042', customer: 'Lucas M.', items: '2x Brocadão Duplo', total: 65.00, status: 'Em Preparo' },
+                { id: '#1041', customer: 'Mariana S.', items: '1x Combo Casal', total: 62.90, status: 'Saiu p/ Entrega' }
+            ]
+        };
+
+        const formatBRL = (val) => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 2600);
+        }
+
+        // =================================================================
+        // 3. WORKSPACE & VIEWPORT NAVIGATION CONTROLS
+        // =================================================================
+        function setWorkspaceTab(tab) {
+            appState.workspaceTab = tab;
+            ['ds', 'client', 'admin', 'overview'].forEach(t => {
+                const btn = document.getElementById(`ws-tab-${t}`);
+                btn.className = t === tab
+                    ? 'px-3 py-1.5 rounded-lg bg-brand-primary text-black transition'
+                    : 'px-3 py-1.5 rounded-lg text-neutral-300 hover:text-white transition';
+            });
+
+            const secDs = document.getElementById('section-ds');
+            const secClient = document.getElementById('section-client');
+            const secAdmin = document.getElementById('section-admin');
+
+            secDs.classList.toggle('hidden', tab !== 'ds' && tab !== 'overview');
+            secClient.classList.toggle('hidden', tab !== 'client' && tab !== 'overview');
+            secAdmin.classList.toggle('hidden', tab !== 'admin' && tab !== 'overview');
+
+            applyDesktopAutoScale();
+        }
+
+        function setViewportMode(vp) {
+            appState.viewport = vp;
+            const btnM = document.getElementById('vp-btn-mobile');
+            const btnD = document.getElementById('vp-btn-desktop');
+            const btnFit = document.getElementById('btn-desktop-fit');
+
+            if (vp === 'mobile') {
+                btnM.className = 'px-2.5 py-1.5 rounded-lg bg-brand-primary text-black transition';
+                btnD.className = 'px-2.5 py-1.5 rounded-lg text-neutral-300 hover:text-white transition';
+                btnFit.classList.add('hidden');
+            } else {
+                btnD.className = 'px-2.5 py-1.5 rounded-lg bg-brand-primary text-black transition';
+                btnM.className = 'px-2.5 py-1.5 rounded-lg text-neutral-300 hover:text-white transition';
+                btnFit.classList.remove('hidden');
+            }
+
+            renderAllPrototypes();
+            showToast(`Ambiente alterado para ${vp === 'mobile' ? 'Mobile (375px)' : 'Desktop (1280px)'}`);
+        }
+
+        function toggleDesktopFit() {
+            appState.desktopFit = !appState.desktopFit;
+            document.getElementById('btn-desktop-fit').textContent = `Ajustar à Tela: ${appState.desktopFit ? 'ON' : 'OFF (100%)'}`;
+            applyDesktopAutoScale();
+        }
+
+        function applyDesktopAutoScale() {
+            if (appState.viewport !== 'desktop') return;
+            const shells = document.querySelectorAll('.desktop-shell');
+            const availableWidth = Math.min(window.innerWidth - 48, 1620);
+            shells.forEach(shell => {
+                const parent = shell.parentElement;
+                if (appState.desktopFit && availableWidth < 1280) {
+                    const scale = availableWidth / 1280;
+                    shell.style.transform = `scale(${scale})`;
+                    if (parent) parent.style.height = `${shell.offsetHeight * scale}px`;
+                } else {
+                    shell.style.transform = 'scale(1)';
+                    if (parent) parent.style.height = 'auto';
+                }
+            });
+        }
+        window.addEventListener('resize', applyDesktopAutoScale);
+
+        function setClientLayoutMode(mode) {
+            appState.clientLayout = mode;
+            document.getElementById('client-mode-all').className = mode === 'side-by-side'
+                ? 'px-3 py-1.5 rounded-lg bg-brand-primary text-black transition'
+                : 'px-3 py-1.5 rounded-lg text-neutral-300 hover:text-white transition';
+            document.getElementById('client-mode-focused').className = mode === 'focused'
+                ? 'px-3 py-1.5 rounded-lg bg-brand-primary text-black transition'
+                : 'px-3 py-1.5 rounded-lg text-neutral-300 hover:text-white transition';
+            renderClientStage();
+        }
+
+        function selectFocusedClientScreen(screenKey) {
+            appState.focusedClientScreen = screenKey;
+            document.querySelectorAll('.c-nav-pill').forEach(btn => {
+                btn.className = btn.dataset.cscreen === screenKey
+                    ? 'c-nav-pill px-3 py-1.5 rounded-full bg-brand-primary text-black font-bold'
+                    : 'c-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white';
+            });
+            if (appState.clientLayout === 'focused') {
+                renderClientStage();
+            } else {
+                const targetEl = document.getElementById(`client-frame-${screenKey}`);
+                if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        function setAdminLayoutMode(mode) {
+            appState.adminLayout = mode;
+            document.getElementById('admin-mode-all').className = mode === 'side-by-side'
+                ? 'px-3 py-1.5 rounded-lg bg-brand-primary text-black transition'
+                : 'px-3 py-1.5 rounded-lg text-neutral-300 hover:text-white transition';
+            document.getElementById('admin-mode-focused').className = mode === 'focused'
+                ? 'px-3 py-1.5 rounded-lg bg-brand-primary text-black transition'
+                : 'px-3 py-1.5 rounded-lg text-neutral-300 hover:text-white transition';
+            renderAdminStage();
+        }
+
+        function selectFocusedAdminScreen(screenKey) {
+            appState.focusedAdminScreen = screenKey;
+            document.querySelectorAll('.a-nav-pill').forEach(btn => {
+                btn.className = btn.dataset.ascreen === screenKey
+                    ? 'a-nav-pill px-3 py-1.5 rounded-full bg-brand-primary text-black font-bold'
+                    : 'a-nav-pill px-3 py-1.5 rounded-full bg-[#1A1A1A] text-neutral-300 hover:text-white';
+            });
+            if (appState.adminLayout === 'focused') {
+                renderAdminStage();
+            } else {
+                const targetEl = document.getElementById(`admin-frame-${screenKey}`);
+                if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        // =================================================================
+        // 4. CUSTOMER SCREEN BUILDERS (MOBILE 375px & DESKTOP 1280px)
+        // =================================================================
+        function getCartTotals() {
+            const count = appState.cart.reduce((s, i) => s + i.qty, 0);
+            const subtotal = appState.cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const activeZones = appState.zones.filter(z => z.active);
+            const selectedZone = activeZones.find(z => z.id === appState.checkoutZoneId) || activeZones[0];
+            const fee = appState.checkoutDeliveryType === 'delivery' && selectedZone ? selectedZone.fee : 0;
+            return { count, subtotal, fee, total: subtotal + fee, selectedZone };
+        }
+
+        function buildClientGlobalFooter(activeKey) {
+            const { count, subtotal } = getCartTotals();
+            return `
+                <footer class="p-3 bg-[#0A0A0A]/95 backdrop-blur-md border-t border-[#1F1F1F] space-y-2 shrink-0">
+                    <button onclick="navigateClient('cart')" class="w-full py-2.5 px-4 rounded-full bg-brand-primary text-black font-extrabold text-xs flex items-center justify-between brand-btn-shadow hover:opacity-95 transition">
+                        <span>Ver carrinho (${count})</span>
+                        <span>${formatBRL(subtotal)} 🛒</span>
+                    </button>
+                    <div class="grid grid-cols-4 gap-1 pt-0.5 text-[10px] text-center font-semibold">
+                        <button onclick="navigateClient('home')" class="py-1 ${activeKey === 'home' ? 'text-brand-primary font-bold' : 'text-neutral-400 hover:text-white'}">🏠 Home</button>
+                        <button onclick="navigateClient('menu')" class="py-1 ${activeKey === 'menu' ? 'text-brand-primary font-bold' : 'text-neutral-400 hover:text-white'}">🍔 Cardápio</button>
+                        <button onclick="navigateClient('cart')" class="py-1 ${activeKey === 'cart' ? 'text-brand-primary font-bold' : 'text-neutral-400 hover:text-white'}">🛒 Carrinho</button>
+                        <button onclick="navigateClient('credits')" class="py-1 ${activeKey === 'credits' ? 'text-brand-primary font-bold' : 'text-neutral-400 hover:text-white'}">ℹ️ Créditos</button>
+                    </div>
+                </footer>
+            `;
+        }
+
+        function buildDesktopClientTopNav(activeKey) {
+            const { count, subtotal } = getCartTotals();
+            return `
+                <header class="bg-[#0D0D0D] border-b border-[#242424] px-8 py-4 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-3 cursor-pointer" onclick="navigateClient('home')">
+                        ${BRAND_LOGO_SVG('w-10 h-10')}
+                        <div>
+                            <div class="font-display text-2xl tracking-wider text-brand-primary leading-none">${appState.store.name.toUpperCase()}</div>
+                            <div class="text-[10px] tracking-[0.35em] text-brand-neon font-bold">LANCHES ARTESANAIS</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-6 text-xs font-bold">
+                        <button onclick="navigateClient('home')" class="${activeKey === 'home' ? 'text-brand-primary' : 'text-neutral-300 hover:text-white'}">Home</button>
+                        <button onclick="navigateClient('menu')" class="${activeKey === 'menu' ? 'text-brand-primary' : 'text-neutral-300 hover:text-white'}">Cardápio Completo</button>
+                        <button onclick="navigateClient('customize')" class="${activeKey === 'customize' ? 'text-brand-primary' : 'text-neutral-300 hover:text-white'}">Personalizar</button>
+                        <button onclick="navigateClient('checkout')" class="${activeKey === 'checkout' ? 'text-brand-primary' : 'text-neutral-300 hover:text-white'}">Checkout</button>
+                        <button onclick="navigateClient('credits')" class="${activeKey === 'credits' ? 'text-brand-primary' : 'text-neutral-300 hover:text-white'}">Créditos</button>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 rounded-full text-[11px] font-bold ${appState.store.isOpen ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}">
+                            ${appState.store.isOpen ? '● Aberto Agora' : '● Fechado'}
+                        </span>
+                        <button onclick="navigateClient('cart')" class="px-4 py-2 rounded-full bg-brand-primary text-black font-extrabold text-xs brand-btn-shadow">
+                            🛒 ${count} • ${formatBRL(subtotal)}
+                        </button>
+                    </div>
+                </header>
+            `;
+        }
+
+        function buildDesktopClientPersistentFooter(activeKey) {
+            return `
+                <footer class="bg-[#0B0B0B] border-t border-[#242424] px-8 py-4 flex items-center justify-between text-xs text-neutral-400 shrink-0">
+                    <div class="flex items-center gap-3">
+                        <span class="font-display text-lg text-brand-primary">${appState.store.name.toUpperCase()}</span>
+                        <span>•</span>
+                        <span>${appState.store.address}</span>
+                    </div>
+                    <div class="flex items-center gap-4 font-semibold">
+                        <button onclick="navigateClient('home')" class="${activeKey === 'home' ? 'text-brand-primary' : 'hover:text-white'}">Home</button>
+                        <button onclick="navigateClient('menu')" class="${activeKey === 'menu' ? 'text-brand-primary' : 'hover:text-white'}">Cardápio</button>
+                        <button onclick="navigateClient('cart')" class="${activeKey === 'cart' ? 'text-brand-primary' : 'hover:text-white'}">Carrinho</button>
+                        <button onclick="navigateClient('credits')" class="${activeKey === 'credits' ? 'text-brand-primary' : 'hover:text-white'}">Créditos do Projeto</button>
+                    </div>
+                    <div class="text-brand-neon font-bold">WhatsApp: ${appState.store.whatsapp}</div>
+                </footer>
+            `;
+        }
+
+        function buildDesktopRightCartSidebar() {
+            const { subtotal, fee, total } = getCartTotals();
+            return `
+                <aside class="w-80 bg-[#121212] border-l border-[#242424] p-5 flex flex-col justify-between shrink-0">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between border-b border-[#242424] pb-3">
+                            <h4 class="font-bold text-sm text-white">🛒 Seu Pedido</h4>
+                            <button onclick="clearCart()" class="text-[11px] text-red-400 hover:underline">Limpar</button>
+                        </div>
+                        <div class="space-y-2.5 max-h-80 overflow-y-auto no-scrollbar">
+                            ${appState.cart.length === 0 ? '<p class="text-xs text-neutral-500 py-6 text-center">Carrinho vazio.</p>' : appState.cart.map((item, idx) => `
+                                <div class="bg-[#161616] border border-[#2E2E2E] rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
+                                    <div>
+                                        <div class="font-bold text-white">${item.name}</div>
+                                        <div class="text-[10px] text-neutral-400">${item.notes}</div>
+                                        <div class="text-brand-neon font-bold mt-0.5">${formatBRL(item.price * item.qty)}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <button onclick="changeCartQty(${idx}, -1)" class="w-6 h-6 rounded bg-[#242424] font-bold">-</button>
+                                        <span class="font-bold w-4 text-center">${item.qty}</span>
+                                        <button onclick="changeCartQty(${idx}, 1)" class="w-6 h-6 rounded bg-brand-primary text-black font-black">+</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="border-t border-[#242424] pt-4 space-y-3 text-xs">
+                        <div class="flex justify-between text-neutral-400"><span>Subtotal</span><span class="text-white">${formatBRL(subtotal)}</span></div>
+                        <div class="flex justify-between text-neutral-400"><span>Entrega</span><span class="text-white">${formatBRL(fee)}</span></div>
+                        <div class="flex justify-between text-sm font-extrabold"><span>Total</span><span class="text-brand-neon">${formatBRL(total)}</span></div>
+                        <button onclick="navigateClient('checkout')" class="w-full py-3 rounded-full bg-brand-primary text-black font-extrabold brand-btn-shadow">Ir para Checkout →</button>
+                    </div>
+                </aside>
+            `;
+        }
+
+        function buildClientScreenContent(screenKey, isDesktop) {
+            const activeCats = appState.categories.filter(c => c.active);
+            const featuredProds = appState.products.filter(p => p.available && p.featured);
+            const { subtotal, fee, total } = getCartTotals();
+
+            // TELA 00: HOME
+            if (screenKey === 'home') {
+                const heroBlock = `
+                    <div class="rounded-2xl p-5 bg-gradient-to-r from-[#FF8C00] to-[#FFB703] text-black shadow-lg ${isDesktop ? 'flex items-center justify-between gap-6' : ''}">
+                        <div>
+                            <span class="px-2 py-0.5 rounded bg-black/20 text-[10px] font-extrabold uppercase">Destaque da Noite</span>
+                            <h3 class="font-display ${isDesktop ? 'text-5xl' : 'text-3xl'} mt-1 leading-none">BROCADÃO DUPLO + REFRI</h3>
+                            <p class="text-xs font-semibold mt-1.5 opacity-90">Blend artesanal 160g, cheddar cremoso derretido e pão brioche selado na manteiga.</p>
+                            <div class="mt-4 flex gap-2">
+                                <button onclick="navigateClient('menu')" class="px-4 py-2 rounded-full bg-black text-brand-neon font-bold text-xs">Abrir Cardápio Completo →</button>
+                            </div>
+                        </div>
+                        ${isDesktop ? `<div class="bg-black/15 p-4 rounded-2xl">${FOOD_SVGS.combo}</div>` : ''}
+                    </div>
+                `;
+
+                const catsRow = `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-bold text-white">Categorias</h4>
+                            <button onclick="navigateClient('menu')" class="text-xs text-brand-primary font-semibold">Ver tudo</button>
+                        </div>
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                            ${activeCats.map(c => `<button onclick="filterCatAndGoMenu('${c.id}')" class="px-3.5 py-2 rounded-full bg-darkBg-surface border border-[#2E2E2E] hover:border-brand-primary text-xs font-semibold text-white whitespace-nowrap">${c.name}</button>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                const featuredGrid = `
+                    <div>
+                        <h4 class="text-sm font-bold text-white mb-2.5">🔥 Mais Pedidos da Casa</h4>
+                        <div class="grid ${isDesktop ? 'grid-cols-3' : 'grid-cols-1'} gap-3">
+                            ${featuredProds.map(p => `
+                                <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3 flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 cursor-pointer" onclick="openCustomizer('${p.id}')">
+                                        <div class="w-12 h-12 rounded-xl bg-[#1F1F1F] flex items-center justify-center shrink-0">${FOOD_SVGS[p.icon] || FOOD_SVGS.burger}</div>
+                                        <div>
+                                            <div class="text-xs font-bold text-white">${p.name}</div>
+                                            <div class="text-xs font-extrabold text-brand-neon mt-0.5">${formatBRL(p.price)}</div>
+                                        </div>
+                                    </div>
+                                    <button onclick="quickAddCart('${p.id}')" class="w-8 h-8 rounded-lg bg-brand-primary text-black font-black shrink-0">+</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                const infoCard = `
+                    <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 text-xs flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <div class="font-bold text-white">📍 ${appState.store.name}</div>
+                            <p class="text-neutral-400 mt-0.5">${appState.store.address}</p>
+                        </div>
+                        <div class="text-brand-neon font-bold">🕒 Tempo médio: ${appState.store.deliveryTime}</div>
+                    </div>
+                `;
+
+                if (isDesktop) {
+                    return `
+                        ${buildDesktopClientTopNav('home')}
+                        <div class="flex-1 flex">
+                            <div class="flex-1 p-8 space-y-6">${heroBlock}${catsRow}${featuredGrid}${infoCard}</div>
+                            ${buildDesktopRightCartSidebar()}
+                        </div>
+                        ${buildDesktopClientPersistentFooter('home')}
+                    `;
+                }
+
+                return `
+                    <div class="pt-5 pb-3 px-4 text-center border-b border-[#1F1F1F] bg-black/50 shrink-0">
+                        <div class="inline-flex flex-col items-center">
+                            ${BRAND_LOGO_SVG('w-11 h-11 mb-1')}
+                            <span class="font-display text-3xl tracking-wider text-brand-primary leading-none">${appState.store.name.toUpperCase()}</span>
+                        </div>
+                        <div class="mt-2 flex items-center justify-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${appState.store.isOpen ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">${appState.store.isOpen ? '● Aberto' : '● Fechado'}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] bg-darkBg-surface border border-[#2E2E2E] text-neutral-300">🕒 ${appState.store.deliveryTime}</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">${heroBlock}${catsRow}${featuredGrid}${infoCard}</div>
+                    ${buildClientGlobalFooter('home')}
+                `;
+            }
+
+            // TELA 01: CARDÁPIO COMPLETO
+            if (screenKey === 'menu') {
+                const filtered = appState.products.filter(p => {
+                    const matchCat = appState.selectedCategory === 'all' || p.catId === appState.selectedCategory;
+                    const q = appState.searchQuery.toLowerCase();
+                    const matchQ = p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q);
+                    return matchCat && matchQ;
+                });
+
+                const filterBar = `
+                    <div class="space-y-3">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-3.5 flex items-center text-brand-primary text-xs">🔍</span>
+                            <input type="text" value="${appState.searchQuery}" oninput="updateSearchQuery(this.value)" placeholder="Buscar no cardápio..." class="w-full bg-[#1F1F1F] border border-brand-primary/50 rounded-full py-2 pl-9 pr-4 text-xs text-white focus:outline-none focus:border-brand-primary">
+                        </div>
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                            <button onclick="setMenuCat('all')" class="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${appState.selectedCategory === 'all' ? 'bg-brand-primary text-black' : 'bg-darkBg-surface border border-[#2E2E2E] text-white'}">Todos</button>
+                            ${activeCats.map(c => `<button onclick="setMenuCat('${c.id}')" class="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${appState.selectedCategory === c.id ? 'bg-brand-primary text-black' : 'bg-darkBg-surface border border-[#2E2E2E] text-white'}">${c.name}</button>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                const productsGrid = `
+                    <div class="grid ${isDesktop ? 'grid-cols-3' : 'grid-cols-2'} gap-3">
+                        ${filtered.map(p => `
+                            <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3 flex flex-col justify-between ${!p.available ? 'opacity-50' : ''}">
+                                <div onclick="${p.available ? `openCustomizer('${p.id}')` : ''}" class="cursor-pointer">
+                                    <div class="h-24 rounded-xl bg-[#1F1F1F] flex items-center justify-center mb-2 relative">
+                                        ${FOOD_SVGS[p.icon] || FOOD_SVGS.burger}
+                                        ${!p.available ? '<span class="absolute inset-0 bg-black/75 rounded-xl flex items-center justify-center text-[10px] font-extrabold text-red-400 uppercase">Esgotado</span>' : ''}
+                                    </div>
+                                    <h4 class="text-xs font-bold text-white line-clamp-1">${p.name}</h4>
+                                    <p class="text-[11px] text-neutral-400 line-clamp-2 mt-1">${p.desc}</p>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <span class="text-xs font-extrabold text-brand-neon">${formatBRL(p.price)}</span>
+                                    <button ${!p.available ? 'disabled' : ''} onclick="quickAddCart('${p.id}')" class="w-7 h-7 rounded-lg bg-brand-primary text-black font-black flex items-center justify-center text-xs disabled:bg-neutral-700">+</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                if (isDesktop) {
+                    return `
+                        ${buildDesktopClientTopNav('menu')}
+                        <div class="flex-1 flex">
+                            <div class="flex-1 p-8 space-y-5">${filterBar}<h3 class="text-lg font-extrabold text-white">Cardápio Digital</h3>${productsGrid}</div>
+                            ${buildDesktopRightCartSidebar()}
+                        </div>
+                        ${buildDesktopClientPersistentFooter('menu')}
+                    `;
+                }
+
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] space-y-2.5 shrink-0">
+                        <div class="flex items-center justify-between">
+                            <span class="font-display text-2xl text-brand-primary">${appState.store.name.toUpperCase()}</span>
+                            <span class="text-[11px] font-bold ${appState.store.isOpen ? 'text-emerald-400' : 'text-red-400'}">${appState.store.isOpen ? '● Aberto' : '● Fechado'}</span>
+                        </div>
+                        ${filterBar}
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3">
+                        <h3 class="text-sm font-bold text-white">Produtos (${filtered.length})</h3>
+                        ${productsGrid}
+                    </div>
+                    ${buildClientGlobalFooter('menu')}
+                `;
+            }
+
+            // TELA 02: PERSONALIZAÇÃO DO ITEM
+            if (screenKey === 'customize') {
+                const prod = appState.products.find(p => p.id === appState.customizingProdId) || appState.products[0];
+                const addonsList = [
+                    { name: 'Bacon Crocante', price: 5.00 },
+                    { name: 'Cheddar Cremoso Extra', price: 4.00 },
+                    { name: 'Blend 160g Extra', price: 9.00 }
+                ];
+                const extraSum = appState.customAddons.reduce((s, aName) => {
+                    const found = addonsList.find(x => x.name === aName);
+                    return s + (found ? found.price : 0);
+                }, 0);
+                const finalItemPrice = prod.price + extraSum;
+
+                const customBody = `
+                    <div class="space-y-4 text-xs">
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-2xl bg-[#1F1F1F] flex items-center justify-center shrink-0">${FOOD_SVGS[prod.icon] || FOOD_SVGS.burger}</div>
+                            <div>
+                                <h3 class="text-base font-extrabold text-white">${prod.name}</h3>
+                                <p class="text-neutral-400 mt-0.5">${prod.desc}</p>
+                                <div class="text-sm font-extrabold text-brand-neon mt-1">Base: ${formatBRL(prod.price)}</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-white">Ponto da Carne</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-brand-primary/20 text-brand-primary font-bold">Obrigatório</span>
+                            </div>
+                            ${['Ao ponto', 'Bem passado'].map(pt => `
+                                <label class="flex items-center justify-between py-1 cursor-pointer">
+                                    <span class="flex items-center gap-2"><input type="radio" name="doneness" ${appState.customDoneness === pt ? 'checked' : ''} onchange="setCustomDoneness('${pt}')" class="accent-[#FF8C00]"> ${pt}</span>
+                                    <span class="text-neutral-400">Grátis</span>
+                                </label>
+                            `).join('')}
+                        </div>
+
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5 space-y-2">
+                            <span class="font-bold text-white block">Adicionais Extras</span>
+                            ${addonsList.map(ad => `
+                                <label class="flex items-center justify-between py-1 cursor-pointer">
+                                    <span class="flex items-center gap-2"><input type="checkbox" ${appState.customAddons.includes(ad.name) ? 'checked' : ''} onchange="toggleCustomAddon('${ad.name}')" class="accent-[#FF8C00]"> ${ad.name}</span>
+                                    <span class="text-brand-neon font-bold">+ ${formatBRL(ad.price)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-white block mb-1">Observações</label>
+                            <input type="text" value="${appState.customNotes}" oninput="appState.customNotes = this.value" placeholder="Ex: Sem cebola, molho à parte..." class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                        </div>
+
+                        <button onclick="addCustomizedItemToCart()" class="w-full py-3.5 px-5 rounded-full bg-brand-primary text-black font-extrabold flex items-center justify-between brand-btn-shadow">
+                            <span>Adicionar Item Personalizado</span>
+                            <span>${formatBRL(finalItemPrice)}</span>
+                        </button>
+                    </div>
+                `;
+
+                if (isDesktop) {
+                    return `
+                        ${buildDesktopClientTopNav('customize')}
+                        <div class="flex-1 flex">
+                            <div class="flex-1 p-8 max-w-3xl mx-auto">${customBody}</div>
+                            ${buildDesktopRightCartSidebar()}
+                        </div>
+                        ${buildDesktopClientPersistentFooter('customize')}
+                    `;
+                }
+
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] flex items-center justify-between shrink-0">
+                        <button onclick="navigateClient('menu')" class="text-xs text-brand-primary font-bold">← Voltar</button>
+                        <span class="text-xs font-extrabold text-white">Personalizar Lanche</span>
+                        <span class="w-8"></span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4">${customBody}</div>
+                    ${buildClientGlobalFooter('customize')}
+                `;
+            }
+
+            // TELA 03: CARRINHO
+            if (screenKey === 'cart') {
+                const cartContent = `
+                    <div class="space-y-4 text-xs">
+                        <div class="space-y-2.5">
+                            ${appState.cart.length === 0 ? '<div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-8 text-center text-neutral-400">Seu carrinho está vazio. Adicione itens no Cardápio!</div>' : appState.cart.map((item, idx) => `
+                                <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                                    <div>
+                                        <div class="font-bold text-white text-sm">${item.name}</div>
+                                        <div class="text-[11px] text-neutral-400 mt-0.5">${item.notes}</div>
+                                        <div class="text-xs font-extrabold text-brand-neon mt-1">${formatBRL(item.price * item.qty)}</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="changeCartQty(${idx}, -1)" class="w-8 h-8 rounded-lg bg-[#242424] text-white font-bold">-</button>
+                                        <span class="font-bold w-5 text-center">${item.qty}</span>
+                                        <button onclick="changeCartQty(${idx}, 1)" class="w-8 h-8 rounded-lg bg-brand-primary text-black font-black">+</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 space-y-2">
+                            <div class="flex justify-between text-neutral-400"><span>Subtotal</span><span class="text-white font-bold">${formatBRL(subtotal)}</span></div>
+                            <div class="flex justify-between text-neutral-400"><span>Taxa de Entrega</span><span class="text-white font-bold">${formatBRL(fee)}</span></div>
+                            <div class="pt-2 border-t border-[#262626] flex justify-between text-sm font-extrabold"><span>Total</span><span class="text-brand-neon">${formatBRL(total)}</span></div>
+                        </div>
+
+                        <button onclick="navigateClient('checkout')" class="w-full py-3.5 px-5 rounded-full bg-brand-primary text-black font-extrabold brand-btn-shadow">
+                            Avançar para Entrega & Pagamento →
+                        </button>
+                    </div>
+                `;
+
+                if (isDesktop) {
+                    return `
+                        ${buildDesktopClientTopNav('cart')}
+                        <div class="flex-1 p-8 max-w-3xl mx-auto w-full space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl font-black text-white">Revisão do Carrinho</h3>
+                                <button onclick="clearCart()" class="text-xs text-red-400 hover:underline">Limpar Carrinho</button>
+                            </div>
+                            ${cartContent}
+                        </div>
+                        ${buildDesktopClientPersistentFooter('cart')}
+                    `;
+                }
+
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] flex items-center justify-between shrink-0">
+                        <button onclick="navigateClient('menu')" class="text-xs text-brand-primary font-bold">← Cardápio</button>
+                        <span class="text-xs font-extrabold text-white">Carrinho</span>
+                        <button onclick="clearCart()" class="text-[11px] text-red-400">Limpar</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4">${cartContent}</div>
+                    ${buildClientGlobalFooter('cart')}
+                `;
+            }
+
+            // TELA 04: CHECKOUT
+            if (screenKey === 'checkout') {
+                const activeZones = appState.zones.filter(z => z.active);
+                const checkoutBody = `
+                    <div class="space-y-4 text-xs">
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5 space-y-2">
+                            <span class="font-bold text-white block">1. Tipo de Recebimento</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#1F1F1F] border ${appState.checkoutDeliveryType === 'delivery' ? 'border-brand-primary' : 'border-[#2E2E2E]'} cursor-pointer">
+                                    <input type="radio" name="ctype" ${appState.checkoutDeliveryType === 'delivery' ? 'checked' : ''} onchange="setCheckoutDeliveryType('delivery')" class="accent-[#FF8C00]">
+                                    <span class="font-bold">🛵 Delivery</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#1F1F1F] border ${appState.checkoutDeliveryType === 'pickup' ? 'border-brand-primary' : 'border-[#2E2E2E]'} cursor-pointer">
+                                    <input type="radio" name="ctype" ${appState.checkoutDeliveryType === 'pickup' ? 'checked' : ''} onchange="setCheckoutDeliveryType('pickup')" class="accent-[#FF8C00]">
+                                    <span class="font-bold">🏪 Retirada</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5 space-y-2.5 ${appState.checkoutDeliveryType === 'pickup' ? 'opacity-40 pointer-events-none' : ''}">
+                            <span class="font-bold text-white block">2. Bairro / Local de Entrega (Bairros do Admin)</span>
+                            <select onchange="setCheckoutZone(this.value)" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                                ${activeZones.map(z => `<option value="${z.id}" ${appState.checkoutZoneId === z.id ? 'selected' : ''}>${z.name} (+ ${formatBRL(z.fee)})</option>`).join('')}
+                            </select>
+                            <input type="text" value="${appState.checkoutStreet}" oninput="appState.checkoutStreet = this.value" placeholder="Rua, número e referência..." class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                        </div>
+
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5 space-y-2">
+                            <span class="font-bold text-white block">3. Pagamento</span>
+                            <div class="grid grid-cols-3 gap-2">
+                                ${['Pix', 'Cartão', 'Dinheiro'].map(pm => `
+                                    <label class="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-[#1F1F1F] border ${appState.checkoutPayment === pm ? 'border-brand-primary text-brand-neon font-bold' : 'border-[#2E2E2E]'} cursor-pointer">
+                                        <input type="radio" name="cpay" ${appState.checkoutPayment === pm ? 'checked' : ''} onchange="setCheckoutPayment('${pm}')" class="accent-[#FF8C00]">
+                                        <span>${pm}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                            ${appState.checkoutPayment === 'Dinheiro' ? `
+                                <input type="text" value="${appState.checkoutChangeFor}" oninput="appState.checkoutChangeFor = this.value" placeholder="Troco para quanto? (ex: R$ 100,00)" class="w-full bg-[#1F1F1F] border border-brand-primary/50 rounded-xl px-3 py-2 text-white mt-2">
+                            ` : ''}
+                        </div>
+
+                        <div class="bg-darkBg-surface border border-brand-primary/40 rounded-2xl p-4 flex items-center justify-between">
+                            <div>
+                                <div class="text-neutral-400">Total Final</div>
+                                <div class="text-lg font-black text-brand-neon">${formatBRL(total)}</div>
+                            </div>
+                            <button onclick="submitWhatsAppOrder()" class="px-5 py-3 rounded-full bg-brand-primary text-black font-extrabold brand-btn-shadow">
+                                Finalizar no WhatsApp 🚀
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                if (isDesktop) {
+                    return `
+                        ${buildDesktopClientTopNav('checkout')}
+                        <div class="flex-1 p-8 max-w-3xl mx-auto w-full space-y-4">
+                            <h3 class="text-xl font-black text-white">Checkout & Envio do Pedido</h3>
+                            ${checkoutBody}
+                        </div>
+                        ${buildDesktopClientPersistentFooter('checkout')}
+                    `;
+                }
+
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] flex items-center justify-between shrink-0">
+                        <button onclick="navigateClient('cart')" class="text-xs text-brand-primary font-bold">← Carrinho</button>
+                        <span class="text-xs font-extrabold text-white">Checkout</span>
+                        <span class="w-10"></span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4">${checkoutBody}</div>
+                    ${buildClientGlobalFooter('checkout')}
+                `;
+            }
+
+            // TELA 05: CRÉDITOS DO DESENVOLVIMENTO
+            const creditsBody = `
+                <div class="space-y-4 text-xs">
+                    <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-5 text-center space-y-2">
+                        <div class="inline-flex p-3 rounded-2xl bg-black border border-brand-neon/50">${BRAND_LOGO_SVG('w-10 h-10')}</div>
+                        <h3 class="font-display text-3xl text-brand-primary tracking-wider">BROCADOS LANCHES STUDIO</h3>
+                        <p class="text-neutral-400 leading-relaxed max-w-lg mx-auto">Arquitetura digital de alta conversão desenvolvida com Design System Dark Mode & Neon, sincronização em tempo real entre cliente e administrador e responsividade fluida.</p>
+                    </div>
+                    <div class="grid ${isDesktop ? 'grid-cols-3' : 'grid-cols-1'} gap-3">
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5">
+                            <div class="font-bold text-brand-neon mb-1">🎨 UI/UX & Design System</div>
+                            <p class="text-neutral-400">Paleta #0A0A0A + #FF8C00, tipografia Bebas Neue & Inter e componentes acessíveis.</p>
+                        </div>
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5">
+                            <div class="font-bold text-brand-neon mb-1">⚡ Engenharia Frontend</div>
+                            <p class="text-neutral-400">HTML5, Tailwind CSS responsivo e gerenciamento reativo de estado sem dependências pesadas.</p>
+                        </div>
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5">
+                            <div class="font-bold text-brand-neon mb-1">🛠️ Painel Gestor Integrado</div>
+                            <p class="text-neutral-400">Controle total de estoque, categorias, taxas de entrega por bairro e dados da loja.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-3 pt-2">
+                        <button onclick="navigateClient('home')" class="px-4 py-2.5 rounded-full bg-brand-primary text-black font-bold">Voltar para Home</button>
+                        <button onclick="navigateClient('menu')" class="px-4 py-2.5 rounded-full bg-darkBg-surface border border-[#2E2E2E] text-white font-bold">Ver Cardápio</button>
+                    </div>
+                </div>
+            `;
+
+            if (isDesktop) {
+                return `
+                    ${buildDesktopClientTopNav('credits')}
+                    <div class="flex-1 p-8 max-w-4xl mx-auto w-full flex flex-col justify-center">${creditsBody}</div>
+                    ${buildDesktopClientPersistentFooter('credits')}
+                `;
+            }
+
+            return `
+                <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] text-center shrink-0">
+                    <span class="text-xs font-extrabold text-white">Créditos do Desenvolvimento</span>
+                </div>
+                <div class="flex-1 overflow-y-auto no-scrollbar p-4">${creditsBody}</div>
+                ${buildClientGlobalFooter('credits')}
+            `;
+        }
+
+        function renderClientStage() {
+            const stage = document.getElementById('client-prototype-stage');
+            const isDesktop = appState.viewport === 'desktop';
+            const screens = [
+                { key: 'home', label: 'TELA 00 • HOME / VITRINE' },
+                { key: 'menu', label: 'TELA 01 • CARDÁPIO COMPLETO' },
+                { key: 'customize', label: 'TELA 02 • PERSONALIZAÇÃO' },
+                { key: 'cart', label: 'TELA 03 • CARRINHO' },
+                { key: 'checkout', label: 'TELA 04 • CHECKOUT' },
+                { key: 'credits', label: 'TELA 05 • CRÉDITOS' }
+            ];
+
+            const toRender = appState.clientLayout === 'focused'
+                ? screens.filter(s => s.key === appState.focusedClientScreen)
+                : screens;
+
+            if (isDesktop) {
+                stage.innerHTML = `<div class="space-y-10">` + toRender.map(s => `
+                    <div id="client-frame-${s.key}" class="space-y-2">
+                        <div class="flex items-center justify-between px-2">
+                            <span class="text-xs font-mono font-bold text-brand-neon">${s.label} — DESKTOP 1280PX</span>
+                            <span class="text-[11px] text-neutral-400">Grid Multi-Coluna + Rodapé Persistente</span>
+                        </div>
+                        <div class="desktop-scale-outer">
+                            <div class="desktop-shell">${buildClientScreenContent(s.key, true)}</div>
+                        </div>
+                    </div>
+                `).join('') + `</div>`;
+            } else {
+                stage.innerHTML = `<div class="${appState.clientLayout === 'focused' ? 'flex justify-center' : 'flex gap-6 overflow-x-auto pb-4'}">` + toRender.map(s => `
+                    <div id="client-frame-${s.key}" class="space-y-2 shrink-0">
+                        <div class="text-xs font-mono font-bold text-brand-neon px-1">${s.label}</div>
+                        <div class="mobile-shell">${buildClientScreenContent(s.key, false)}</div>
+                    </div>
+                `).join('') + `</div>`;
+            }
+
+            applyDesktopAutoScale();
+        }
+
+        // =================================================================
+        // 5. ADMIN SCREEN BUILDERS (MOBILE 375px & DESKTOP 1280px)
+        // =================================================================
+        function buildDesktopAdminWrapper(activeKey, title, innerHTML) {
+            return `
+                <div class="flex-1 flex">
+                    <!-- Left Admin Sidebar -->
+                    <aside class="w-64 bg-[#0E0E0E] border-r border-[#242424] p-5 flex flex-col justify-between shrink-0">
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-2.5">
+                                ${BRAND_LOGO_SVG('w-9 h-9')}
+                                <div>
+                                    <div class="font-display text-xl text-brand-primary leading-none">BROCADOS ADMIN</div>
+                                    <div class="text-[10px] text-neutral-400">Painel de Controle</div>
+                                </div>
+                            </div>
+                            <nav class="space-y-1.5 text-xs font-bold">
+                                <button onclick="navigateAdmin('dashboard')" class="w-full text-left px-3.5 py-2.5 rounded-xl ${activeKey === 'dashboard' ? 'bg-brand-primary text-black' : 'text-neutral-300 hover:bg-[#1A1A1A]'}">📊 01. Dashboard & Status</button>
+                                <button onclick="navigateAdmin('products')" class="w-full text-left px-3.5 py-2.5 rounded-xl ${activeKey === 'products' ? 'bg-brand-primary text-black' : 'text-neutral-300 hover:bg-[#1A1A1A]'}">🍔 02. Gestão de Produtos</button>
+                                <button onclick="navigateAdmin('categories')" class="w-full text-left px-3.5 py-2.5 rounded-xl ${activeKey === 'categories' ? 'bg-brand-primary text-black' : 'text-neutral-300 hover:bg-[#1A1A1A]'}">🏷️ 03. Categorias</button>
+                                <button onclick="navigateAdmin('zones')" class="w-full text-left px-3.5 py-2.5 rounded-xl ${activeKey === 'zones' ? 'bg-brand-primary text-black' : 'text-neutral-300 hover:bg-[#1A1A1A]'}">🛵 04. Locais & Taxas</button>
+                                <button onclick="navigateAdmin('account')" class="w-full text-left px-3.5 py-2.5 rounded-xl ${activeKey === 'account' ? 'bg-brand-primary text-black' : 'text-neutral-300 hover:bg-[#1A1A1A]'}">⚙️ 05. Conta & Contato</button>
+                            </nav>
+                        </div>
+                        <div class="bg-[#161616] border border-[#2E2E2E] rounded-xl p-3 text-[11px] space-y-2">
+                            <div class="text-neutral-400">Status da Loja</div>
+                            <button onclick="toggleStoreStatus()" class="w-full py-2 rounded-lg font-extrabold ${appState.store.isOpen ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}">
+                                ${appState.store.isOpen ? '● LOJA ABERTA' : '● LOJA FECHADA'}
+                            </button>
+                        </div>
+                    </aside>
+
+                    <!-- Main Admin Area -->
+                    <div class="flex-1 flex flex-col">
+                        <header class="bg-[#111111] border-b border-[#242424] px-8 py-4 flex items-center justify-between">
+                            <h3 class="text-lg font-extrabold text-white">${title}</h3>
+                            <span class="text-xs text-emerald-400 font-semibold">⚡ Sincronizado em tempo real com a Visão do Cliente</span>
+                        </header>
+                        <div class="flex-1 p-8 overflow-y-auto">${innerHTML}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildAdminMobileFooter(activeKey) {
+            return `
+                <footer class="p-2 bg-[#0D0D0D] border-t border-[#1F1F1F] grid grid-cols-5 gap-1 text-[10px] text-center font-bold shrink-0">
+                    <button onclick="navigateAdmin('dashboard')" class="py-1.5 rounded-lg ${activeKey === 'dashboard' ? 'bg-brand-primary text-black' : 'text-neutral-400'}">📊 Dash</button>
+                    <button onclick="navigateAdmin('products')" class="py-1.5 rounded-lg ${activeKey === 'products' ? 'bg-brand-primary text-black' : 'text-neutral-400'}">🍔 Itens</button>
+                    <button onclick="navigateAdmin('categories')" class="py-1.5 rounded-lg ${activeKey === 'categories' ? 'bg-brand-primary text-black' : 'text-neutral-400'}">🏷️ Cats</button>
+                    <button onclick="navigateAdmin('zones')" class="py-1.5 rounded-lg ${activeKey === 'zones' ? 'bg-brand-primary text-black' : 'text-neutral-400'}">🛵 Taxas</button>
+                    <button onclick="navigateAdmin('account')" class="py-1.5 rounded-lg ${activeKey === 'account' ? 'bg-brand-primary text-black' : 'text-neutral-400'}">⚙️ Conta</button>
+                </footer>
+            `;
+        }
+
+        function buildAdminScreenContent(screenKey, isDesktop) {
+            // ADMIN 01: DASHBOARD
+            if (screenKey === 'dashboard') {
+                const activeProds = appState.products.filter(p => p.available).length;
+                const activeZones = appState.zones.filter(z => z.active).length;
+
+                const dashBody = `
+                    <div class="space-y-4 text-xs">
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 flex items-center justify-between">
+                            <div>
+                                <div class="font-bold text-white text-sm">Controle Master da Loja</div>
+                                <div class="text-neutral-400 mt-0.5">Alterna imediatamente o status na Home e Cardápio</div>
+                            </div>
+                            <button onclick="toggleStoreStatus()" class="px-4 py-2 rounded-full font-extrabold ${appState.store.isOpen ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}">
+                                ${appState.store.isOpen ? 'ABERTO' : 'FECHADO'}
+                            </button>
+                        </div>
+
+                        <div class="grid ${isDesktop ? 'grid-cols-3' : 'grid-cols-2'} gap-3">
+                            <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5">
+                                <span class="text-neutral-400">Produtos Disponíveis</span>
+                                <div class="text-2xl font-black text-white mt-1">${activeProds} / ${appState.products.length}</div>
+                            </div>
+                            <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5">
+                                <span class="text-neutral-400">Bairros Ativos</span>
+                                <div class="text-2xl font-black text-brand-neon mt-1">${activeZones}</div>
+                            </div>
+                            <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-3.5 ${isDesktop ? '' : 'col-span-2'}">
+                                <span class="text-neutral-400">Tempo Médio Delivery</span>
+                                <div class="text-xl font-black text-brand-primary mt-1">${appState.store.deliveryTime}</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 space-y-2.5">
+                            <div class="font-bold text-white">Pedidos Recentes</div>
+                            ${appState.recentOrders.map(o => `
+                                <div class="flex items-center justify-between bg-[#1F1F1F] p-2.5 rounded-xl">
+                                    <div>
+                                        <span class="font-bold text-brand-neon">${o.id}</span> • <span class="font-semibold text-white">${o.customer}</span>
+                                        <div class="text-[11px] text-neutral-400">${o.items}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-bold text-white">${formatBRL(o.total)}</div>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-brand-primary/20 text-brand-primary font-bold">${o.status}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                if (isDesktop) return buildDesktopAdminWrapper('dashboard', 'Dashboard Operacional & Status', dashBody);
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] bg-[#111111] shrink-0">
+                        <span class="text-[10px] font-bold uppercase text-brand-neon">Admin 01</span>
+                        <h3 class="text-sm font-extrabold text-white">Dashboard & Status</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4">${dashBody}</div>
+                    ${buildAdminMobileFooter('dashboard')}
+                `;
+            }
+
+            // ADMIN 02: GESTÃO DE PRODUTOS
+            if (screenKey === 'products') {
+                const prodBody = `
+                    <div class="${isDesktop ? 'grid grid-cols-12 gap-6' : 'space-y-4'} text-xs">
+                        <form onsubmit="handleAdminAddProduct(event)" class="${isDesktop ? 'col-span-5' : ''} bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 space-y-2.5 h-fit">
+                            <div class="font-bold text-brand-primary text-sm">+ Cadastrar Novo Produto</div>
+                            <input type="text" id="adm-prod-name-${isDesktop ? 'd' : 'm'}" required placeholder="Nome (ex: Brocado Bacon)" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" step="0.01" id="adm-prod-price-${isDesktop ? 'd' : 'm'}" required placeholder="Preço (ex: 27.90)" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                                <select id="adm-prod-cat-${isDesktop ? 'd' : 'm'}" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-2 py-2 text-white">
+                                    ${appState.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <input type="text" id="adm-prod-desc-${isDesktop ? 'd' : 'm'}" placeholder="Descrição dos ingredientes..." class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                            <button type="submit" class="w-full py-2.5 rounded-full bg-brand-primary text-black font-extrabold brand-btn-shadow">Publicar no Cardápio</button>
+                        </form>
+
+                        <div class="${isDesktop ? 'col-span-7' : ''} space-y-2">
+                            <div class="font-bold text-white">Catálogo Atual (Clique no status para Disponível / Esgotado)</div>
+                            ${appState.products.map(p => `
+                                <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-xl p-3 flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-10 h-10 rounded-lg bg-[#1F1F1F] flex items-center justify-center shrink-0">${FOOD_SVGS[p.icon] || FOOD_SVGS.burger}</div>
+                                        <div>
+                                            <div class="font-bold text-white">${p.name}</div>
+                                            <div class="text-brand-neon font-bold">${formatBRL(p.price)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <button onclick="toggleProdFeatured('${p.id}')" title="Destacar na Home" class="px-2 py-1 rounded-lg text-[10px] font-bold ${p.featured ? 'bg-brand-neon text-black' : 'bg-[#242424] text-neutral-400'}">★</button>
+                                        <button onclick="toggleProdAvail('${p.id}')" class="px-2.5 py-1 rounded-full text-[10px] font-bold ${p.available ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}">
+                                            ${p.available ? 'Disponível' : 'Esgotado'}
+                                        </button>
+                                        <button onclick="deleteProd('${p.id}')" class="px-2 py-1 rounded-lg bg-[#242424] text-red-400 text-[10px] font-bold">✕</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                if (isDesktop) return buildDesktopAdminWrapper('products', 'Gestão de Produtos & Estoque', prodBody);
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] bg-[#111111] shrink-0">
+                        <span class="text-[10px] font-bold uppercase text-brand-neon">Admin 02</span>
+                        <h3 class="text-sm font-extrabold text-white">Produtos & Disponibilidade</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4">${prodBody}</div>
+                    ${buildAdminMobileFooter('products')}
+                `;
+            }
+
+            // ADMIN 03: CATEGORIAS
+            if (screenKey === 'categories') {
+                const catBody = `
+                    <div class="space-y-4 text-xs max-w-2xl">
+                        <form onsubmit="handleAdminAddCat(event)" class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 flex gap-2">
+                            <input type="text" id="adm-cat-name-${isDesktop ? 'd' : 'm'}" required placeholder="Nova categoria (ex: Sobremesas)" class="flex-1 bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                            <button type="submit" class="px-4 py-2 rounded-xl bg-brand-primary text-black font-extrabold">Adicionar</button>
+                        </form>
+                        <div class="space-y-2">
+                            ${appState.categories.map(c => `
+                                <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-xl p-3 flex items-center justify-between">
+                                    <span class="font-bold text-white">${c.name}</span>
+                                    <button onclick="toggleCatStatus('${c.id}')" class="px-3 py-1 rounded-full text-[10px] font-bold ${c.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-700 text-neutral-300'}">
+                                        ${c.active ? 'Ativa no Menu' : 'Oculta'}
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                if (isDesktop) return buildDesktopAdminWrapper('categories', 'Gestão de Categorias do Cardápio', catBody);
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] bg-[#111111] shrink-0">
+                        <span class="text-[10px] font-bold uppercase text-brand-neon">Admin 03</span>
+                        <h3 class="text-sm font-extrabold text-white">Categorias</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4">${catBody}</div>
+                    ${buildAdminMobileFooter('categories')}
+                `;
+            }
+
+            // ADMIN 04: LOCAIS & TAXAS DE ENTREGA
+            if (screenKey === 'zones') {
+                const zoneBody = `
+                    <div class="space-y-4 text-xs max-w-2xl">
+                        <form onsubmit="handleAdminAddZone(event)" class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 space-y-2.5">
+                            <div class="font-bold text-brand-primary">+ Novo Bairro / Região de Entrega</div>
+                            <div class="flex gap-2">
+                                <input type="text" id="adm-zone-name-${isDesktop ? 'd' : 'm'}" required placeholder="Nome do Bairro" class="flex-1 bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                                <input type="number" step="0.50" id="adm-zone-fee-${isDesktop ? 'd' : 'm'}" required placeholder="Taxa R$" class="w-28 bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                                <button type="submit" class="px-4 py-2 rounded-xl bg-brand-primary text-black font-extrabold">Salvar</button>
+                            </div>
+                        </form>
+                        <div class="space-y-2">
+                            ${appState.zones.map(z => `
+                                <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-xl p-3 flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-white">${z.name}</div>
+                                        <div class="text-brand-neon font-bold">Taxa: ${formatBRL(z.fee)}</div>
+                                    </div>
+                                    <button onclick="toggleZoneStatus('${z.id}')" class="px-3 py-1 rounded-full text-[10px] font-bold ${z.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
+                                        ${z.active ? 'Ativo no Checkout' : 'Pausado'}
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                if (isDesktop) return buildDesktopAdminWrapper('zones', 'Locais & Taxas de Entrega Delivery', zoneBody);
+                return `
+                    <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] bg-[#111111] shrink-0">
+                        <span class="text-[10px] font-bold uppercase text-brand-neon">Admin 04</span>
+                        <h3 class="text-sm font-extrabold text-white">Locais & Taxas</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-4">${zoneBody}</div>
+                    ${buildAdminMobileFooter('zones')}
+                `;
+            }
+
+            // ADMIN 05: CONTA, CONTATO & IDENTIDADE
+            const suffix = isDesktop ? 'd' : 'm';
+            const accountBody = `
+                <form onsubmit="handleAdminSaveAccount(event, '${suffix}')" class="space-y-3 text-xs max-w-2xl">
+                    <div class="bg-darkBg-surface border border-[#2E2E2E] rounded-2xl p-4 space-y-3">
+                        <div>
+                            <label class="text-neutral-400 block mb-1">Nome da Loja</label>
+                            <input type="text" id="adm-acc-name-${suffix}" value="${appState.store.name}" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-neutral-400 block mb-1">WhatsApp Oficial</label>
+                                <input type="text" id="adm-acc-whats-${suffix}" value="${appState.store.whatsapp}" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="text-neutral-400 block mb-1">Tempo Estimado</label>
+                                <input type="text" id="adm-acc-time-${suffix}" value="${appState.store.deliveryTime}" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-neutral-400 block mb-1">Instagram</label>
+                            <input type="text" id="adm-acc-insta-${suffix}" value="${appState.store.instagram}" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="text-neutral-400 block mb-1">Endereço Completo</label>
+                            <input type="text" id="adm-acc-addr-${suffix}" value="${appState.store.address}" class="w-full bg-[#1F1F1F] border border-[#2E2E2E] rounded-xl px-3 py-2 text-white">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 rounded-full bg-brand-primary text-black font-extrabold brand-btn-shadow">
+                        Salvar & Sincronizar com o Site
+                    </button>
+                </form>
+            `;
+
+            if (isDesktop) return buildDesktopAdminWrapper('account', 'Conta, Contato & Dados da Loja', accountBody);
+            return `
+                <div class="pt-4 pb-3 px-4 border-b border-[#1F1F1F] bg-[#111111] shrink-0">
+                    <span class="text-[10px] font-bold uppercase text-brand-neon">Admin 05</span>
+                    <h3 class="text-sm font-extrabold text-white">Conta & Contato</h3>
+                </div>
+                <div class="flex-1 overflow-y-auto no-scrollbar p-4">${accountBody}</div>
+                ${buildAdminMobileFooter('account')}
+            `;
+        }
+
+        function renderAdminStage() {
+            const stage = document.getElementById('admin-prototype-stage');
+            const isDesktop = appState.viewport === 'desktop';
+            const screens = [
+                { key: 'dashboard', label: 'ADMIN 01 • DASHBOARD & STATUS' },
+                { key: 'products', label: 'ADMIN 02 • GESTÃO DE PRODUTOS' },
+                { key: 'categories', label: 'ADMIN 03 • CATEGORIAS' },
+                { key: 'zones', label: 'ADMIN 04 • LOCAIS & TAXAS' },
+                { key: 'account', label: 'ADMIN 05 • CONTA & CONTATO' }
+            ];
+
+            const toRender = appState.adminLayout === 'focused'
+                ? screens.filter(s => s.key === appState.focusedAdminScreen)
+                : screens;
+
+            if (isDesktop) {
+                stage.innerHTML = `<div class="space-y-10">` + toRender.map(s => `
+                    <div id="admin-frame-${s.key}" class="space-y-2">
+                        <div class="flex items-center justify-between px-2">
+                            <span class="text-xs font-mono font-bold text-brand-primary">${s.label} — DESKTOP 1280PX</span>
+                            <span class="text-[11px] text-neutral-400">Sidebar Administrativa + Gestão Completa</span>
+                        </div>
+                        <div class="desktop-scale-outer">
+                            <div class="desktop-shell">${buildAdminScreenContent(s.key, true)}</div>
+                        </div>
+                    </div>
+                `).join('') + `</div>`;
+            } else {
+                stage.innerHTML = `<div class="${appState.adminLayout === 'focused' ? 'flex justify-center' : 'flex gap-6 overflow-x-auto pb-4'}">` + toRender.map(s => `
+                    <div id="admin-frame-${s.key}" class="space-y-2 shrink-0">
+                        <div class="text-xs font-mono font-bold text-brand-primary px-1">${s.label}</div>
+                        <div class="mobile-shell">${buildAdminScreenContent(s.key, false)}</div>
+                    </div>
+                `).join('') + `</div>`;
+            }
+
+            applyDesktopAutoScale();
+        }
+
+        function renderAllPrototypes() {
+            renderClientStage();
+            renderAdminStage();
+        }
+
+        // =================================================================
+        // 6. INTERACTIVE HANDLERS (CLIENT & ADMIN MUTATIONS)
+        // =================================================================
+        function navigateClient(screenKey) {
+            selectFocusedClientScreen(screenKey);
+        }
+
+        function navigateAdmin(screenKey) {
+            selectFocusedAdminScreen(screenKey);
+        }
+
+        function filterCatAndGoMenu(catId) {
+            appState.selectedCategory = catId;
+            navigateClient('menu');
+            renderClientStage();
+        }
+
+        function setMenuCat(catId) {
+            appState.selectedCategory = catId;
+            renderClientStage();
+        }
+
+        function updateSearchQuery(val) {
+            appState.searchQuery = val;
+            renderClientStage();
+        }
+
+        function openCustomizer(prodId) {
+            appState.customizingProdId = prodId;
+            appState.customDoneness = 'Ao ponto';
+            appState.customAddons = [];
+            appState.customNotes = '';
+            navigateClient('customize');
+            renderClientStage();
+        }
+
+        function setCustomDoneness(val) {
+            appState.customDoneness = val;
+            renderClientStage();
+        }
+
+        function toggleCustomAddon(addonName) {
+            if (appState.customAddons.includes(addonName)) {
+                appState.customAddons = appState.customAddons.filter(x => x !== addonName);
+            } else {
+                appState.customAddons.push(addonName);
+            }
+            renderClientStage();
+        }
+
+        function addCustomizedItemToCart() {
+            const prod = appState.products.find(p => p.id === appState.customizingProdId) || appState.products[0];
+            const prices = { 'Bacon Crocante': 5, 'Cheddar Cremoso Extra': 4, 'Blend 160g Extra': 9 };
+            const extra = appState.customAddons.reduce((s, a) => s + (prices[a] || 0), 0);
+            const notes = [appState.customDoneness, ...appState.customAddons, appState.customNotes].filter(Boolean).join(' • ');
+
+            appState.cart.push({
+                uid: 'c_' + Date.now(),
+                prodId: prod.id,
+                name: prod.name,
+                price: prod.price + extra,
+                qty: 1,
+                notes
+            });
+            showToast(`${prod.name} adicionado ao carrinho!`);
+            navigateClient('cart');
+            renderClientStage();
+        }
+
+        function quickAddCart(prodId) {
+            const prod = appState.products.find(p => p.id === prodId);
+            if (!prod || !prod.available) return;
+            const found = appState.cart.find(i => i.prodId === prodId && i.notes === 'Padrão');
+            if (found) found.qty += 1;
+            else appState.cart.push({ uid: 'c_' + Date.now(), prodId: prod.id, name: prod.name, price: prod.price, qty: 1, notes: 'Padrão' });
+            showToast(`+1 ${prod.name} no carrinho!`);
+            renderClientStage();
+        }
+
+        function changeCartQty(idx, delta) {
+            appState.cart[idx].qty += delta;
+            if (appState.cart[idx].qty <= 0) appState.cart.splice(idx, 1);
+            renderClientStage();
+        }
+
+        function clearCart() {
+            appState.cart = [];
+            renderClientStage();
+            showToast('Carrinho esvaziado.');
+        }
+
+        function setCheckoutDeliveryType(type) {
+            appState.checkoutDeliveryType = type;
+            renderClientStage();
+        }
+
+        function setCheckoutZone(zoneId) {
+            appState.checkoutZoneId = zoneId;
+            renderClientStage();
+        }
+
+        function setCheckoutPayment(pm) {
+            appState.checkoutPayment = pm;
+            renderClientStage();
+        }
+
+        function submitWhatsAppOrder() {
+            if (!appState.store.isOpen) {
+                showToast('⚠️ Loja fechada! Abra a loja no Admin 01 para testar o envio.');
+                return;
+            }
+            if (appState.cart.length === 0) {
+                showToast('Adicione pelo menos 1 lanche ao carrinho.');
+                return;
+            }
+            const { total } = getCartTotals();
+            appState.recentOrders.unshift({
+                id: '#' + Math.floor(1043 + Math.random() * 50),
+                customer: 'Cliente Web',
+                items: appState.cart.map(i => `${i.qty}x ${i.name}`).join(', '),
+                total,
+                status: 'Novo Pedido'
+            });
+            showToast(`Pedido de ${formatBRL(total)} enviado para ${appState.store.whatsapp}! 🚀`);
+            renderAdminStage();
+        }
+
+        // Admin Mutations (Live Sync to Client)
+        function toggleStoreStatus() {
+            appState.store.isOpen = !appState.store.isOpen;
+            renderAllPrototypes();
+            showToast(`Status atualizado: Loja ${appState.store.isOpen ? 'ABERTA' : 'FECHADA'}`);
+        }
+
+        function handleAdminAddProduct(e) {
+            e.preventDefault();
+            const suffix = appState.viewport === 'desktop' ? 'd' : 'm';
+            const name = document.getElementById(`adm-prod-name-${suffix}`).value;
+            const price = parseFloat(document.getElementById(`adm-prod-price-${suffix}`).value);
+            const catId = document.getElementById(`adm-prod-cat-${suffix}`).value;
+            const desc = document.getElementById(`adm-prod-desc-${suffix}`).value || 'Preparado artesanalmente na hora.';
+
+            appState.products.unshift({
+                id: 'prod_' + Date.now(),
+                catId,
+                name,
+                price,
+                desc,
+                icon: 'burger',
+                available: true,
+                featured: true
+            });
+            renderAllPrototypes();
+            showToast(`"${name}" publicado e visível na área do cliente!`);
+        }
+
+        function toggleProdAvail(id) {
+            const p = appState.products.find(x => x.id === id);
+            if (p) {
+                p.available = !p.available;
+                renderAllPrototypes();
+                showToast(`${p.name}: ${p.available ? 'Disponível' : 'Marcado como Esgotado'}`);
+            }
+        }
+
+        function toggleProdFeatured(id) {
+            const p = appState.products.find(x => x.id === id);
+            if (p) {
+                p.featured = !p.featured;
+                renderAllPrototypes();
+                showToast(`${p.name}: ${p.featured ? 'Destacado na Home' : 'Removido dos destaques'}`);
+            }
+        }
+
+        function deleteProd(id) {
+            appState.products = appState.products.filter(x => x.id !== id);
+            renderAllPrototypes();
+            showToast('Produto removido.');
+        }
+
+        function handleAdminAddCat(e) {
+            e.preventDefault();
+            const suffix = appState.viewport === 'desktop' ? 'd' : 'm';
+            const name = document.getElementById(`adm-cat-name-${suffix}`).value;
+            appState.categories.push({ id: 'cat_' + Date.now(), name, active: true });
+            renderAllPrototypes();
+            showToast(`Categoria "${name}" criada!`);
+        }
+
+        function toggleCatStatus(id) {
+            const c = appState.categories.find(x => x.id === id);
+            if (c) {
+                c.active = !c.active;
+                renderAllPrototypes();
+                showToast(`Categoria ${c.name}: ${c.active ? 'Ativa' : 'Oculta'}`);
+            }
+        }
+
+        function handleAdminAddZone(e) {
+            e.preventDefault();
+            const suffix = appState.viewport === 'desktop' ? 'd' : 'm';
+            const name = document.getElementById(`adm-zone-name-${suffix}`).value;
+            const fee = parseFloat(document.getElementById(`adm-zone-fee-${suffix}`).value);
+            appState.zones.push({ id: 'z_' + Date.now(), name, fee, active: true });
+            renderAllPrototypes();
+            showToast(`Bairro "${name}" (${formatBRL(fee)}) sincronizado com o Checkout!`);
+        }
+
+        function toggleZoneStatus(id) {
+            const z = appState.zones.find(x => x.id === id);
+            if (z) {
+                z.active = !z.active;
+                renderAllPrototypes();
+                showToast(`Bairro ${z.name}: ${z.active ? 'Ativo' : 'Pausado'}`);
+            }
+        }
+
+        function handleAdminSaveAccount(e, suffix) {
+            e.preventDefault();
+            appState.store.name = document.getElementById(`adm-acc-name-${suffix}`).value;
+            appState.store.whatsapp = document.getElementById(`adm-acc-whats-${suffix}`).value;
+            appState.store.deliveryTime = document.getElementById(`adm-acc-time-${suffix}`).value;
+            appState.store.instagram = document.getElementById(`adm-acc-insta-${suffix}`).value;
+            appState.store.address = document.getElementById(`adm-acc-addr-${suffix}`).value;
+            renderAllPrototypes();
+            showToast('Dados da loja atualizados em todas as telas!');
+        }
+
+        // =================================================================
+        // 7. LIVE THEME CUSTOMIZER & EXPORT MODAL
+        // =================================================================
+        function updateCssVar(name, val) {
+            document.documentElement.style.setProperty(name, val);
+            showToast(`Token ${name} atualizado!`);
+        }
+
+        function resetColors() {
+            document.getElementById('cp-primary').value = '#FF8C00';
+            document.getElementById('cp-neon').value = '#FFB703';
+            document.getElementById('cp-surface').value = '#161616';
+            updateCssVar('--brand-primary', '#FF8C00');
+            updateCssVar('--brand-neon', '#FFB703');
+            updateCssVar('--bg-surface', '#161616');
+            showToast('Paleta original da logo restaurada!');
+        }
+
+        function copyHex(hex) {
+            const el = document.createElement('textarea');
+            el.value = hex;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast(`Cor ${hex} copiada!`);
+        }
+
+        function toggleExportModal(open) {
+            const modal = document.getElementById('export-modal');
+            modal.classList.toggle('hidden', !open);
+            modal.classList.toggle('flex', open);
+            if (open) switchExportTab('css');
+        }
+
+        function switchExportTab(tab) {
+            const box = document.getElementById('export-code-box');
+            document.getElementById('tab-export-css').className = tab === 'css'
+                ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-primary text-black'
+                : 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#1F1F1F] text-neutral-300';
+            document.getElementById('tab-export-json').className = tab === 'json'
+                ? 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-primary text-black'
+                : 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#1F1F1F] text-neutral-300';
+
+            if (tab === 'css') {
+                const p = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim();
+                const n = getComputedStyle(document.documentElement).getPropertyValue('--brand-neon').trim();
+                const s = getComputedStyle(document.documentElement).getPropertyValue('--bg-surface').trim();
+                box.textContent = `:root {\n  --bg-primary: #0A0A0A;\n  --bg-surface: ${s};\n  --bg-input: #1F1F1F;\n  --brand-primary: ${p};\n  --brand-hover: #E07B00;\n  --brand-neon: ${n};\n  --status-open: #22C55E;\n  --status-error: #EF4444;\n}\n\n// Tailwind Theme Extension\ncolors: {\n  brand: { primary: '${p}', hover: '#E07B00', neon: '${n}' },\n  darkBg: { DEFAULT: '#0A0A0A', surface: '${s}', input: '#1F1F1F', border: '#2E2E2E' }\n}`;
+            } else {
+                box.textContent = JSON.stringify({
+                    store: appState.store,
+                    categories: appState.categories,
+                    products: appState.products,
+                    delivery_zones: appState.zones
+                }, null, 2);
+            }
+        }
+
+        function copyExportCode() {
+            const text = document.getElementById('export-code-box').textContent;
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast('Código copiado com sucesso!');
+        }
+
+        window.onload = function () {
+            renderAllPrototypes();
+            setWorkspaceTab('overview');
+        };
+    </script>
+</body>
+</html>

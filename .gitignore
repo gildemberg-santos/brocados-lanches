@@ -1,0 +1,52 @@
+# Sistema e editores
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Segredos e ambiente
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Go
+backend/bin/
+backend/tmp/
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Node / Vue / Vite
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*
+
+# MongoDB local
+mongo-data/
+.mongo/
+dump/
+*.bson
+
+# Builds e artefatos
+build/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Logs
+*.log
