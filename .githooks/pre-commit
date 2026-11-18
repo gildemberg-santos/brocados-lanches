@@ -34,12 +34,17 @@ done < "$staged_file"
 git diff --cached --check -- . ':(exclude)*.md' \
   || fail "corrija espaços em branco ou conflitos no diff"
 
-# 3. Documentação: links relativos e cercas de código.
+# 3. Design system: tokens consistentes e nenhum padrão visual fora do padrão.
+if [ -f scripts/check_design_system.py ]; then
+  python3 scripts/check_design_system.py || fail "validação do design system falhou"
+fi
+
+# 4. Documentação: links relativos e cercas de código.
 if [ -f scripts/check_docs.py ]; then
   python3 scripts/check_docs.py || fail "validação de documentação falhou"
 fi
 
-# 4. Testes automatizados disponíveis neste estágio do projeto.
+# 5. Testes automatizados disponíveis neste estágio do projeto.
 if [ -f Makefile ]; then
   if grep -q '^lint:' Makefile; then
     make lint || fail "make lint falhou"
@@ -49,4 +54,4 @@ if [ -f Makefile ]; then
   fi
 fi
 
-printf 'pre-commit: documentação e testes validados.\n'
+printf 'pre-commit: design system, documentação e testes validados.\n'

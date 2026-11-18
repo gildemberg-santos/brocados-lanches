@@ -72,11 +72,14 @@ brocados-lanches/
 ├── .githooks/
 │   └── pre-commit
 ├── scripts/
+│   ├── check_design_system.py
 │   ├── check_docs.py
+│   ├── test_check_design_system.py
 │   └── test_check_docs.py
 ├── briefing/
 │   └── chamado.md
 ├── design-system/
+│   ├── README.md
 │   ├── brocados-lanches-design-system-v2.5.html
 │   ├── tokens.css
 │   ├── tokens.json
@@ -141,6 +144,8 @@ Esses pontos estão detalhados em `docs/01-inventario-prototipo.md` e priorizado
 - `docs/02-plano-de-producao.md` — fases propostas para tirar o protótipo do papel.
 - `Makefile` — comandos de entrada do projeto.
 - `scripts/check_docs.py` — validador de links da documentação.
+- `scripts/check_design_system.py` — validador de tokens e padrões visuais.
+- `design-system/README.md` — regra visual e validação obrigatória.
 - `design-system/tokens.css` — variáveis de marca prontas para uso.
 - `design-system/tokens.json` — os mesmos tokens em formato consumível por ferramentas.
 - `design-system/seed.json` — dados de demonstração para popular um banco de desenvolvimento.
@@ -154,7 +159,8 @@ O projeto é versionado com Git. Antes de qualquer commit, documentação e test
 ```bash
 git config core.hooksPath .githooks   # ativa o gate uma vez por clone
 make docs-check                       # valida links da documentação
+make design-check                     # valida tokens e padrões visuais
 make test                             # roda os testes disponíveis
 ```
 
-O hook `.githooks/pre-commit` bloqueia arquivos de ambiente e segredos, valida a documentação e executa os testes. Nenhum commit deve ser criado com `--no-verify`.
+O hook `.githooks/pre-commit` bloqueia arquivos de ambiente e segredos, valida a documentação, confere o design system e executa os testes. Nenhum commit deve ser criado com `--no-verify`.

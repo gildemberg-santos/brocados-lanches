@@ -52,6 +52,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 11. **Dados do seed são fictícios.** Telefone, endereço, preços e taxas precisam de validação do cliente antes de produção.
 12. **A loja só aceita pedido** se o horário permitir **e** o interruptor manual estiver ligado. O interruptor é o kill switch da operação.
 13. **Nenhum código sem teste.** Todo comportamento novo ou corrigido tem teste automatizado, e todos os testes precisam passar antes do commit.
+14. **O design system é a fonte de verdade visual.** Nenhuma cor, fonte, escala, espaçamento, raio, sombra ou componente fora do padrão documentado. Toda UI passa por `make design-check` e revisão visual antes do commit; mudança de padrão visual exige aprovação e atualização conjunta de `tokens.css` e `tokens.json`.
 
 ---
 
@@ -118,11 +119,18 @@ brocados-lanches/
 │   ├── tsconfig.json
 │   └── package.json
 ├── scripts/
-│   ├── check_docs.py        # valida links relativos da documentação
-│   └── test_check_docs.py   # testes do validador
+│   ├── check_design_system.py
+│   ├── check_docs.py
+│   ├── test_check_design_system.py
+│   └── test_check_docs.py
 ├── .githooks/
 │   └── pre-commit           # gate obrigatório antes de commit
 ├── design-system/           # referência visual; não editar o protótipo
+│   ├── README.md
+│   ├── brocados-lanches-design-system-v2.5.html
+│   ├── tokens.css
+│   ├── tokens.json
+│   └── seed.json
 ├── docs/
 ├── briefing/
 ├── assets/
@@ -149,6 +157,7 @@ O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o em vez de
 | `make test-e2e` | Playwright |
 | `make lint` | `golangci-lint` + ESLint + `vue-tsc --noEmit` |
 | `make fmt` | `gofmt`/`goimports` + Prettier |
+| `make design-check` | Valida tokens e uso do design system no frontend |
 | `make docs-check` | Valida links relativos e consistência da documentação |
 | `make build` | Build de produção dos dois lados |
 | `make up` / `make down` | Sobe/derruba API, web e MongoDB via Compose |
@@ -254,6 +263,7 @@ handler → service → repository → MongoDB
 
 - Tailwind compilado no build. Proibido CDN em qualquer ambiente.
 - Cores, fontes e escala vêm de `design-system/tokens.css`. Não use hex solto em componente; use token ou classe do tema.
+- `make design-check` é obrigatório: bloqueia cor literal, CDN e divergência entre `tokens.css` e `tokens.json`.
 - O frontend consome os tokens por alias/import do `design-system/` ou por cópia gerada. Nunca edite a cópia à mão.
 - Fonte Bebas Neue e Inter self-hosted em produção, com `font-display: swap`. Sem Google Fonts em produção.
 - Reaproveite componentes (`BaseButton`, `ProductCard`, `QuantityStepper`, `PriceText`) antes de criar variante nova.
@@ -268,6 +278,13 @@ handler → service → repository → MongoDB
 - Título e metadados por rota com `@unhead/vue` (ou equivalente). Sitemap e JSON-LD `Restaurant`/`Menu` na V1.
 - A SPA limita SEO orgânico. Se SEO virar prioridade, reavalie Nuxt com o time; não migre por conta própria.
 - Analytics só com consentimento e sem PII. Não instale script de terceiro sem revisão.
+
+### 8.5 Gate visual
+
+- Nenhum componente entra sem validação contra `design-system/README.md`.
+- `make design-check` roda no hook e no CI; falha bloqueia o commit.
+- O validador cobre tokens, cores literais e CDNs. Revisão visual humana cobre espaçamento, hierarquia, estados e responsividade em 375 px e 1280 px.
+- Mudança de padrão visual exige aprovação de design e atualização de `tokens.css` + `tokens.json` + documentação.
 
 ---
 
@@ -383,7 +400,7 @@ Regras:
 ## 11. Testes e qualidade
 
 - Backend: testes de tabela (table-driven) para service, `httptest` para handlers e testcontainers para repositório. Rode `go test -race ./...`.
-- Scripts Python: `unittest` para o validador de documentação, executado por `make test-docs` e pelo hook de commit.
+- Scripts Python: `unittest` para os validadores de documentação e design system, executado por `make test-docs`, `make test-design` e pelo hook de commit.
 - Frontend: Vitest + Vue Test Utils para componentes e stores; Playwright para o fluxo crítico.
 - Fluxo E2E mínimo: cardápio → personalizar → carrinho → checkout → pedido persistido → pedido aparece no admin → mudança de status.
 - Não use snapshot como única prova de UI crítica.
@@ -414,13 +431,13 @@ Regras:
 
 Nenhum commit é criado sem passar por esta sequência:
 
-1. **Documentação:** atualize o documento afetado — `AGENTS.md` para decisão de arquitetura/processo, `README.md` para estrutura ou uso, `docs/` para comportamento e contrato. Links relativos precisam resolver.
+1. **Documentação:** atualize o documento afetado — `AGENTS.md` para decisão de arquitetura/processo, `README.md` para estrutura ou uso, `docs/` para comportamento e contrato, `design-system/README.md` para padrão visual. Links relativos precisam resolver.
 2. **Testes:** todo arquivo novo de código (endpoint, componente, store, script, migração) nasce com teste automatizado correspondente. Todo comportamento novo ou corrigido exige teste. Correção de bug sem teste de regressão não é aceita, salvo impossibilidade técnica justificada no PR. **Todos os testes, novos e existentes, precisam passar antes do commit.**
-3. **Validação:** rode `make fmt`, `make lint`, `make test` e `make docs-check`. Tudo precisa passar antes do commit.
-4. **Inspeção:** revise `git diff --cached` e confirme que não há segredo, PII, arquivo gerado ou mudança fora do escopo.
+3. **Validação:** rode `make fmt`, `make lint`, `make test`, `make docs-check` e `make design-check`. Tudo precisa passar antes do commit.
+4. **Inspeção:** revise `git diff --cached` e confirme que não há segredo, PII, arquivo gerado, cor/fonte fora do design system ou mudança fora do escopo.
 5. **Commit:** use Conventional Commits em português. Não use `--no-verify` para contornar o hook.
 
-O hook versionado em `.githooks/pre-commit` executa as verificações mínimas (segredos, whitespace, links de documentação e, quando o `Makefile` existir, `make lint` e `make test`). Se o commit for apenas de documentação, os links e a estrutura ainda são validados.
+O hook versionado em `.githooks/pre-commit` executa as verificações mínimas (segredos, whitespace, design system, links de documentação e, quando o `Makefile` existir, `make lint` e `make test`). Se o commit for apenas de documentação, os links e a estrutura ainda são validados.
 
 ---
 
@@ -436,10 +453,11 @@ Uma entrega só termina quando:
 - [ ] Loja fechada, item esgotado, zona inativa e transição inválida têm tratamento explícito.
 - [ ] Rotas admin exigem sessão válida e autorização por papel.
 - [ ] Nenhum dado pessoal aparece em log, analytics ou mensagem de erro.
-- [ ] `make fmt`, `make lint` e `make test` passam (ou a exceção está justificada).
+- [ ] `make fmt`, `make lint`, `make test`, `make docs-check` e `make design-check` passam (ou a exceção está justificada).
 - [ ] Contrato de API e documentação foram atualizados, com links válidos.
 - [ ] Auditoria registra mutações administrativas relevantes.
 - [ ] Acessibilidade básica verificada: teclado, foco, rótulos, contraste.
+- [ ] UI validada contra `design-system/README.md`, sem cor, fonte ou espaçamento fora do padrão.
 
 ---
 
@@ -455,7 +473,9 @@ Uma entrega só termina quando:
 - Não logue telefone, endereço, nome, observação, cookie ou token.
 - Não armazene dados de cartão.
 - Não invente cardápio, preços, bairros, horários ou contatos.
-- Não edite `design-system/brocados-lanches-design-system-v2.5.html` nem os tokens sem confirmação de design.
+- Não crie cor, fonte, espaçamento, raio, sombra ou componente fora do padrão documentado no design system.
+- Não edite `design-system/brocados-lanches-design-system-v2.5.html` nem os tokens sem aprovação de design; mudança de token exige atualizar `tokens.css`, `tokens.json` e documentação.
+- Não desative, ignore ou contorne `make design-check`.
 - Não troque stack, banco ou gerenciador de pacotes por preferência pessoal.
 - Não adicione dependência sem necessidade comprovada.
 - Não use `any` no TypeScript.
@@ -495,4 +515,5 @@ Toda mudança nessas premissas deve atualizar este arquivo e o briefing.
 - `design-system/tokens.css` — fonte dos tokens de marca.
 - `design-system/tokens.json` — tokens para ferramentas.
 - `design-system/seed.json` — dados fictícios para desenvolvimento.
+- `design-system/README.md` — regra visual e validação obrigatória do design system.
 - `design-system/brocados-lanches-design-system-v2.5.html` — protótipo visual; somente leitura.
