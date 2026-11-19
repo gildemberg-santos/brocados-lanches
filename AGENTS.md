@@ -17,7 +17,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Objetivo da V1:** o cliente monta o pedido e ele é **registrado no servidor antes de qualquer envio**; a operação gerencia catálogo, zonas e pedidos pelo painel; preços, taxas e disponibilidade são sempre validados no backend.
 
-**Estado em 18/11/2026:** existem apenas documentação, protótipo e tokens. Nenhum código de produção foi criado. A Fase 1 cria o esqueleto descrito na seção 5.
+**Estado em 18/11/2026:** documentação, protótipo, tokens e esqueleto de produção da Fase 1. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; catálogo, checkout e painel administrativo ainda não foram implementados.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
 
@@ -72,6 +72,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 | Pacotes frontend | pnpm | Lockfile commitado |
 | Auth admin | Sessão em cookie `HttpOnly` | Token opaco com hash no MongoDB |
 | Logs | `log/slog` em JSON | Sem PII |
+| Ambiente integrado | Docker Compose | MongoDB, API e web com health checks |
 
 **Não troque** framework, banco, gerenciador de pacotes ou biblioteca de estado sem decisão explícita do time.
 
@@ -87,17 +88,20 @@ brocados-lanches/
 ├── README.md
 ├── Makefile
 ├── compose.yaml
+├── compose.offline.yaml
+├── .dockerignore
 ├── .env.example
 ├── backend/
-│   ├── cmd/api/main.go
+│   ├── cmd/api/              # composição, configuração e shutdown
 │   ├── internal/
-│   │   ├── config/          # env, timeouts, validação de configuração
-│   │   ├── httpapi/         # router, handlers, middleware, respostas
-│   │   ├── domain/          # entidades, enums, erros de negócio
-│   │   ├── service/         # regras de negócio
-│   │   ├── repository/      # MongoDB
-│   │   └── platform/        # clock, IDs, log, senha, WhatsApp
-│   ├── scripts/             # índices, seed de desenvolvimento
+│   │   ├── config/           # env, timeouts, validação de configuração
+│   │   ├── httpapi/          # router, handlers, middleware, respostas
+│   │   ├── domain/           # entidades, enums, erros de negócio (fase seguinte)
+│   │   ├── service/          # regras de negócio (fase seguinte)
+│   │   ├── repository/       # MongoDB
+│   │   └── platform/         # clock, IDs, log, senha, WhatsApp (fase seguinte)
+│   ├── vendor/               # dependências Go para build Docker offline
+│   ├── Dockerfile
 │   ├── go.mod
 │   └── go.sum
 ├── frontend/
@@ -107,17 +111,22 @@ brocados-lanches/
 │   │   ├── router/
 │   │   ├── stores/
 │   │   ├── services/        # cliente HTTP e endpoints tipados
-│   │   ├── components/      # componentes reutilizáveis
+│   │   ├── components/      # componentes reutilizáveis (fase seguinte)
 │   │   ├── views/           # páginas do cliente e do admin
-│   │   ├── features/        # regras de UI por domínio
-│   │   ├── composables/
-│   │   ├── types/
+│   │   ├── features/        # regras de UI por domínio (fase seguinte)
+│   │   ├── composables/      # (fase seguinte)
+│   │   ├── types/            # (fase seguinte)
 │   │   └── styles/
-│   ├── e2e/
+│   ├── e2e/                  # Playwright (fase seguinte)
+│   ├── Dockerfile
+│   ├── Dockerfile.runtime
+│   ├── nginx.conf
 │   ├── index.html
+│   ├── package.json
+│   ├── pnpm-lock.yaml
 │   ├── vite.config.ts
-│   ├── tsconfig.json
-│   └── package.json
+│   ├── vitest.config.ts
+│   └── tsconfig.json
 ├── scripts/
 │   ├── check_design_system.py
 │   ├── check_docs.py
@@ -139,31 +148,44 @@ brocados-lanches/
 
 **Nomes:** pastas em `kebab-case`; componentes Vue em `PascalCase.vue`; stores `useXStore.ts`; composables `useX.ts`; arquivos Go em `snake_case.go`; pacotes Go curtos e minúsculos.
 
+**Dependências:** `backend/vendor/` é versionado para o build Docker não depender de rede. Depois de mudar dependências Go, rode `make vendor` e commite o resultado. `frontend/node_modules/`, `frontend/dist/`, cobertura e binários não são versionados.
+
+**Testes:** ficam ao lado do código (`*_test.go`, `*.test.ts`) e são obrigatórios para todo comportamento novo.
+
 ---
 
 ## 6. Comandos
 
-O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o em vez de exigir comandos soltos na documentação.
+O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o junto com a funcionalidade em vez de exigir comandos soltos na documentação.
 
 | Comando | Efeito |
 |---|---|
 | `make setup` | Instala dependências de backend e frontend |
+| `make vendor` | Atualiza `backend/vendor` após mudar dependências Go |
 | `make dev` | Sobe API e frontend em modo desenvolvimento |
 | `make dev-api` | Só a API |
 | `make dev-web` | Só o frontend |
-| `make test` | Testes de backend e frontend |
+| `make test` | Documentação, design system, backend e frontend |
 | `make test-api` | `go test -race ./...` |
 | `make test-web` | Vitest |
-| `make test-e2e` | Playwright |
-| `make lint` | `golangci-lint` + ESLint + `vue-tsc --noEmit` |
-| `make fmt` | `gofmt`/`goimports` + Prettier |
+| `make test-docs` | `unittest` dos validadores de documentação |
+| `make test-design` | `unittest` do validador de design system |
+| `make lint` | `golangci-lint` (ou `go vet`) + ESLint + `vue-tsc --noEmit` |
+| `make fmt` | `gofmt` + Prettier |
 | `make design-check` | Valida tokens e uso do design system no frontend |
-| `make docs-check` | Valida links relativos e consistência da documentação |
-| `make build` | Build de produção dos dois lados |
-| `make up` / `make down` | Sobe/derruba API, web e MongoDB via Compose |
-| `make seed` | Popula **apenas** o banco de desenvolvimento |
+| `make docs-check` | Valida links relativos da documentação |
+| `make build` | Binário Go em `backend/bin/api` e build do frontend |
+| `make up` | Sobe MongoDB, API e web via Compose e espera os health checks |
+| `make up-offline` | Compila o frontend no host e sobe via Compose sem baixar npm no Docker |
+| `make down` | Derruba API, web e MongoDB |
+| `make logs` | Acompanha os logs do Compose |
+| `make ps` | Mostra o estado dos containers |
 
-Nunca rode `make seed` contra banco de produção. O script deve recusar `MONGO_DB` diferente de `brocados_dev`.
+O build Docker do backend usa `backend/vendor/` e não acessa a rede. O build da imagem web baixa dependências do npm; o primeiro build precisa de acesso ao registry. Se o Docker não alcançar o npm, `make up-offline` compila o frontend no host e usa `frontend/Dockerfile.runtime` com `compose.offline.yaml`.
+
+`make test-e2e` e `make seed` entram nas fases de checkout/catálogo, quando existirem fluxo e dados reais para validar. Não crie alvo vazio que finge executar uma verificação.
+
+Nunca rode seed ou teste contra banco de produção. Use `brocados_dev` ou `brocados_test`.
 
 ---
 
@@ -401,6 +423,7 @@ Regras:
 
 - Backend: testes de tabela (table-driven) para service, `httptest` para handlers e testcontainers para repositório. Rode `go test -race ./...`.
 - Scripts Python: `unittest` para os validadores de documentação e design system, executado por `make test-docs`, `make test-design` e pelo hook de commit.
+- Teste de integração do repositório: pula por padrão; use `cd backend && MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -run TestConnectIntegration -v` com um Mongo real e descartável.
 - Frontend: Vitest + Vue Test Utils para componentes e stores; Playwright para o fluxo crítico.
 - Fluxo E2E mínimo: cardápio → personalizar → carrinho → checkout → pedido persistido → pedido aparece no admin → mudança de status.
 - Não use snapshot como única prova de UI crítica.
@@ -508,7 +531,9 @@ Toda mudança nessas premissas deve atualizar este arquivo e o briefing.
 
 ## 16. Referências
 
-- `README.md` — visão geral da pasta e limites do protótipo.
+- `README.md` — visão geral, como rodar localmente e via Docker, limites do protótipo e do esqueleto.
+- `compose.yaml` — MongoDB, API e web no ambiente integrado.
+- `.env.example` — variáveis de ambiente do desenvolvimento local.
 - `briefing/chamado.md` — escopo, pendências e dados a confirmar.
 - `docs/01-inventario-prototipo.md` — o que o protótipo faz e não faz.
 - `docs/02-plano-de-producao.md` — fases, riscos e definição de pronto da V1.

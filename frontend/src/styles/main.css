@@ -1,0 +1,37 @@
+@import '../../../design-system/tokens.css';
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--bg-primary);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: var(--brand-neon);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-neon);
+  outline-offset: 2px;
+}

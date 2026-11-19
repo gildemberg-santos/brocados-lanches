@@ -1,8 +1,8 @@
 # Plano de Produção — Brocados Lanches
 
-**Status:** proposta inicial, dependente do fechamento do briefing.  
+**Status:** Fase 1 iniciada; esqueleto técnico disponível em 18/11/2026. Fases 2 a 6 dependem do fechamento do briefing.  
 **Premissa:** o HTML recebido é referência de design e fluxo, não base de produção.  
-**Stack:** decidida em 18/11/2026 — Go + Chi, Vue 3 + Vite + TypeScript e MongoDB.
+**Stack:** decidida em 18/11/2026 — Go + Chi, Vue 3 + Vite + TypeScript, MongoDB e Docker Compose.
 
 ---
 
@@ -40,6 +40,19 @@ Sem essas respostas, o plano abaixo é uma referência — não um compromisso d
 - Importar `../design-system/tokens.css`, configurar o tema e ativar `make design-check`.
 - Configurar lint, formatação, testes e deploy de preview.
 - Definir modelo de dados inicial.
+
+**Entregue em 18/11/2026:**
+
+- monorepo com backend Go + Chi, frontend Vue 3 + Vite + TypeScript e MongoDB via Compose;
+- health checks `/healthz` e `/readyz`, logs JSON sem PII e shutdown gracioso;
+- tela inicial Vue consumindo o readiness da API;
+- tokens do design system importados no build, Tailwind compilado e validação `make design-check`;
+- testes de backend, frontend, documentação e design system;
+- Dockerfiles de API e web, Nginx same-origin e `compose.yaml`;
+- caminho offline (`frontend/Dockerfile.runtime`) para ambientes sem acesso npm dentro do Docker;
+- dependências Go vendorizadas para build Docker offline.
+
+**Pendente na Fase 1:** provedor de CI, deploy de preview, modelo de dados inicial e definição de hospedagem.
 
 **Saída:** aplicação vazia no ar em ambiente de preview, com tema aplicado.
 
@@ -147,4 +160,4 @@ Não troque a stack sem atualizar `../AGENTS.md` e registrar a decisão.
 
 ## 6. Próximo passo imediato
 
-Fechar o briefing. Sem número do chamado, solicitante, prazo, catálogo real e definição do fluxo de pedido, qualquer estimativa é chute.
+Fechar o briefing e iniciar a Fase 2 (catálogo), mantendo o esqueleto da Fase 1 como base. Sem número do chamado, solicitante, prazo, catálogo real e definição do fluxo de pedido, qualquer estimativa é chute.

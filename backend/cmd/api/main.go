@@ -1,0 +1,84 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+	// Keep the America/Fortaleza timezone available in the scratch-like runtime image.
+	_ "time/tzdata"
+
+	"github.com/brocados-lanches/api/internal/config"
+	"github.com/brocados-lanches/api/internal/httpapi"
+	"github.com/brocados-lanches/api/internal/repository"
+)
+
+func main() {
+	if err := run(); err != nil {
+		slog.Error("api stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	cfg, err := config.Load(os.Getenv)
+	if err != nil {
+		return err
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	startupContext, cancelStartup := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelStartup()
+
+	mongoClient, err := repository.Connect(startupContext, cfg.MongoURI)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		shutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := mongoClient.Close(shutdownContext); err != nil {
+			logger.Error("mongo disconnect failed", "error", err)
+		}
+	}()
+
+	server := &http.Server{
+		Addr:              cfg.Addr(),
+		Handler:           httpapi.NewRouter(httpapi.Dependencies{Pinger: mongoClient, Logger: logger}),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	serverErrors := make(chan error, 1)
+	go func() {
+		logger.Info("api listening", "addr", cfg.Addr(), "env", cfg.Env)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrors <- err
+		}
+		close(serverErrors)
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case err := <-serverErrors:
+		return err
+	case signalReceived := <-stop:
+		logger.Info("shutdown requested", "signal", signalReceived.String())
+	}
+
+	shutdownContext, cancelShutdown := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelShutdown()
+
+	return server.Shutdown(shutdownContext)
+}

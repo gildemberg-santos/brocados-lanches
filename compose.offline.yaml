@@ -1,0 +1,7 @@
+# Use com: docker compose -f compose.yaml -f compose.offline.yaml up --build
+# Exige `make build-web` antes para gerar frontend/dist.
+services:
+  web:
+    build:
+      context: frontend
+      dockerfile: Dockerfile.runtime
