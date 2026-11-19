@@ -1,8 +1,10 @@
 # Plano de Produção — Brocados Lanches
 
-**Status:** Fase 1 iniciada; esqueleto técnico disponível em 18/11/2026. Fases 2 a 6 dependem do fechamento do briefing.  
+**Status:** documento histórico da Fase 1; planejamento executável atualizado em `11-roadmap.md` e `08-backlog.md`.  
 **Premissa:** o HTML recebido é referência de design e fluxo, não base de produção.  
 **Stack:** decidida em 18/11/2026 — Go + Chi, Vue 3 + Vite + TypeScript, MongoDB e Docker Compose.
+
+> Este é o plano inicial da descoberta. O escopo funcional detalhado está em `03-prd.md`; a arquitetura em `04-arquitetura.md`; o contrato em `06-contrato-api.md`; e a execução em `08-backlog.md` + `11-roadmap.md`. Em caso de conflito, prevalecem os documentos atualizados.
 
 ---
 

@@ -17,7 +17,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Objetivo da V1:** o cliente monta o pedido e ele é **registrado no servidor antes de qualquer envio**; a operação gerencia catálogo, zonas e pedidos pelo painel; preços, taxas e disponibilidade são sempre validados no backend.
 
-**Estado em 18/11/2026:** documentação, protótipo, tokens e esqueleto de produção da Fase 1. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; catálogo, checkout e painel administrativo ainda não foram implementados.
+**Estado em 18/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens e esqueleto de produção da Fase 1 disponíveis. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; catálogo, checkout e painel administrativo ainda não foram implementados.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
 
@@ -320,7 +320,7 @@ handler → service → repository → MongoDB
 - `201` com `Location` ao criar pedido. `204` em logout/exclusão sem corpo.
 - `POST /orders` exige `Idempotency-Key`. A mesma chave devolve o mesmo pedido; não cria duplicata.
 - Datas em RFC 3339 UTC. IDs como string hexadecimal de 24 caracteres.
-- Mudança incompatível exige `/api/v2`; não quebre contrato em silêncio. Atualize `docs/api.md` (ou OpenAPI) na mesma alteração.
+- Mudança incompatível exige `/api/v2`; não quebre contrato em silêncio. Atualize `docs/06-contrato-api.md` (ou OpenAPI) na mesma alteração.
 
 ### 9.2 Endpoints públicos
 
@@ -329,6 +329,7 @@ handler → service → repository → MongoDB
 | GET | `/store` | Status efetivo, horários, contato, tempo de entrega |
 | GET | `/menu` | Categorias, produtos, adicionais e opções ativos |
 | GET | `/delivery-zones` | Zonas ativas com taxa |
+| POST | `/orders/quote` | Cotação server-side sem persistir pedido |
 | POST | `/orders` | Cria pedido validado no servidor |
 | GET | `/orders/{publicId}` | Acompanhamento por identificador opaco |
 
@@ -352,6 +353,8 @@ O pedido enviado pelo cliente contém apenas:
 
 Preço, taxa, total e disponibilidade **nunca** vêm do cliente. A resposta inclui `orderNumber`, `publicId`, `status`, `totalCents` e `whatsappUrl` do pedido já persistido.
 
+`POST /orders/quote` recebe apenas itens, `fulfillment` e `zoneId`, sem dados pessoais. Ele valida catálogo/zona e devolve subtotal, taxa e total sem persistir pedido; o `POST /orders` recalcula tudo antes de gravar.
+
 ### 9.3 Endpoints administrativos
 
 | Método | Rota | Função |
@@ -367,6 +370,8 @@ Preço, taxa, total e disponibilidade **nunca** vêm do cliente. A resposta incl
 | GET | `/admin/orders` | Fila com filtro por status e data |
 | GET | `/admin/orders/{id}` | Detalhe |
 | PATCH | `/admin/orders/{id}/status` | Transição de status |
+| GET/POST/PATCH | `/admin/users` | Usuários admin; somente `owner` |
+| GET | `/admin/audit-logs` | Auditoria de mutações; somente `owner` |
 
 Catálogo não é apagado fisicamente: use `active: false`.
 
@@ -401,7 +406,7 @@ Campos canônicos:
 
 - **Produto:** `name`, `slug`, `description`, `priceCents`, `categoryId`, `imageUrl`, `imageAlt`, `allergens[]`, `available`, `featured`, `active`, `sortOrder`, `optionGroups[]`, `addonIds[]`, `createdAt`, `updatedAt`.
 - **Zona:** `name`, `slug`, `feeCents`, `active`, `sortOrder`, `createdAt`, `updatedAt`.
-- **Pedido:** `number`, `publicId`, `status`, `fulfillment`, `customer{name,phone}`, `address`, `zone{id,name,feeCents}`, `items[]`, `subtotalCents`, `deliveryFeeCents`, `totalCents`, `payment{method,changeForCents}`, `idempotencyKey`, `createdAt`, `updatedAt`, `confirmedAt`, `cancelledAt`, `cancelReason`.
+- **Pedido:** `number`, `publicId`, `status`, `fulfillment`, `customer{name,phone}`, `address`, `zone{id,name,feeCents}`, `items[]`, `subtotalCents`, `deliveryFeeCents`, `totalCents`, `payment{method,changeForCents}`, `idempotencyKey`, `requestHash`, `statusHistory[]`, `createdAt`, `updatedAt`, `confirmedAt`, `cancelledAt`, `cancelReason`.
 - **Item do pedido:** `productId`, `name`, `unitPriceCents`, `quantity`, `options[]` (nome e preço congelados), `note`, `lineTotalCents`.
 - **Usuário admin:** `name`, `email` (normalizado), `passwordHash`, `role`, `active`, `lastLoginAt`, `createdAt`, `updatedAt`.
 - **Auditoria:** `actorId`, `action`, `entity`, `entityId`, `before`, `after`, `createdAt`. Sem senha, token ou dado pessoal desnecessário.
@@ -536,7 +541,20 @@ Toda mudança nessas premissas deve atualizar este arquivo e o briefing.
 - `.env.example` — variáveis de ambiente do desenvolvimento local.
 - `briefing/chamado.md` — escopo, pendências e dados a confirmar.
 - `docs/01-inventario-prototipo.md` — o que o protótipo faz e não faz.
-- `docs/02-plano-de-producao.md` — fases, riscos e definição de pronto da V1.
+- `docs/02-plano-de-producao.md` — plano histórico da Fase 1.
+- `docs/README.md` — índice da documentação completa.
+- `docs/03-prd.md` — produto, personas, escopo e requisitos.
+- `docs/04-arquitetura.md` — arquitetura, fluxos e segurança.
+- `docs/05-modelo-de-dados.md` — coleções, campos, índices e retenção.
+- `docs/06-contrato-api.md` — contrato HTTP detalhado.
+- `docs/07-design-system-e-experiencia.md` — telas, componentes e acessibilidade.
+- `docs/08-backlog.md` — épicos, histórias, tarefas e aceite.
+- `docs/09-qualidade-e-testes.md` — estratégia e matriz de testes.
+- `docs/10-operacao-e-lancamento.md` — deploy, backup, monitoramento e LGPD.
+- `docs/11-roadmap.md` — fases, marcos e caminho crítico.
+- `docs/12-referencia-ola-click.md` — snapshot funcional do site de referência.
+- `docs/13-decisoes-e-pendencias.md` — decisões e perguntas abertas.
+- `docs/adr/README.md` — decisões arquiteturais.
 - `design-system/tokens.css` — fonte dos tokens de marca.
 - `design-system/tokens.json` — tokens para ferramentas.
 - `design-system/seed.json` — dados fictícios para desenvolvimento.

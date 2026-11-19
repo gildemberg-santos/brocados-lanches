@@ -1,0 +1,453 @@
+# Operação e Lançamento — Brocados Lanches
+
+**Versão:** 1.0  
+**Atualizado em:** 18/11/2026  
+**Status:** plano operacional da V1; provedores ainda em aberto.  
+**Relacionados:** `04-arquitetura.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`.
+
+---
+
+## 1. Objetivo
+
+Garantir que a V1 saia do ambiente local e opere com:
+
+- deploy repetível e reversível;
+- banco protegido, com backup e restauração testada;
+- logs e métricas sem PII;
+- runbooks para falhas comuns;
+- conformidade mínima com LGPD;
+- critérios objetivos de go-live.
+
+Este documento não define o provedor de nuvem. Ele define **requisitos** que qualquer provedor precisa atender.
+
+---
+
+## 2. Ambientes
+
+| Ambiente | Banco | Domínio | Uso | Dados |
+|---|---|---|---|---|
+| Local | `brocados_dev` | `localhost` | Desenvolvimento | Fictícios |
+| Teste | `brocados_test` | efêmero | Testes automatizados | Fictícios, descartáveis |
+| Preview | banco isolado | subdomínio por PR | Validação | Fictícios |
+| Produção | `brocados` | domínio oficial | Operação | Reais |
+
+Regras:
+
+- Nunca compartilhar banco entre ambientes.
+- Nunca rodar seed/teste contra produção.
+- Preview não acessa banco de produção.
+- Produção não expõe MongoDB publicamente.
+- Banco de produção tem usuário dedicado e permissão mínima.
+- `APP_ENV=production` ativa cookies `Secure`, HSTS e CORS restrito.
+
+---
+
+## 3. Configuração e segredos
+
+### 3.1 Variáveis previstas
+
+| Variável | Obrigatória | Uso |
+|---|---|---|
+| `APP_ENV` | sim | `development`, `test`, `production` |
+| `HTTP_ADDR` | sim | Endereço/porta da API |
+| `MONGO_URI` | sim | Conexão MongoDB |
+| `MONGO_DATABASE` | sim | Nome do banco |
+| `SESSION_SECRET` | sim | Assinatura/hash auxiliar, se aplicável |
+| `ADMIN_SESSION_COOKIE` | sim | Nome do cookie |
+| `PUBLIC_BASE_URL` | sim | URL pública same-origin |
+| `WHATSAPP_NUMBER` | sim | Número E.164 da loja |
+| `LOG_LEVEL` | sim | `info`/`debug` |
+| `RATE_LIMIT_*` | não | Ajustes por rota |
+| `OTEL_*`/métricas | não | Observabilidade, se adotada |
+
+O `.env.example` é a referência local. Nenhum segredo real entra no repositório.
+
+### 3.2 Regras
+
+- Segredos ficam no cofre do provedor/CI.
+- Rotação documentada e testada.
+- Nunca logar valor de segredo.
+- Nunca commitar `.env`.
+- Build não depende de segredo em tempo de compilação, exceto variáveis públicas do frontend (`VITE_*`).
+- `VITE_*` nunca contém segredo.
+
+---
+
+## 4. Topologia de produção
+
+```text
+Internet
+  → TLS (443)
+  → Nginx / proxy reverso
+      ├── /            → arquivos estáticos da SPA
+      ├── /api/*       → Go API
+      ├── /healthz     → Go API
+      └── /readyz      → Go API
+  → Go API (rede privada)
+  → MongoDB (rede privada)
+```
+
+Requisitos:
+
+- same-origin para web e API;
+- TLS válido e renovação automática;
+- HTTP redireciona para HTTPS;
+- MongoDB sem IP público;
+- API sem porta pública direta, se possível;
+- headers de segurança no proxy;
+- compressão `gzip`/`brotli`;
+- cache longo para assets com hash e curto para HTML;
+- fallback da SPA para `index.html`.
+
+---
+
+## 5. Pipeline de entrega
+
+### 5.1 Estágios
+
+```text
+commit → fmt/lint/test/docs/design/build → imagem → preview → aprovação → produção
+```
+
+### 5.2 Gates
+
+- `make fmt`
+- `make lint`
+- `make test`
+- `make docs-check`
+- `make design-check`
+- `make build`
+- scanner de dependências
+- smoke test no preview
+
+### 5.3 Regras
+
+- `main` protegida; PR obrigatório.
+- Um PR = uma mudança lógica.
+- Deploy de produção só a partir de commit aprovado.
+- Rollback para imagem/commit anterior.
+- Migração de banco é compatível para trás quando possível.
+- Índices são criados no start, de forma idempotente.
+- Nenhum deploy com teste falhando.
+
+### 5.4 Estratégia de release
+
+- Preferir deploy gradual ou janela de baixo movimento.
+- Não fazer deploy durante pico sem necessidade.
+- Após deploy: smoke test de `/healthz`, `/readyz`, `/`, `/api/v1/store`, `/api/v1/menu`.
+- Se erro crítico: rollback imediato e comunicação.
+
+---
+
+## 6. Banco de dados
+
+### 6.1 Operação
+
+- MongoDB 8+.
+- Um `mongo.Client` por processo.
+- Timeout de 5 s por operação; checkout até 10 s.
+- Índices criados na inicialização com log.
+- Conexões limitadas e monitoradas.
+- Backup separado do volume da aplicação.
+
+### 6.2 Migrações
+
+- Scripts versionados em `backend/scripts/`.
+- Idempotentes e testados.
+- Ordem: expandir → migrar → contrair.
+- Nunca alterar documento em produção por comando manual sem registro.
+- Toda migração tem rollback ou plano de correção.
+
+### 6.3 Retenção
+
+| Dado | Proposta |
+|---|---|
+| Pedidos | 24 meses; depois anonimizar PII |
+| Sessões | 7 dias (TTL) |
+| Auditoria | 12 meses |
+| Logs | 30 dias |
+| Backups | 30 dias, com teste de restore |
+
+A retenção final depende de validação jurídica.
+
+---
+
+## 7. Backup e restauração
+
+### 7.1 Requisitos
+
+- Backup automático diário no mínimo.
+- Backup criptografado em repouso.
+- Retenção de 30 dias.
+- Cópia em região/armazenamento separado, se disponível.
+- Monitoramento de falha de backup.
+- Restauração testada antes do go-live e a cada trimestre.
+
+### 7.2 Metas propostas
+
+| Métrica | Meta |
+|---|---|
+| RPO | ≤ 24 h (ideal ≤ 1 h com oplog/point-in-time) |
+| RTO | ≤ 4 h |
+| Teste de restore | trimestral + antes do go-live |
+
+### 7.3 Procedimento de restore
+
+1. Declarar incidente e congelar escritas, se necessário.
+2. Selecionar backup e validar integridade.
+3. Restaurar em ambiente isolado.
+4. Conferir contagens, índices e pedidos recentes.
+5. Promover ou copiar dados conforme runbook.
+6. Registrar evidência, tempo e lições.
+7. Comunicar operação e clientes afetados, se houver.
+
+Nunca testar restore em produção sem autorização.
+
+---
+
+## 8. Observabilidade
+
+### 8.1 Logs
+
+- JSON via `log/slog`.
+- Campos: timestamp, level, requestId, method, path, status, duration, errorCode.
+- Nunca: nome, telefone, endereço, observação, cookie, authorization, corpo de checkout/login, URL do WhatsApp.
+- Retenção: 30 dias.
+- Acesso restrito.
+
+### 8.2 Métricas
+
+- requisições por rota/status;
+- latência p50/p95/p99;
+- erros 4xx/5xx;
+- pedidos criados por status;
+- falhas de handoff;
+- tempo de resposta do Mongo;
+- conexões e saúde;
+- sucesso de backup.
+
+### 8.3 Alertas
+
+| Alerta | Condição | Ação |
+|---|---|---|
+| API indisponível | `/healthz` falha 2 min | Verificar processo/rede |
+| Mongo indisponível | `/readyz` falha 2 min | Verificar banco/conexão |
+| Erro 5xx alto | > 2% em 5 min | Investigar logs |
+| Latência alta | p95 > 1 s em 5 min | Verificar carga/Mongo |
+| Fila parada | pedidos `pending` > 15 min | Avisar operação |
+| Backup falhou | execução diária falhou | Corrigir e reexecutar |
+| Disco alto | > 80% | Expandir/limpar |
+| Certificado | < 14 dias | Renovar |
+
+Alertas precisam de destinatário e runbook. Sem alerta acionável, não criar.
+
+### 8.4 SLOs propostos
+
+| SLO | Meta |
+|---|---|
+| Disponibilidade da API | ≥ 99,5% ao mês |
+| Disponibilidade da web | ≥ 99,5% ao mês |
+| Latência de leitura p95 | ≤ 300 ms |
+| Criação de pedido p95 | ≤ 800 ms |
+| Taxa de erro 5xx | < 0,5% |
+
+---
+
+## 9. Segurança operacional
+
+- Acesso ao servidor por chave, sem senha compartilhada.
+- MFA no provedor/CI quando disponível.
+- Princípio do menor privilégio.
+- Banco com usuário dedicado.
+- Segredos em cofre; nunca em issue/chat.
+- Dependências verificadas no CI.
+- Revisão de headers e cookies após deploy.
+- Backup de configuração.
+- Plano de resposta a incidente.
+- Acesso de emergência documentado.
+
+### 9.1 Resposta a incidente
+
+| Severidade | Exemplo | Resposta |
+|---|---|---|
+| S1 | Site fora, pedidos perdidos, vazamento | Ação imediata, rollback, comunicação |
+| S2 | Admin fora, erro de pedido frequente | Correção em horas |
+| S3 | Bug visual, erro isolado | Próximo ciclo |
+| S4 | Melhoria | Backlog |
+
+Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem sem culpa.
+
+---
+
+## 10. LGPD e privacidade
+
+### 10.1 Dados coletados
+
+- nome;
+- telefone;
+- endereço de entrega;
+- observação do pedido;
+- dados de autenticação do admin (nome/e-mail/senha com hash).
+
+Não coletar CPF, e-mail de cliente ou dados de cartão.
+
+### 10.2 Finalidade
+
+- executar o pedido;
+- contatar sobre o pedido;
+- entregar/retirar;
+- cumprir obrigação legal;
+- segurança e auditoria.
+
+### 10.3 Direitos do titular
+
+- confirmação de tratamento;
+- acesso;
+- correção;
+- anonimização/eliminação quando aplicável;
+- informação sobre compartilhamento;
+- revogação de consentimento, quando aplicável.
+
+Canal do titular precisa ser publicado na política de privacidade.
+
+### 10.4 Retenção e anonimização
+
+- Pedidos: 24 meses; depois remover/mascarar nome, telefone, endereço e observação, preservando estatística.
+- Sessões: TTL de 7 dias.
+- Auditoria: 12 meses, sem PII.
+- Logs: 30 dias, sem PII.
+- Backups: 30 dias; respeitar retenção ao restaurar.
+
+### 10.5 Incidente de dados
+
+1. Conter vazamento.
+2. Registrar escopo e dados afetados.
+3. Avaliar risco.
+4. Comunicar responsável legal e, se necessário, titulares/ANPD.
+5. Corrigir causa.
+6. Documentar postmortem.
+
+---
+
+## 11. Runbooks
+
+### 11.1 Loja não abre
+
+1. Verificar `GET /api/v1/store`.
+2. Conferir `isOpen` e horários no admin.
+3. Conferir fuso do servidor.
+4. Conferir logs de erro.
+5. Se necessário, usar kill switch e comunicar operação.
+
+### 11.2 Pedido não aparece no admin
+
+1. Conferir se o `POST /orders` retornou 201.
+2. Buscar por `orderNumber`/`publicId` no banco.
+3. Verificar filtro de status/data.
+4. Verificar índice e conexão.
+5. Se persistiu e não aparece, corrigir query; não recriar pedido.
+
+### 11.3 WhatsApp não abre
+
+1. Confirmar que o pedido foi criado.
+2. Copiar a mensagem/link.
+3. Abrir manualmente no WhatsApp.
+4. Orientar o cliente.
+5. Registrar ocorrência e verificar bloqueio de popup.
+
+### 11.4 API indisponível
+
+1. Verificar processo e health.
+2. Verificar Mongo/readyz.
+3. Verificar proxy/TLS.
+4. Rollback se o deploy coincidir.
+5. Comunicar operação.
+
+### 11.5 Erro de preço/taxa
+
+1. Identificar pedido e snapshot.
+2. Comparar com catálogo no momento.
+3. Não alterar pedido antigo sem autorização.
+4. Corrigir catálogo/zone.
+5. Registrar auditoria e comunicar.
+
+### 11.6 Suspeita de acesso indevido
+
+1. Revogar sessões.
+2. Trocar senhas/segredos.
+3. Preservar logs.
+4. Investigar escopo.
+5. Seguir plano de incidente/LGPD.
+
+---
+
+## 12. Go-live checklist
+
+### 12.1 Produto e conteúdo
+
+- [ ] Catálogo, preços, opções e adicionais validados.
+- [ ] Zonas, taxas, prazo e horários validados.
+- [ ] WhatsApp, endereço, Instagram e pagamentos validados.
+- [ ] Fotos, logo, alergênicos e textos aprovados.
+- [ ] Política de privacidade e termos publicados.
+- [ ] Página de contato e canal do titular.
+
+### 12.2 Técnico
+
+- [ ] `make fmt`, `make lint`, `make test`, `make docs-check`, `make design-check`, `make build` passando.
+- [ ] E2E crítico passando.
+- [ ] Acessibilidade sem erro grave.
+- [ ] Performance dentro do orçamento.
+- [ ] Índices criados em produção.
+- [ ] Backup automático ativo.
+- [ ] Restore testado.
+- [ ] TLS e headers configurados.
+- [ ] Cookies `Secure`/`HttpOnly`/`SameSite`.
+- [ ] Rate limit ativo.
+- [ ] Logs sem PII.
+- [ ] Alertas com destinatário.
+- [ ] Rollback definido.
+
+### 12.3 Operação
+
+- [ ] Owner e operator criados.
+- [ ] Treinamento realizado.
+- [ ] Runbooks disponíveis.
+- [ ] Escala de suporte definida.
+- [ ] Comunicação de lançamento pronta.
+- [ ] Monitoramento acompanhado no primeiro dia.
+
+### 12.4 Pós-lançamento
+
+- [ ] Smoke test em produção.
+- [ ] Primeiro pedido real acompanhado ponta a ponta.
+- [ ] Nenhum erro 5xx inexplicado.
+- [ ] Feedback da operação coletado.
+- [ ] Revisão em 48 h e 7 dias.
+
+---
+
+## 13. Operação diária
+
+| Momento | Ação |
+|---|---|
+| Abertura | Conferir status, horários, itens esgotados e taxas |
+| Pico | Acompanhar fila e alertas |
+| Fechamento | Conferir pedidos pendentes e fechar loja |
+| Semanal | Revisar erros, pedidos perdidos e backup |
+| Mensal | Revisar acessos, retenção e custos |
+| Trimestral | Testar restore e revisar LGPD |
+
+---
+
+## 14. Pendências
+
+- Provedor de hospedagem.
+- Provedor de CI.
+- MongoDB gerenciado ou container.
+- Ferramenta de métricas/alertas.
+- Política de retenção aprovada.
+- Canal do titular.
+- Domínio e DNS.
+- Estratégia de backup/point-in-time.
+- Responsável de plantão.

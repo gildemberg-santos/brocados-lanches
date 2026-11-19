@@ -1,0 +1,642 @@
+# Contrato de API — Brocados Lanches
+
+**Versão:** 1.0  
+**Base:** `/api/v1`  
+**Atualizado em:** 18/11/2026  
+**Relacionados:** `04-arquitetura.md`, `05-modelo-de-dados.md`, `09-qualidade-e-testes.md`.
+
+---
+
+## 1. Convenções
+
+- JSON em `camelCase`.
+- Sucesso: `{ "data": ... }`.
+- Lista paginada: `{ "data": [...], "meta": { "page": 1, "pageSize": 20, "total": 0, "totalPages": 0 } }`.
+- Erro: `{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": [...] } }`.
+- Datas em RFC 3339 UTC.
+- IDs públicos em string hexadecimal de 24 caracteres, exceto `publicId` (base64url opaco).
+- Dinheiro em centavos (`int64`).
+- `Content-Type: application/json` em corpos JSON.
+- Limite de corpo: 1 MB.
+- Campos desconhecidos são rejeitados.
+- `POST /orders` exige `Idempotency-Key`.
+- `201` inclui `Location`; `204` não tem corpo.
+- Respostas com dados pessoais ou estado de pedido usam `Cache-Control: no-store`.
+- Mudança incompatível exige `/api/v2`.
+
+### 1.1 Health checks
+
+Fora de `/api/v1`:
+
+| Método | Rota | Resposta |
+|---|---|---|
+| GET | `/healthz` | `200` se o processo está vivo |
+| GET | `/readyz` | `200` se o Mongo responde; `503` caso contrário |
+
+---
+
+## 2. Endpoints públicos
+
+| Método | Rota | Função |
+|---|---|---|
+| GET | `/store` | Status efetivo, horários, contato, prazo |
+| GET | `/menu` | Categorias, produtos, opções e adicionais ativos |
+| GET | `/delivery-zones` | Zonas ativas com taxa |
+| POST | `/orders/quote` | Cotação server-side sem persistir |
+| POST | `/orders` | Cria pedido persistido |
+| GET | `/orders/{publicId}` | Acompanhamento público mínimo |
+
+---
+
+## 3. `GET /store`
+
+Retorna o status efetivo calculado no servidor.
+
+```json
+{
+  "data": {
+    "name": "Brocados Lanches",
+    "status": "open",
+    "isOpenManual": true,
+    "timezone": "America/Fortaleza",
+    "deliveryTime": "30-90 min",
+    "whatsapp": "+5585992358708",
+    "instagram": "@brocadoslanches",
+    "address": "R. Lourenço Alves, 364 - Tapera, Aquiraz - CE, 61700-000",
+    "openingHours": [
+      { "day": "sunday", "closed": false, "intervals": [{ "open": "17:45", "close": "23:30" }] },
+      { "day": "monday", "closed": false, "intervals": [{ "open": "18:00", "close": "23:30" }] },
+      { "day": "tuesday", "closed": true, "intervals": [] }
+    ],
+    "nextOpeningAt": "2026-11-19T21:00:00Z",
+    "updatedAt": "2026-11-18T20:00:00Z"
+  }
+}
+```
+
+Regras:
+
+- `status` é `open` ou `closed`.
+- `status = open` somente se o horário permitir e `isOpenManual` for `true`.
+- `nextOpeningAt` pode ser `null`.
+- O frontend não recalcula o status.
+
+---
+
+## 4. `GET /menu`
+
+Retorna somente categorias ativas, produtos ativos, opções disponíveis e adicionais ativos.
+
+```json
+{
+  "data": {
+    "categories": [
+      {
+        "id": "665f1c2a9b1e4a0012a3b4c1",
+        "name": "Hambúrguer artesanal",
+        "slug": "hamburguer-artesanal",
+        "sortOrder": 1,
+        "products": [
+          {
+            "id": "665f1c2a9b1e4a0012a3b4c6",
+            "name": "BACON CHEDDAR",
+            "slug": "bacon-cheddar",
+            "description": "Pão brioche, carne artesanal 120g, cheddar e bacon.",
+            "priceCents": 2200,
+            "imageUrl": "https://cdn.example.com/products/bacon-cheddar.webp",
+            "imageAlt": "Hambúrguer com bacon e cheddar",
+            "allergens": ["glúten", "leite"],
+            "available": true,
+            "featured": true,
+            "sortOrder": 1,
+            "optionGroups": [
+              {
+                "id": "doneness",
+                "name": "Ponto da carne",
+                "required": true,
+                "minSelections": 1,
+                "maxSelections": 1,
+                "options": [
+                  { "id": "medium", "name": "Ao ponto", "priceCents": 0, "available": true }
+                ]
+              }
+            ],
+            "addons": [
+              { "id": "665f1c2a9b1e4a0012a3b4d1", "name": "Bacon Crocante", "priceCents": 500, "available": true }
+            ]
+          }
+        ]
+      }
+    ],
+    "updatedAt": "2026-11-18T20:00:00Z"
+  }
+}
+```
+
+Regras:
+
+- Produto ativo e `available: false` aparece para permitir “Esgotado”.
+- Produto inativo não aparece.
+- Categoria vazia pode ser omitida ou retornada com lista vazia; escolher uma e testar.
+- Adicional só aparece se ativo e vinculado ao produto.
+- O cliente não envia preço; o servidor é a fonte.
+- Cache HTTP curto pode ser usado; nenhuma resposta cacheada pode sobreviver a uma mudança crítica sem invalidação.
+
+---
+
+## 5. `GET /delivery-zones`
+
+```json
+{
+  "data": [
+    { "id": "665f1c2a9b1e4a0012a3b4e1", "name": "Tapera", "feeCents": 800, "sortOrder": 1 },
+    { "id": "665f1c2a9b1e4a0012a3b4e2", "name": "Centro de Aquiraz", "feeCents": 1000, "sortOrder": 2 }
+  ]
+}
+```
+
+Somente zonas ativas. A taxa é sempre do servidor.
+
+---
+
+## 6. `POST /orders/quote`
+
+Calcula totais sem persistir pedido e sem receber PII.
+
+### Request
+
+```http
+POST /api/v1/orders/quote
+Content-Type: application/json
+```
+
+```json
+{
+  "items": [
+    { "productId": "665f1c2a9b1e4a0012a3b4c6", "quantity": 2, "optionIds": ["medium", "665f1c2a9b1e4a0012a3b4d1"] }
+  ],
+  "fulfillment": "delivery",
+  "zoneId": "665f1c2a9b1e4a0012a3b4e1"
+}
+```
+
+### Response `200`
+
+```json
+{
+  "data": {
+    "subtotalCents": 5400,
+    "deliveryFeeCents": 800,
+    "totalCents": 6200,
+    "currency": "BRL",
+    "items": [
+      {
+        "productId": "665f1c2a9b1e4a0012a3b4c6",
+        "name": "BACON CHEDDAR",
+        "quantity": 2,
+        "unitPriceCents": 2200,
+        "optionsPriceCents": 500,
+        "lineTotalCents": 5400,
+        "options": [
+          { "name": "Ao ponto", "priceCents": 0 },
+          { "name": "Bacon Crocante", "priceCents": 500 }
+        ]
+      }
+    ],
+    "warnings": []
+  }
+}
+```
+
+Regras:
+
+- Não cria pedido, não reserva estoque e não gera número.
+- Valida loja, produto, opções, adicionais e zona.
+- `pickup` ignora `zoneId` e retorna taxa zero.
+- `unitPriceCents` é o preço base do produto; `optionsPriceCents` soma opções e adicionais; `lineTotalCents = (unitPriceCents + optionsPriceCents) * quantity`.
+- Pode retornar `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE` ou `VALIDATION_ERROR`.
+- Rate limit: 30/min por IP.
+- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou.
+
+---
+
+## 7. `POST /orders`
+
+### Headers
+
+```http
+POST /api/v1/orders
+Content-Type: application/json
+Idempotency-Key: 4d1f6b1e-7c2a-4e2f-9f2a-1c3d5e7f9a0b
+```
+
+### Request
+
+```json
+{
+  "items": [
+    {
+      "productId": "665f1c2a9b1e4a0012a3b4c6",
+      "quantity": 2,
+      "optionIds": ["medium", "665f1c2a9b1e4a0012a3b4d1"],
+      "note": "sem cebola"
+    }
+  ],
+  "fulfillment": "delivery",
+  "zoneId": "665f1c2a9b1e4a0012a3b4e1",
+  "customer": {
+    "name": "Maria Silva",
+    "phone": "+5585999999999"
+  },
+  "address": {
+    "street": "Rua das Flores",
+    "number": "450",
+    "complement": "Apto 2",
+    "district": "Tapera",
+    "city": "Aquiraz",
+    "state": "CE",
+    "zipCode": "61700-000"
+  },
+  "payment": {
+    "method": "cash",
+    "changeForCents": 10000
+  }
+}
+```
+
+Para retirada:
+
+```json
+{
+  "items": [{ "productId": "665f1c2a9b1e4a0012a3b4c6", "quantity": 1, "optionIds": ["medium"] }],
+  "fulfillment": "pickup",
+  "customer": { "name": "Maria Silva", "phone": "+5585999999999" },
+  "payment": { "method": "pix" }
+}
+```
+
+### Response `201`
+
+```json
+{
+  "data": {
+    "orderNumber": 1042,
+    "publicId": "3Jk9Qm2pX7vR5sT1aB8cD4",
+    "status": "pending",
+    "fulfillment": "delivery",
+    "subtotalCents": 5400,
+    "deliveryFeeCents": 800,
+    "totalCents": 6200,
+    "createdAt": "2026-11-18T20:15:00Z",
+    "whatsappUrl": "https://wa.me/5585992358708?text=..."
+  }
+}
+```
+
+Headers:
+
+```http
+Location: /api/v1/orders/3Jk9Qm2pX7vR5sT1aB8cD4
+```
+
+### Idempotência
+
+- Primeira requisição: `201`.
+- Repetição com a mesma chave e o mesmo corpo: `200`, mesmo corpo, header `Idempotent-Replayed: true`.
+- Mesma chave e corpo diferente: `409 CONFLICT`.
+- Chave ausente: `400 VALIDATION_ERROR`.
+- Chave com 16 a 128 caracteres; recomendado UUID v4.
+- O corpo canônico é usado para `requestHash`; campos desconhecidos são rejeitados.
+
+### Validações
+
+| Regra | Erro |
+|---|---|
+| Loja fechada | `409 STORE_CLOSED` |
+| Produto inativo/indisponível | `409 PRODUCT_UNAVAILABLE` |
+| Zona inativa/inexistente | `409 ZONE_UNAVAILABLE` |
+| Opção obrigatória ausente | `422 VALIDATION_ERROR` |
+| Adicional não vinculado | `422 VALIDATION_ERROR` |
+| Quantidade inválida | `422 VALIDATION_ERROR` |
+| Troco insuficiente | `422 VALIDATION_ERROR` |
+| Telefone inválido | `422 VALIDATION_ERROR` |
+| Endereço ausente em delivery | `422 VALIDATION_ERROR` |
+| Chave idempotente conflitante | `409 CONFLICT` |
+| Limite de taxa | `429 RATE_LIMITED` |
+
+> O código HTTP de validação é `422` para erros semânticos; `400` para JSON malformado ou campo desconhecido. O mapeamento é centralizado e testado.
+
+### Contrato do `whatsappUrl`
+
+- Gerado após a persistência.
+- Contém número da loja e mensagem com número do pedido, itens, total, pagamento e dados de entrega.
+- O servidor não faz chamada à API do WhatsApp na V1.
+- O cliente abre o link; se o navegador bloquear, mostra link copiável.
+- A URL não é logada.
+
+---
+
+## 8. `GET /orders/{publicId}`
+
+Retorna o acompanhamento público mínimo.
+
+```json
+{
+  "data": {
+    "orderNumber": 1042,
+    "publicId": "3Jk9Qm2pX7vR5sT1aB8cD4",
+    "status": "preparing",
+    "fulfillment": "delivery",
+    "items": [
+      { "name": "BACON CHEDDAR", "quantity": 2 }
+    ],
+    "subtotalCents": 5400,
+    "deliveryFeeCents": 800,
+    "totalCents": 6200,
+    "createdAt": "2026-11-18T20:15:00Z",
+    "updatedAt": "2026-11-18T20:30:00Z",
+    "estimatedTime": "30-90 min"
+  }
+}
+```
+
+Não retorna:
+
+- telefone;
+- endereço;
+- observações;
+- e-mail;
+- dados de outros pedidos;
+- `_id`;
+- histórico interno de auditoria;
+- `whatsappUrl` (a URL contém a mensagem com PII e só é devolvida na criação do pedido).
+
+Após recarregar a confirmação, o cliente vê o número do pedido e o contato da loja; para reenviar, informa o número no WhatsApp. O link completo não é persistido no navegador nem exposto pelo acompanhamento público.
+
+`404 NOT_FOUND` para ID inválido ou inexistente. Rate limit: 60/min por IP.
+
+---
+
+## 9. Admin — autenticação
+
+### 9.1 `POST /admin/auth/login`
+
+```json
+{
+  "email": "operador@example.com",
+  "password": "senha-forte-com-12-caracteres"
+}
+```
+
+Resposta `200`:
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "665f1c2a9b1e4a0012a3b4f1",
+      "name": "Operador",
+      "email": "operador@example.com",
+      "role": "operator"
+    }
+  }
+}
+```
+
+- Cookie `HttpOnly`, `SameSite=Lax`, `Path=/`; `Secure` e prefixo `__Host-` em produção.
+- Sessão ociosa de 8 h; absoluta de 7 dias.
+- Login rotaciona a sessão.
+- Erro genérico `401 UNAUTHORIZED`; não revelar se o e-mail existe.
+- Rate limit: 5/min por IP + e-mail.
+
+### 9.2 `POST /admin/auth/logout`
+
+Resposta `204`. Apaga a sessão e o cookie.
+
+### 9.3 `GET /admin/auth/me`
+
+Retorna usuário e papel; `401` se não houver sessão.
+
+---
+
+## 10. Admin — catálogo
+
+Todas as rotas exigem sessão e autorização. Mutações geram auditoria.
+
+| Método | Rota | Papel | Função |
+|---|---|---|---|
+| GET | `/admin/products` | operator/owner | Lista com paginação/filtros |
+| POST | `/admin/products` | operator/owner | Cria produto |
+| PATCH | `/admin/products/{id}` | operator/owner | Atualiza produto |
+| GET | `/admin/categories` | operator/owner | Lista categorias |
+| POST | `/admin/categories` | operator/owner | Cria categoria |
+| PATCH | `/admin/categories/{id}` | operator/owner | Atualiza categoria |
+| GET | `/admin/addons` | operator/owner | Lista adicionais |
+| POST | `/admin/addons` | operator/owner | Cria adicional |
+| PATCH | `/admin/addons/{id}` | operator/owner | Atualiza adicional |
+| GET | `/admin/delivery-zones` | operator/owner | Lista zonas |
+| POST | `/admin/delivery-zones` | operator/owner | Cria zona |
+| PATCH | `/admin/delivery-zones/{id}` | operator/owner | Atualiza zona |
+
+Regras:
+
+- Não há `DELETE`; desative com `active: false`.
+- `priceCents`/`feeCents` são inteiros.
+- `slug` é único.
+- `PATCH` é parcial; campos desconhecidos são rejeitados.
+- Produto pode ter `optionGroups` e `addonIds`.
+- Alterações refletem no cardápio após o cache curto.
+
+Exemplo de `PATCH /admin/products/{id}`:
+
+```json
+{
+  "available": false,
+  "priceCents": 2300,
+  "featured": true
+}
+```
+
+---
+
+## 11. Admin — loja
+
+| Método | Rota | Papel | Função |
+|---|---|---|---|
+| GET | `/admin/store` | operator/owner | Configuração completa |
+| PATCH | `/admin/store` | operator/owner | Atualiza status, horários e contato |
+
+Exemplo:
+
+```json
+{
+  "isOpen": false,
+  "deliveryTime": "30-90 min",
+  "whatsapp": "+5585992358708"
+}
+```
+
+- `PATCH` é parcial.
+- Alterar `isOpen` é auditado.
+- Horários precisam ser válidos e não sobrepostos no mesmo dia.
+- `whatsapp` em E.164.
+
+---
+
+## 12. Admin — pedidos
+
+| Método | Rota | Papel | Função |
+|---|---|---|---|
+| GET | `/admin/orders` | operator/owner | Fila paginada |
+| GET | `/admin/orders/{id}` | operator/owner | Detalhe completo |
+| PATCH | `/admin/orders/{id}/status` | operator/owner | Transição de status |
+
+Listagem:
+
+```http
+GET /api/v1/admin/orders?status=pending&from=2026-11-18T00:00:00Z&to=2026-11-19T00:00:00Z&page=1&pageSize=20&sort=createdAt:desc
+```
+
+- `pageSize` máximo 100.
+- Filtros: `status`, `from`, `to`, `fulfillment`, `q` (número/telefone mascarado).
+- Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`.
+- Detalhe inclui snapshot, cliente, endereço, pagamento e histórico.
+- Dados pessoais só para admin autenticado; não vão para log.
+
+Transição:
+
+```json
+{
+  "status": "confirmed"
+}
+```
+
+Cancelamento:
+
+```json
+{
+  "status": "cancelled",
+  "reason": "Cliente solicitou cancelamento"
+}
+```
+
+- Transição inválida: `409 CONFLICT`.
+- `reason` obrigatório em cancelamento.
+- Cada transição gera auditoria e `statusHistory`.
+
+---
+
+## 13. Admin — usuários e auditoria
+
+### 13.1 Usuários (owner)
+
+| Método | Rota | Função |
+|---|---|---|
+| GET | `/admin/users` | Lista usuários |
+| POST | `/admin/users` | Cria usuário |
+| PATCH | `/admin/users/{id}` | Atualiza nome, papel ou `active` |
+
+- Nunca retornar `passwordHash`.
+- Não permitir desativar o último owner ativo.
+- Não permitir autoexclusão do último owner.
+- Toda mutação é auditada.
+- Criação exige senha temporária forte; troca no primeiro acesso é P2.
+
+### 13.2 Auditoria (owner)
+
+```http
+GET /api/v1/admin/audit-logs?actorId=...&entity=products&from=...&to=...&page=1&pageSize=20
+```
+
+- Somente leitura.
+- Sem PII.
+- `pageSize` máximo 100.
+- Ordenação por `createdAt` desc.
+
+---
+
+## 14. Erros
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Não foi possível validar o pedido.",
+    "details": [
+      { "field": "customer.phone", "code": "INVALID", "message": "Telefone inválido." }
+    ]
+  }
+}
+```
+
+| Código | HTTP | Uso |
+|---|---|---|
+| `VALIDATION_ERROR` | 400/422 | JSON inválido ou regra semântica |
+| `UNAUTHORIZED` | 401 | Sem sessão/credencial inválida |
+| `FORBIDDEN` | 403 | Papel sem permissão |
+| `NOT_FOUND` | 404 | Recurso inexistente |
+| `CONFLICT` | 409 | Idempotência, transição ou estado conflitante |
+| `STORE_CLOSED` | 409 | Loja fechada |
+| `ZONE_UNAVAILABLE` | 409 | Zona inativa/inexistente |
+| `PRODUCT_UNAVAILABLE` | 409 | Produto inativo/esgotado |
+| `RATE_LIMITED` | 429 | Limite excedido |
+| `INTERNAL_ERROR` | 500 | Erro inesperado |
+
+Regras:
+
+- Não devolver erro bruto do Mongo, stack trace ou detalhe interno.
+- Logar 5xx com request ID e contexto técnico.
+- Resposta pública genérica em 5xx.
+- `429` sem revelar existência de conta.
+- `404` de acompanhamento não revela se o ID já existiu.
+
+---
+
+## 15. Rate limits
+
+| Rota | Limite | Chave |
+|---|---|---|
+| `POST /admin/auth/login` | 5/min | IP + e-mail |
+| `POST /orders` | 10/min | IP |
+| `POST /orders` | 3/min | telefone |
+| `POST /orders/quote` | 30/min | IP |
+| `GET /orders/{publicId}` | 60/min | IP |
+| `GET /menu` | 120/min | IP |
+| Admin autenticado | 120/min | sessão |
+
+Respostas `429` incluem `Retry-After` quando possível.
+
+---
+
+## 16. Segurança HTTP
+
+- Same-origin por padrão.
+- `Origin`/`Referer` validados em métodos mutáveis.
+- Cookie de sessão `HttpOnly`; nunca acessível por JS.
+- CORS allowlist explícita apenas em desenvolvimento.
+- Headers no proxy: CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS em produção.
+- Nenhum dado de cartão é recebido ou armazenado.
+- Nenhum PII em log, analytics ou URL de tracking.
+
+---
+
+## 17. Versionamento e evolução
+
+- `/api/v1` é a versão da V1.
+- Adicionar campo opcional é compatível.
+- Remover/renomear campo, mudar tipo ou semântica exige `/api/v2`.
+- `docs/06-contrato-api.md` e OpenAPI (quando existir) são atualizados no mesmo PR.
+- Testes de contrato cobrem o envelope e os campos críticos.
+
+---
+
+## 18. OpenAPI
+
+A V1 pode começar com este contrato em Markdown e evoluir para OpenAPI 3.1. Quando o OpenAPI existir:
+
+- ele é a fonte executável do contrato;
+- exemplos são validados no CI;
+- o frontend gera tipos ou mantém tipos espelhados testados;
+- mudanças incompatíveis são detectadas.
+
+Até lá, este documento é a referência e deve ser atualizado junto com o código.

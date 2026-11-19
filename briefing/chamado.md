@@ -39,12 +39,16 @@ O chamado ainda não traz o texto do pedido do cliente, o escopo contratado nem 
 - Fluxo de cliente: Home → Cardápio → Personalizar → Carrinho → Checkout.
 - Painel administrativo com produtos, categorias, zonas de entrega e dados da loja.
 - Exportação de tokens CSS/Tailwind e JSON de dados.
+- Esqueleto de produção em Go, Vue e MongoDB.
+- Documentação completa de produto, arquitetura, dados, API, design, backlog, testes e operação em `../docs/README.md`.
 
-Detalhes em `../docs/01-inventario-prototipo.md`.
+Detalhes do protótipo em `../docs/01-inventario-prototipo.md`. Planejamento executável em `../docs/08-backlog.md` e `../docs/11-roadmap.md`.
 
 ---
 
 ## 4. Dados conhecidos
+
+### 4.1 Protótipo (fictício)
 
 | Dado | Valor no protótipo | Situação |
 |---|---|---|
@@ -58,6 +62,50 @@ Detalhes em `../docs/01-inventario-prototipo.md`.
 | Zonas de entrega | Centro (R$ 5), Prainha (R$ 8), Porto das Dunas (R$ 12) | validar bairros e taxas |
 | Pagamentos | Pix, Cartão e Dinheiro | confirmar |
 | Horário de funcionamento | não exibido | **falta** |
+
+> Esses dados são de demonstração e **não** devem ir para produção.
+
+### 4.2 Site público de referência (snapshot em 18/11/2026)
+
+Fonte: `https://cardpiobrocadoslanchess.ola.click/`.
+
+| Dado | Valor observado | Situação |
+|---|---|---|
+| Nome | Brocados Lanches | validar com cliente |
+| WhatsApp | `+55 85 99235-8708` | **validar** |
+| Endereço | `R. Lourenço Alves, 364 - Tapera, Aquiraz - CE, 61700-000` | **validar** |
+| Fuso | `America/Fortaleza` | confirmado no site |
+| Entrega | 30–90 min | **validar** |
+| Retirada | sim | **validar regras** |
+| Checkout | WhatsApp | confirmado no site |
+| Pagamento | dinheiro, cartão e Pix, na entrega/retirada | **validar** |
+| Catálogo | 6 seções, 40 itens; 8 esgotados no snapshot | **validar item a item** |
+| Bairros | 30 regiões listadas; taxas não públicas | **validar taxas** |
+| Horário | seg–dom, com terça fechada; ver detalhes | **validar feriados** |
+
+Horários observados:
+
+| Dia | Horário |
+|---|---|
+| Domingo | 17:45–23:30 |
+| Segunda | 18:00–23:30 |
+| Terça | fechado |
+| Quarta | 18:00–23:30 |
+| Quinta | 18:00–23:30 |
+| Sexta | 17:30–23:30 |
+| Sábado | 18:00–23:30 |
+
+O catálogo, os bairros e as taxas do site **não** são importados automaticamente. A análise completa está em `../docs/12-referencia-ola-click.md`.
+
+### 4.3 O que ainda falta validar
+
+- cardápio oficial, descrições, ingredientes e alergênicos;
+- grupos de opções e adicionais por produto;
+- taxas por bairro e prazo real;
+- feriados e fechamentos temporários;
+- dados de contato e endereço;
+- formas de pagamento e regra de troco;
+- fotos, logo e direitos de uso.
 
 ---
 
@@ -92,10 +140,10 @@ Detalhes em `../docs/01-inventario-prototipo.md`.
 
 ### Técnico e jurídico
 
-- [ ] Stack e infraestrutura definidas.
-- [ ] Integração de pagamento (se houver).
+- [ ] Stack definida (Go + Vue + MongoDB); hospedagem, domínio e CI pendentes.
+- [ ] Integração de pagamento (não prevista na V1; confirmar).
 - [ ] Envio de pedidos para WhatsApp: link manual ou API oficial?
-- [ ] Analytics e métricas de conversão.
+- [ ] Analytics e métricas de conversão (somente com consentimento).
 - [ ] LGPD: base legal, retenção, consentimento e canal do titular.
 - [ ] Responsável por suporte e manutenção após a entrega.
 
@@ -120,6 +168,7 @@ Só valem depois de o escopo ser confirmado:
 ## 7. Observações
 
 - O protótipo usa dados fictícios e não deve ir para produção como está.
-- O botão de finalizar pedido **não envia nada hoje**; ele apenas simula o fluxo.
-- O HTML depende de CDN externo (Tailwind e Google Fonts).
+- O site público de referência é uma plataforma OlaClick; seus dados precisam de validação e seus textos/fotos não podem ser copiados sem autorização.
+- O botão de finalizar pedido do protótipo **não envia nada hoje**; ele apenas simula o fluxo.
+- O HTML do protótipo depende de CDN externo (Tailwind e Google Fonts).
 - Antes de reutilizar qualquer conteúdo, confirmar autoria e licença das imagens e textos.

@@ -184,4 +184,4 @@ O caminho mais seguro é:
 5. substituir o CDN por build;
 6. auditar acessibilidade, SEO, segurança e LGPD antes do lançamento.
 
-O plano detalhado está em `02-plano-de-producao.md`.
+O plano detalhado está em `11-roadmap.md` e `08-backlog.md`. A análise do site público usado como referência funcional está em `12-referencia-ola-click.md`; ela não substitui a validação do cliente.

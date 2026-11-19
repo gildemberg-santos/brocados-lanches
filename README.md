@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — esqueleto de produção disponível; catálogo, checkout e painel ainda não implementados.  
+**Status:** Fase 1 — esqueleto de produção disponível; planejamento documental completo da V1; catálogo, checkout e painel ainda não implementados.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -13,10 +13,12 @@ Reunir a presença digital de pedidos da Brocados Lanches:
 
 - o protótipo e o design system recebidos;
 - o esqueleto de produção em Go, Vue e MongoDB;
+- a documentação completa de produto, arquitetura, dados, API, design, backlog, testes e operação;
+- o snapshot funcional do site público `https://cardpiobrocadoslanchess.ola.click/` como referência validável;
 - o inventário do que já está pronto e do que ainda é simulação;
 - o briefing e as pendências para a V1.
 
-O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é uma **referência visual e funcional**, não a base do produto. Ele não tem backend, persistência, autenticação nem pagamento.
+O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é uma **referência visual e funcional**, não a base do produto. Ele não tem backend, persistência, autenticação nem pagamento. O site público da OlaClick é referência funcional e de conteúdo, não fonte visual nem importação automática.
 
 **Stack:** Go + Chi (backend), Vue 3 + Vite + TypeScript + Pinia (frontend), MongoDB 8+ e Docker Compose para o ambiente integrado. As regras de arquitetura, testes e commit estão em `AGENTS.md`.
 
@@ -51,7 +53,23 @@ O esqueleto da Fase 1 já inclui:
 - Dockerfiles de API e web, Nginx same-origin e `compose.yaml` com MongoDB;
 - validação de documentação e design system no gate de commit.
 
-> **Atenção:** telefone, endereço, preços e taxas do seed são **placeholders**. Precisam ser confirmados com o cliente antes de qualquer uso público.
+### Planejamento da V1
+
+A documentação completa está em `docs/README.md`:
+
+- `docs/03-prd.md` — escopo, personas, requisitos e critérios de lançamento;
+- `docs/04-arquitetura.md` — camadas, fluxos, segurança e deploy;
+- `docs/05-modelo-de-dados.md` — coleções, campos, índices e retenção;
+- `docs/06-contrato-api.md` — endpoints, erros e idempotência;
+- `docs/07-design-system-e-experiencia.md` — tokens, componentes, telas e acessibilidade;
+- `docs/08-backlog.md` — épicos, histórias, tarefas e aceite;
+- `docs/09-qualidade-e-testes.md` — matriz de testes e gates;
+- `docs/10-operacao-e-lancamento.md` — ambientes, backup, monitoramento e LGPD;
+- `docs/11-roadmap.md` — fases, marcos e caminho crítico;
+- `docs/12-referencia-ola-click.md` — snapshot do site público;
+- `docs/13-decisoes-e-pendencias.md` — decisões e perguntas abertas.
+
+> **Atenção:** telefone, endereço, preços e taxas do seed são **placeholders**. O snapshot do site público também precisa de validação. Nada entra em produção sem confirmação do cliente.
 
 ---
 
@@ -242,19 +260,18 @@ O esqueleto **ainda não** entrega:
 - login e painel administrativo;
 - seed de desenvolvimento, E2E e deploy de produção.
 
-Esses pontos estão priorizados em `docs/02-plano-de-producao.md`.
+Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. O site público de referência está analisado em `docs/12-referencia-ola-click.md`.
 
 ---
 
 ## 7. Próximos passos
 
-1. Confirmar dados reais da loja: nome, endereço, WhatsApp, Instagram, horários e tempo médio de entrega.
-2. Validar cardápio, categorias, preços, adicionais e zonas de entrega.
-3. Definir o fluxo de fechamento do pedido e o papel do WhatsApp.
-4. Implementar o modelo de dados e o catálogo no backend e no frontend.
-5. Implementar carrinho, checkout, persistência do pedido e painel administrativo.
-6. Adicionar seed de desenvolvimento, E2E e pipeline de CI.
-7. Definir hospedagem, domínio e política de retenção de dados.
+1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
+2. Configurar CI, seed/reset e fixtures (Épico 1).
+3. Implementar o catálogo somente leitura (Épico 2).
+4. Implementar carrinho, cotação, checkout e pedido persistido (Épicos 3 e 4).
+5. Implementar autenticação, catálogo admin, fila e transições (Épicos 6 e 7).
+6. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 
 ---
 
@@ -262,8 +279,20 @@ Esses pontos estão priorizados em `docs/02-plano-de-producao.md`.
 
 - `AGENTS.md` — regras de arquitetura, testes, commit e operação.
 - `briefing/chamado.md` — escopo, pendências e dados a confirmar.
+- `docs/README.md` — índice da documentação.
 - `docs/01-inventario-prototipo.md` — inventário funcional e técnico do HTML.
-- `docs/02-plano-de-producao.md` — fases, riscos e definição de pronto da V1.
+- `docs/02-plano-de-producao.md` — plano histórico da Fase 1.
+- `docs/03-prd.md` — PRD da V1.
+- `docs/04-arquitetura.md` — arquitetura técnica.
+- `docs/05-modelo-de-dados.md` — modelo MongoDB.
+- `docs/06-contrato-api.md` — contrato HTTP.
+- `docs/07-design-system-e-experiencia.md` — design system e UX.
+- `docs/08-backlog.md` — backlog executável.
+- `docs/09-qualidade-e-testes.md` — qualidade e testes.
+- `docs/10-operacao-e-lancamento.md` — operação e go-live.
+- `docs/11-roadmap.md` — roadmap.
+- `docs/12-referencia-ola-click.md` — análise do site público.
+- `docs/13-decisoes-e-pendencias.md` — decisões e pendências.
 - `design-system/README.md` — regra visual e validação obrigatória.
 - `design-system/tokens.css` — fonte dos tokens de marca.
 - `design-system/tokens.json` — os mesmos tokens para ferramentas.
