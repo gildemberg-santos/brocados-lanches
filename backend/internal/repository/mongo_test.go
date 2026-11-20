@@ -36,6 +36,9 @@ func TestNilClient(t *testing.T) {
 	if err := client.Close(ctx); err != nil {
 		t.Fatalf("Close() error = %v, want nil", err)
 	}
+	if database := client.Database("brocados_dev"); database != nil {
+		t.Fatalf("Database() = %v, want nil", database)
+	}
 }
 
 func TestConnectIntegration(t *testing.T) {

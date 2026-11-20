@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: Documentação e design system
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validar links da documentação
+        run: make docs-check
+
+      - name: Validar tokens e uso do design system
+        run: make design-check
+
+      - name: Testar validadores de documentação
+        run: make test-docs
+
+      - name: Testar validador do design system
+        run: make test-design
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: false
+
+      - name: Verificar formatação
+        run: make fmt-check-api
+
+      - name: Lint
+        run: make lint-api
+
+      - name: Testes com race detector
+        run: make test-api
+
+      - name: Validar dados de seed
+        run: make seed-check
+
+      - name: Compilar binário
+        run: make build-api
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.0
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Instalar dependências
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Verificar formatação
+        run: make fmt-check-web
+
+      - name: Lint e typecheck
+        run: make lint-web
+
+      - name: Testes unitários
+        run: make test-web
+
+      - name: Build
+        run: make build-web
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MONGO_URI: mongodb://127.0.0.1:27017
+      MONGO_DB: brocados_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: false
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.0
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Instalar dependências
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Instalar Chromium
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Rodar smoke E2E
+        run: make test-e2e
+
+      - name: Publicar relatório em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7

@@ -1,7 +1,7 @@
 # Operação e Lançamento — Brocados Lanches
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
+**Atualizado em:** 20/11/2026  
 **Status:** plano operacional da V1; provedores ainda em aberto.  
 **Relacionados:** `04-arquitetura.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`.
 
@@ -443,7 +443,7 @@ Canal do titular precisa ser publicado na política de privacidade.
 ## 14. Pendências
 
 - Provedor de hospedagem.
-- Provedor de CI.
+- ~~Provedor de CI.~~ Resolvido em 20/11/2026: GitHub Actions (D-016).
 - MongoDB gerenciado ou container.
 - Ferramenta de métricas/alertas.
 - Política de retenção aprovada.

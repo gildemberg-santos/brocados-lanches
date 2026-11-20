@@ -1,8 +1,8 @@
 # Qualidade e Testes — Brocados Lanches
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
-**Status:** estratégia da V1 definida; implementação pendente.  
+**Atualizado em:** 20/11/2026  
+**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `06-contrato-api.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`.
 
 ---
@@ -53,6 +53,21 @@ Regras:
 - Relógio é injetável (`platform/clock`) para testar horário da loja.
 - IDs e `publicId` são gerados por interface injetável para testes determinísticos quando necessário.
 - Nenhum teste depende do site de referência ou da internet.
+
+### 3.1 Comandos
+
+```bash
+make seed              # aplica design-system/seed.json em brocados_dev
+make seed-reset        # esvazia as coleções semeadas e reaplica
+make seed-check        # valida o seed sem acessar o MongoDB
+make test              # docs, design, seed, Go e Vitest
+make test-e2e          # Playwright com API isolada em brocados_test
+```
+
+- `make seed` e `make seed-reset` recusam `APP_ENV=production`, o banco `brocados` e nomes sem sufixo `_dev` ou `_test`.
+- `make test-e2e` exige MongoDB acessível em `localhost:27017` (ou `MONGO_URI` definido) e sobe a API na porta 8080 com `brocados_test`.
+- O E2E não faz parte de `make test`; o gate de commit continua rápido e sem navegador.
+- O smoke atual cobre a base (home, health, readiness e alvo de toque em 375 px). O fluxo de cardápio entra com US-023.
 
 ---
 

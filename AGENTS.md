@@ -1,7 +1,7 @@
 # AGENTS.md — Brocados Lanches
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
+**Atualizado em:** 20/11/2026  
 **Stack:** Go + Chi · Vue 3 + Vite + TypeScript · MongoDB  
 **Aplica-se a:** todo o repositório
 
@@ -17,7 +17,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Objetivo da V1:** o cliente monta o pedido e ele é **registrado no servidor antes de qualquer envio**; a operação gerencia catálogo, zonas e pedidos pelo painel; preços, taxas e disponibilidade são sempre validados no backend.
 
-**Estado em 18/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens e esqueleto de produção da Fase 1 disponíveis. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; catálogo, checkout e painel administrativo ainda não foram implementados.
+**Estado em 20/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; catálogo, checkout e painel administrativo ainda não foram implementados.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
 
@@ -100,6 +100,7 @@ brocados-lanches/
 │   │   ├── service/          # regras de negócio (fase seguinte)
 │   │   ├── repository/       # MongoDB
 │   │   └── platform/         # clock, IDs, log, senha, WhatsApp (fase seguinte)
+│   ├── scripts/seed/         # seed de desenvolvimento e teste
 │   ├── vendor/               # dependências Go para build Docker offline
 │   ├── Dockerfile
 │   ├── go.mod
@@ -117,12 +118,13 @@ brocados-lanches/
 │   │   ├── composables/      # (fase seguinte)
 │   │   ├── types/            # (fase seguinte)
 │   │   └── styles/
-│   ├── e2e/                  # Playwright (fase seguinte)
+│   ├── e2e/                  # Playwright (smoke da base; cardápio na fase seguinte)
 │   ├── Dockerfile
 │   ├── Dockerfile.runtime
 │   ├── nginx.conf
 │   ├── index.html
 │   ├── package.json
+│   ├── playwright.config.ts
 │   ├── pnpm-lock.yaml
 │   ├── vite.config.ts
 │   ├── vitest.config.ts
@@ -132,6 +134,8 @@ brocados-lanches/
 │   ├── check_docs.py
 │   ├── test_check_design_system.py
 │   └── test_check_docs.py
+├── .github/
+│   └── workflows/ci.yml      # CI: docs/design, backend, frontend e E2E
 ├── .githooks/
 │   └── pre-commit           # gate obrigatório antes de commit
 ├── design-system/           # referência visual; não editar o protótipo
@@ -168,10 +172,15 @@ O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o junto com
 | `make test` | Documentação, design system, backend e frontend |
 | `make test-api` | `go test -race ./...` |
 | `make test-web` | Vitest |
+| `make test-e2e` | Playwright; exige MongoDB e sobe a API com `brocados_test` |
 | `make test-docs` | `unittest` dos validadores de documentação |
 | `make test-design` | `unittest` do validador de design system |
+| `make seed` | Aplica `design-system/seed.json` em `brocados_dev` |
+| `make seed-reset` | Esvazia as coleções semeadas e reaplica os dados fictícios |
+| `make seed-check` | Valida o seed sem acessar o MongoDB |
 | `make lint` | `golangci-lint` (ou `go vet`) + ESLint + `vue-tsc --noEmit` |
 | `make fmt` | `gofmt` + Prettier |
+| `make fmt-check` | Verifica formatação sem alterar arquivos |
 | `make design-check` | Valida tokens e uso do design system no frontend |
 | `make docs-check` | Valida links relativos da documentação |
 | `make build` | Binário Go em `backend/bin/api` e build do frontend |
@@ -183,7 +192,7 @@ O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o junto com
 
 O build Docker do backend usa `backend/vendor/` e não acessa a rede. O build da imagem web baixa dependências do npm; o primeiro build precisa de acesso ao registry. Se o Docker não alcançar o npm, `make up-offline` compila o frontend no host e usa `frontend/Dockerfile.runtime` com `compose.offline.yaml`.
 
-`make test-e2e` e `make seed` entram nas fases de checkout/catálogo, quando existirem fluxo e dados reais para validar. Não crie alvo vazio que finge executar uma verificação.
+`make test-e2e` não faz parte de `make test`: exige MongoDB em `localhost:27017`, navegador Playwright instalado e sobe a API com `brocados_test`. `make seed` e `make seed-reset` operam apenas em banco com sufixo `_dev` ou `_test` e recusam produção. Não crie alvo vazio que finge executar uma verificação.
 
 Nunca rode seed ou teste contra banco de produção. Use `brocados_dev` ou `brocados_test`.
 
@@ -461,7 +470,7 @@ Nenhum commit é criado sem passar por esta sequência:
 
 1. **Documentação:** atualize o documento afetado — `AGENTS.md` para decisão de arquitetura/processo, `README.md` para estrutura ou uso, `docs/` para comportamento e contrato, `design-system/README.md` para padrão visual. Links relativos precisam resolver.
 2. **Testes:** todo arquivo novo de código (endpoint, componente, store, script, migração) nasce com teste automatizado correspondente. Todo comportamento novo ou corrigido exige teste. Correção de bug sem teste de regressão não é aceita, salvo impossibilidade técnica justificada no PR. **Todos os testes, novos e existentes, precisam passar antes do commit.**
-3. **Validação:** rode `make fmt`, `make lint`, `make test`, `make docs-check` e `make design-check`. Tudo precisa passar antes do commit.
+3. **Validação:** rode `make fmt` (ou `make fmt-check`), `make lint`, `make test`, `make docs-check` e `make design-check`. Tudo precisa passar antes do commit.
 4. **Inspeção:** revise `git diff --cached` e confirme que não há segredo, PII, arquivo gerado, cor/fonte fora do design system ou mudança fora do escopo.
 5. **Commit:** use Conventional Commits em português. Não use `--no-verify` para contornar o hook.
 

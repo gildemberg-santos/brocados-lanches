@@ -43,6 +43,14 @@ func (c *Client) Ping(ctx context.Context) error {
 	return c.mongo.Ping(ctx, nil)
 }
 
+// Database devolve uma referência ao banco informado.
+func (c *Client) Database(name string) *mongo.Database {
+	if c == nil || c.mongo == nil {
+		return nil
+	}
+	return c.mongo.Database(name)
+}
+
 // Close encerra a conexão com o MongoDB.
 func (c *Client) Close(ctx context.Context) error {
 	if c == nil || c.mongo == nil {

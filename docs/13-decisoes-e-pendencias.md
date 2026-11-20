@@ -1,7 +1,7 @@
 # Decisões e Pendências — Brocados Lanches
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
+**Atualizado em:** 20/11/2026  
 **Status:** registro vivo.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `08-backlog.md`, `adr/`.
 
@@ -36,14 +36,12 @@
 | D-012 | 18/11/2026 | Carrinho persiste apenas IDs, quantidades e escolhas; nunca preço confiável | Decidido | Evita fraude e dado obsoleto | `03-prd.md`, `07-design-system-e-experiencia.md` |
 | D-013 | 18/11/2026 | V1 em português; código/API em inglês | Decidido | Consistência | `../AGENTS.md` |
 | D-014 | 18/11/2026 | Não usar CDN, Google Fonts ou analytics sem consentimento em produção | Decidido | Segurança, privacidade e performance | `../AGENTS.md`, `10-operacao-e-lancamento.md` |
-| D-015 | 18/11/2026 | Hospedagem, domínio, CI, MongoDB gerenciado e retenção final ainda não decididos | Pendente | Bloqueia deploy/go-live | Este documento |
+| D-015 | 18/11/2026 | Hospedagem, domínio, MongoDB gerenciado e retenção final ainda não decididos | Pendente | Bloqueia deploy/go-live | Este documento |
+| D-016 | 20/11/2026 | CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E | Decidido | Pipeline versionado em `.github/workflows/ci.yml`; PR bloqueado por falha | `.github/workflows/ci.yml` |
 
-### 2.1 Decisões que precisam de atualização no AGENTS
+### 2.1 Contrato refletido no AGENTS
 
-As decisões D-008 e D-010 ampliam o contrato original. Elas foram registradas no planejamento e precisam estar refletidas em `../AGENTS.md` e `06-contrato-api.md` na mesma entrega de documentação:
-
-- `POST /orders/quote` na lista de endpoints públicos;
-- `GET/POST/PATCH /admin/users` e `GET /admin/audit-logs` na lista administrativa.
+As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audit-logs`) já estão refletidas em `../AGENTS.md` §9.2 e §9.3 e em `06-contrato-api.md`. A verificação de 20/11/2026 não encontrou divergência.
 
 ---
 
@@ -65,7 +63,7 @@ As decisões D-008 e D-010 ampliam o contrato original. Elas foram registradas n
 | P-012 | Textos legais e canal do titular | LGPD | Sim | Cliente/jurídico | Pendente |
 | P-013 | Retenção e anonimização | LGPD | Sim | Cliente/jurídico | Pendente |
 | P-014 | Domínio e hospedagem | Deploy/TLS/cookies | Sim | Cliente/engenharia | Pendente |
-| P-015 | Provedor de CI | Pipeline | Não para código; sim para lançamento | Engenharia | Pendente |
+| P-015 | Provedor de CI | Pipeline | Não para código; sim para lançamento | Engenharia | Resolvido em 20/11/2026 (D-016) |
 | P-016 | MongoDB gerenciado ou container | Backup/transações | Sim para produção | Engenharia | Pendente |
 | P-017 | WhatsApp link ou API oficial | Handoff | Não para V1; decidir antes do lançamento | Cliente/engenharia | Pendente |
 | P-018 | MFA antes ou depois do lançamento | Segurança | Não; risco a aceitar | Cliente/engenharia | Pendente |
@@ -94,6 +92,13 @@ As decisões D-008 e D-010 ampliam o contrato original. Elas foram registradas n
 - **Problema:** `owner` precisa gerenciar usuários e consultar auditoria, mas o contrato original não listava endpoints.
 - **Decisão:** adicionar `/admin/users` e `/admin/audit-logs`, somente owner.
 - **Consequência:** mais superfície de auth; testes de autorização obrigatórios.
+
+### 4.4 Seed de desenvolvimento
+
+- **Problema:** o protótipo tem dados fictícios e não pode alimentar produção nem ser confundido com catálogo validado.
+- **Decisão:** `make seed` e `make seed-reset` importam `design-system/seed.json`, convertem reais para centavos sem ponto flutuante e gravam `seed.fictitious: true` em cada documento. O comando recusa `APP_ENV=production`, o banco `brocados` e qualquer nome sem sufixo `_dev` ou `_test`.
+- **Consequência:** o reset apaga apenas `categories`, `products`, `delivery_zones` e `store_settings`; usuários, sessões, pedidos e auditoria não são tocados.
+- **Risco:** o seed sobrescreve campos do catálogo a cada execução. Use apenas em desenvolvimento e teste.
 
 ---
 
@@ -128,3 +133,4 @@ Elas entram em P2 ou no roadmap seguinte.
 | Data | Mudança |
 |---|---|
 | 18/11/2026 | Criação do registro; decisões da V1 e pendências iniciais |
+| 20/11/2026 | D-016 (GitHub Actions); P-015 resolvido; decisão de seed registrada; §2.1 verificada sem divergência |

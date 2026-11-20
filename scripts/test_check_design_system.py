@@ -136,6 +136,18 @@ class CheckDesignSystemTest(unittest.TestCase):
 
         self.assertEqual(check_design_system.collect_errors(self.root), [])
 
+    def test_ignores_playwright_artifacts(self) -> None:
+        self.write(
+            "frontend/playwright-report/index.html",
+            "<style>.bad { color: #FF8C00; }</style>\n",
+        )
+        self.write(
+            "frontend/test-results/smoke/error-context.html",
+            "<style>.bad { color: #000000; }</style>\n",
+        )
+
+        self.assertEqual(check_design_system.collect_errors(self.root), [])
+
     def test_detects_missing_tokens_files(self) -> None:
         (self.root / "design-system" / "tokens.css").unlink()
 

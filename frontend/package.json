@@ -15,8 +15,10 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write \"src/**/*.{ts,vue,css}\" \"*.{js,mjs,ts,json,html}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,vue,css}\" \"*.{js,mjs,ts,json,html}\""
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "format": "prettier --write \"src/**/*.{ts,vue,css}\" \"e2e/**/*.ts\" \"*.{js,mjs,ts,json,html}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,vue,css}\" \"e2e/**/*.ts\" \"*.{js,mjs,ts,json,html}\""
   },
   "dependencies": {
     "pinia": "^4.1.0",
@@ -24,6 +26,7 @@
     "vue-router": "^5.5.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/vite": "^4.3.5",
     "@vitejs/plugin-vue": "^6.0.11",
     "@vue/compiler-sfc": "^3.5.45",

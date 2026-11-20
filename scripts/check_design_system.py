@@ -12,7 +12,15 @@ ROOT = Path(__file__).resolve().parent.parent
 TOKENS_CSS = Path("design-system/tokens.css")
 TOKENS_JSON = Path("design-system/tokens.json")
 SCAN_SUFFIXES = {".css", ".html", ".js", ".mjs", ".scss", ".ts", ".vue"}
-IGNORED_PARTS = {"node_modules", "dist", ".vite", "coverage", "__pycache__"}
+IGNORED_PARTS = {
+    "node_modules",
+    "dist",
+    ".vite",
+    "coverage",
+    "playwright-report",
+    "test-results",
+    "__pycache__",
+}
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 COLOR_FUNCTION_RE = re.compile(r"\b(?:rgb|rgba|hsl|hsla)\s*\(", re.IGNORECASE)
 CDN_PATTERNS = {

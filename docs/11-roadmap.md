@@ -1,8 +1,8 @@
 # Roadmap — Brocados Lanches V1
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
-**Status:** planejamento; sem data comprometida.  
+**Atualizado em:** 20/11/2026  
+**Status:** planejamento; Fase 1 com CI, seed e E2E entregues em 20/11/2026; preview por PR pendente.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -68,7 +68,7 @@
 - preview por PR;
 - documentação de ambiente.
 
-**Saída:** M1. O esqueleto já existe; falta o pipeline.
+**Saída:** M1. CI, seed/reset e harness Playwright entregues em 20/11/2026; preview por PR pendente.
 
 **Esforço relativo:** M.
 

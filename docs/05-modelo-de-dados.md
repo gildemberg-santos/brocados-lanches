@@ -1,7 +1,7 @@
 # Modelo de Dados — Brocados Lanches
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
+**Atualizado em:** 20/11/2026  
 **Banco:** MongoDB 8+  
 **Bancos:** `brocados_dev`, `brocados_test`, `brocados` (produção)  
 **Relacionados:** `04-arquitetura.md`, `06-contrato-api.md`, `09-qualidade-e-testes.md`.
@@ -18,6 +18,7 @@
 - Dinheiro em `int64` centavos, com sufixo `Cents`.
 - Percentuais, se existirem, em pontos-base inteiros.
 - Todo documento mutável tem `createdAt` e `updatedAt`.
+- Documentos criados por seed de desenvolvimento carregam `seed.fictitious: true` e `seed.source`.
 - Documentos de catálogo não são apagados fisicamente; usam `active: false`.
 - Campos de PII existem apenas em `orders` e `admin_users`.
 - Não usar arrays ilimitados dentro de documentos.
@@ -486,6 +487,11 @@ Nunca colocar PII em:
 - Migrações são scripts versionados em `backend/scripts/`; cada uma tem teste e é idempotente.
 - Índices são criados no start, de forma idempotente, com log.
 - Seed de desenvolvimento usa dados fictícios de `design-system/seed.json` ou fixtures versionadas; nunca produção.
+- `make seed` importa `categories`, `products`, `delivery_zones` e `store_settings` por upsert de `slug` (loja por `_id: "main"`), com `createdAt` preservado em `$setOnInsert`.
+- Preços e taxas vêm em reais no JSON e são convertidos para centavos em Go, sem ponto flutuante.
+- `make seed-reset` apaga apenas as quatro coleções semeadas; usuários, sessões, pedidos e auditoria não são tocados.
+- O comando recusa `APP_ENV=production`, o banco `brocados` e qualquer nome sem sufixo `_dev` ou `_test`.
+- Cada documento semeado recebe `seed: { fictitious: true, source: "design-system/seed.json" }`; `allergens`, `imageUrl` e `openingHours` continuam pendentes de validação.
 - Seed de teste usa `brocados_test` e é limpo antes/depois.
 - O snapshot do site de referência **não** é importado automaticamente; conteúdo precisa de validação.
 - Alterações de schema exigem atualização deste documento e do contrato, se afetarem a API.

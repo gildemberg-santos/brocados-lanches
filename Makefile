@@ -7,9 +7,9 @@ include .env
 export
 endif
 
-.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design \
-	lint lint-api lint-web fmt fmt-api fmt-web docs-check design-check build build-api build-web \
-	up up-offline down logs ps
+.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-e2e \
+	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check build build-api build-web \
+	seed seed-reset seed-check up up-offline down logs ps
 
 help:
 	@printf '%s\n' \
@@ -19,9 +19,14 @@ help:
 		'  make dev         Sobe API e frontend em modo desenvolvimento' \
 		'  make dev-api     Sobe apenas a API' \
 		'  make dev-web     Sobe apenas o frontend' \
-		'  make test        Roda documentação, design system, backend e frontend' \
+		'  make test        Roda documentação, design system, seed, backend e frontend' \
+		'  make test-e2e    Roda o Playwright (exige MongoDB em localhost:27017)' \
 		'  make lint        Roda go vet/golangci-lint, ESLint e vue-tsc' \
 		'  make fmt         Formata Go e frontend' \
+		'  make fmt-check   Verifica formatação sem alterar arquivos' \
+		'  make seed        Aplica os dados fictícios no banco de desenvolvimento' \
+		'  make seed-reset  Esvazia as coleções semeadas e reaplica os dados fictícios' \
+		'  make seed-check  Valida o seed.json sem acessar o MongoDB' \
 		'  make build       Compila backend e frontend' \
 		'  make up          Sobe MongoDB, API e web com Docker Compose' \
 		'  make up-offline  Compila o frontend no host e sobe sem baixar npm no Docker' \
@@ -44,7 +49,7 @@ dev-api:
 dev-web:
 	cd frontend && pnpm dev
 
-test: test-docs test-design test-api test-web
+test: test-docs test-design seed-check test-api test-web
 
 test-api:
 	cd backend && go test -race ./...
@@ -52,11 +57,23 @@ test-api:
 test-web:
 	cd frontend && pnpm test
 
+test-e2e:
+	cd frontend && pnpm test:e2e
+
 test-docs:
 	python3 -m unittest discover -s scripts -p 'test_check_docs.py'
 
 test-design:
 	python3 -m unittest discover -s scripts -p 'test_check_design_system.py'
+
+seed:
+	cd backend && go run ./scripts/seed
+
+seed-reset:
+	cd backend && go run ./scripts/seed -reset
+
+seed-check:
+	cd backend && go run ./scripts/seed -dry-run
 
 lint: lint-api lint-web
 
@@ -75,10 +92,19 @@ lint-web:
 fmt: fmt-api fmt-web
 
 fmt-api:
-	cd backend && gofmt -w ./cmd ./internal
+	cd backend && gofmt -w ./cmd ./internal ./scripts
 
 fmt-web:
 	cd frontend && pnpm format
+
+fmt-check: fmt-check-api fmt-check-web
+
+fmt-check-api:
+	@cd backend && test -z "$$(gofmt -l ./cmd ./internal ./scripts)" || \
+		(printf '%s\n' 'Go precisa de gofmt:'; gofmt -l ./cmd ./internal ./scripts; exit 1)
+
+fmt-check-web:
+	cd frontend && pnpm format:check
 
 docs-check:
 	python3 scripts/check_docs.py

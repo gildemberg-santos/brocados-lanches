@@ -1,8 +1,8 @@
 # Backlog — Brocados Lanches V1
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
-**Status:** planejado; nenhuma história de produto implementada.  
+**Atualizado em:** 20/11/2026  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); nenhuma história de produto implementada.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -144,16 +144,18 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-012 | Fixtures e seed de desenvolvimento | P0 | M | `brocados_dev` e `brocados_test` separados; reset idempotente; dados fictícios marcados |
 | US-013 | Harness E2E | P1 | M | Playwright sobe ambiente isolado e executa um smoke de cardápio |
 
+**Status em 20/11/2026:** US-010 e US-012 concluídos. US-013 com harness pronto e smoke da base em desktop/mobile; o smoke de cardápio entra junto com US-023. US-011 já está entregue no esqueleto (request ID, logs JSON e health checks); falta um teste dedicado de correlação e mascaramento de PII.
+
 **Tarefas:**
 
 - [x] Monorepo, Docker Compose, health checks e build offline.
 - [x] Testes iniciais de backend, frontend, docs e design system.
 - [x] Hook de pre-commit.
-- [ ] Configurar CI no provedor escolhido.
-- [ ] Criar script de seed/reset com teste.
-- [ ] Configurar Playwright no CI.
+- [x] Configurar CI no GitHub Actions (D-016).
+- [x] Criar script de seed/reset com teste.
+- [x] Configurar Playwright no CI.
 - [ ] Definir preview por PR.
-- [ ] Documentar variáveis e secrets de CI.
+- [x] Documentar variáveis e secrets de CI.
 
 ---
 
