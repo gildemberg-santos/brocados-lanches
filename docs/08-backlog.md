@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 e US-061 concluídas; Épico 7 com US-070, US-071 e US-072 concluídas (API; telas pendentes).  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 e US-061 concluídas; Épico 7 com US-070, US-071 e US-072 concluídas (API e painel).  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -307,9 +307,9 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-070 | Fila de pedidos | P0 | G | US-040, US-060 | **API concluída** — Lista/filtros/paginação; status e totais; testes |
-| US-071 | Detalhe do pedido | P0 | M | US-070 | **API concluída** — Snapshot, cliente, endereço, pagamento e histórico; testes |
-| US-072 | Transições de status | P0 | G | US-071 | **API concluída** — Matriz válida; `409` inválido; motivo de cancelamento; auditoria |
+| US-070 | Fila de pedidos | P0 | G | US-040, US-060 | **Concluída** — API com lista/filtros/paginação e painel com busca, filtros, paginação e PII mascarado |
+| US-071 | Detalhe do pedido | P0 | M | US-070 | **Concluída** — API e tela com snapshot, cliente, endereço, pagamento e histórico |
+| US-072 | Transições de status | P0 | G | US-071 | **Concluída** — Matriz válida, `409` inválido, motivo de cancelamento, auditoria e ações contextuais no painel |
 | US-073 | Auditoria | P1 | M | US-072 | Owner consulta mutações sem PII; filtros; testes |
 | US-074 | Atualização em tempo real | P2 | M | US-070 | Fila atualiza sem recarregar ou polling curto; opcional |
 
@@ -319,7 +319,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Mascarar PII na lista; detalhe autorizado.
 - [x] Implementar máquina de estados no domínio.
 - [x] Gravar `statusHistory`, timestamps e auditoria.
-- [ ] Criar ações contextuais por status e as telas admin de fila/detalhe.
+- [x] Criar ações contextuais por status e as telas admin de fila/detalhe.
 - [x] Testar todas as transições e concorrência.
 - [ ] Criar tela de auditoria somente leitura.
 
@@ -359,7 +359,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 |---|---|---|---|---|---|
 | US-090 | Testes de backend | P0 | G | E2–E7 | Service, handler e repository com Mongo real; `-race` |
 | US-091 | Testes de frontend | P0 | G | E2–E7 | Stores, componentes e services; Vitest |
-| US-092 | E2E crítico | P0 | G | US-040, US-072 | Cardápio → pedido → admin → status em mobile/desktop |
+| US-092 | E2E crítico | P0 | G | US-040, US-072 | Parcial: pedido → fila → detalhe → status no painel; falta o fluxo completo cardápio → checkout em mobile/desktop |
 | US-093 | Segurança e privacidade | P0 | M | US-060, US-040 | Rate limit, CSRF, auth, enumeração e PII em logs |
 | US-094 | Performance e carga | P1 | M | E2–E7 | Orçamentos de `03-prd.md` medidos; gargalos corrigidos |
 

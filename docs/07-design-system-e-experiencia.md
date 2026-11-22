@@ -176,9 +176,10 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 | `AddonForm` | Nome, slug, preço, ativo |
 | `ZoneForm` | Nome, slug, taxa, ativo |
 | `StoreSettingsForm` | Kill switch, horários, contato, prazo |
-| `OrderFilters` | Status, data, fulfillment, busca |
-| `OrderDetailPanel` | Snapshot, cliente, endereço, pagamento, histórico |
-| `StatusTransitionActions` | Ações válidas para o status atual; confirmação |
+| `AdminOrderFilters` | Status, data, fulfillment, busca — **implementado em US-070** |
+| `OrderStatusBadge` | Status na fila e no detalhe — **implementado em US-070** |
+| `AdminOrderDetailView` | Snapshot, cliente, endereço, pagamento, histórico — **implementado em US-071** |
+| `OrderStatusActions` | Ações válidas para o status atual; confirmação de cancelamento — **implementado em US-072** |
 | `AuditLogTable` | Ator, ação, entidade, data; sem PII |
 | `UserForm` | Nome, e-mail, papel, ativo |
 
@@ -362,6 +363,8 @@ Regras:
 - Detalhe com snapshot, endereço, pagamento e histórico.
 - Ações de transição válidas.
 - Cancelamento com motivo.
+
+Implementado em `frontend/src/views/admin/AdminOrdersView.vue` e `frontend/src/views/admin/AdminOrderDetailView.vue` (US-070 a US-072). As datas dos filtros usam UTC; a exibição usa `America/Fortaleza`.
 
 ### 6.9 Usuários — `/admin/usuarios` (owner)
 

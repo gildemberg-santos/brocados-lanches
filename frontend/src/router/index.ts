@@ -55,8 +55,14 @@ const adminRoutes: RouteRecordRaw = {
     {
       path: 'pedidos',
       name: 'admin-orders',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminOrdersView.vue'),
       meta: { title: 'Pedidos' },
+    },
+    {
+      path: 'pedidos/:id',
+      name: 'admin-order-detail',
+      component: () => import('../views/admin/AdminOrderDetailView.vue'),
+      meta: { title: 'Detalhe do pedido' },
     },
     {
       path: 'produtos',

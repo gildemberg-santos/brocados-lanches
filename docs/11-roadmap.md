@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060, US-061, US-022, US-065 (API) e US-070 a US-072 (API) concluídas. Informações públicas da loja (US-025) e telas do painel para catálogo, loja, fila e transições pendentes.  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060, US-061, US-022, US-065 (API) e US-070 a US-072 (API e painel) concluídas. Informações públicas da loja (US-025) e telas do painel para catálogo e loja pendentes.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -134,7 +134,7 @@
 - ~~API de detalhe do pedido~~ (US-071 concluída);
 - ~~API de transições de status~~ (US-072 concluída);
 - telas de produtos, categorias, adicionais, zonas e loja (US-062 a US-065 no front);
-- telas de fila, detalhe e ações contextuais no painel;
+- ~~telas de fila, detalhe e ações contextuais no painel~~ (US-070 a US-072 no front concluídas);
 - consulta de auditoria;
 - usuários.
 

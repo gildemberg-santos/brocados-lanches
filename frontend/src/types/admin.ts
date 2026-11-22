@@ -6,3 +6,15 @@ export interface AdminUser {
   email: string
   role: AdminRole
 }
+
+export interface AdminPageMeta {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
+export interface AdminPage<T> {
+  data: T[]
+  meta: AdminPageMeta
+}

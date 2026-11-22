@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação, shell/guard do painel e APIs administrativas de catálogo, configuração da loja, fila, detalhe e transição de status de pedidos entregues; demais telas administrativas ainda não implementadas.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação, shell/guard do painel, APIs administrativas de catálogo, configuração da loja, fila, detalhe e transição de status, e telas de fila/detalhe com ações de status entregues; demais telas administrativas ainda não implementadas.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -53,18 +53,20 @@ O esqueleto da Fase 1 já inclui:
 - shell e guard do painel em `/admin`: login, rotas lazy, `me` no servidor, menu por papel (`owner`/`operator`), redirecionamento `401` para login e tela `403`; o proxy de desenvolvimento alinha `Origin`/`Host` à API;
 - API administrativa de catálogo em `/api/v1/admin`: `GET/POST/PATCH` de categorias, produtos, adicionais e zonas com paginação, filtros, allowlist de ordenação, validação, autorização por papel, CSRF e auditoria;
 - configuração da loja em `GET/PATCH /api/v1/admin/store`: kill switch, horários e contato validados no servidor, com auditoria sem dados pessoais;
+- API administrativa de pedidos em `/api/v1/admin/orders`: fila com PII mascarada, detalhe completo e transições com `409`, `statusHistory` e auditoria;
+- fila e detalhe no painel em `/admin/pedidos`: busca, filtros, paginação, histórico e ações contextuais de status com confirmação de cancelamento;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
 - carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e totais estimados pela menor taxa ativa;
 - checkout com entrega/retirada, zona, endereço, pagamento, troco e validação por campo; confirmação que limpa o carrinho somente após `201` e permite reenviar/copiar o link do WhatsApp;
 - estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo, carrinho, checkout e pedido;
-- componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText` e outros) e services/stores tipados;
+- componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText`, `AdminOrderFilters`, `OrderStatusBadge`, `OrderStatusActions` e outros) e services/stores tipados;
 - tokens do design system importados diretamente de `design-system/tokens.css`;
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
 - testes de frontend com Vitest + Vue Test Utils;
 - seed de desenvolvimento e teste a partir de `design-system/seed.json`, com valores em centavos e marcação de dado fictício;
-- harness E2E com Playwright: smoke da home, navegação para o cardápio e acesso anônimo/credenciais inválidas ao painel em desktop e mobile, com API isolada em `brocados_test`;
+- harness E2E com Playwright: smoke da home, navegação para o cardápio, acesso anônimo/credenciais inválidas ao painel e pedido → fila → detalhe → mudança de status em desktop e mobile, com API isolada em `brocados_test`, seed fictício aplicado pelo `make test-e2e` e um worker por vez (o login admin rotaciona as sessões do usuário);
 - CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E;
 - Dockerfiles de API e web, Nginx same-origin e `compose.yaml` com MongoDB;
 - validação de documentação e design system no gate de commit.
@@ -330,9 +332,9 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 ## 7. Próximos passos
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
-2. Cobrir no E2E o fluxo completo de checkout, pedido persistido e confirmação (Épicos 3 e 4).
-3. Cobrir no E2E o login admin com usuário semeado e o acesso por papel às rotas protegidas (Épico 6).
-4. Implementar o CRUD administrativo, a fila e as transições (Épicos 6 e 7).
+2. Cobrir no E2E o fluxo completo cardápio → personalização → carrinho → checkout → confirmação (Épicos 3 e 4).
+3. Cobrir no E2E o acesso por papel às rotas protegidas com `operator` (Épico 6).
+4. Implementar as telas administrativas de catálogo, loja, usuários e auditoria (Épicos 6 e 7).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 
 ---

@@ -20,7 +20,7 @@ help:
 		'  make dev-api     Sobe apenas a API' \
 		'  make dev-web     Sobe apenas o frontend' \
 		'  make test        Roda documentação, design system, seed, backend e frontend' \
-		'  make test-e2e    Roda o Playwright (exige MongoDB em localhost:27017)' \
+		'  make test-e2e    Semena brocados_test e roda o Playwright (exige MongoDB)' \
 		'  make lint        Roda go vet/golangci-lint, ESLint e vue-tsc' \
 		'  make fmt         Formata Go e frontend' \
 		'  make fmt-check   Verifica formatação sem alterar arquivos' \
@@ -58,6 +58,7 @@ test-web:
 	cd frontend && pnpm test
 
 test-e2e:
+	cd backend && APP_ENV=test MONGO_DB=brocados_test MONGO_URI=mongodb://127.0.0.1:27017 go run ./scripts/seed
 	cd frontend && pnpm test:e2e
 
 test-docs:

@@ -83,3 +83,97 @@ export interface TrackedOrder {
   updatedAt: string
   estimatedTime?: string
 }
+
+export interface AdminOrderListItem {
+  id: string
+  orderNumber: number
+  publicId: string
+  status: string
+  fulfillment: Fulfillment
+  customerName: string
+  phone: string
+  itemCount: number
+  subtotalCents: number
+  deliveryFeeCents: number
+  totalCents: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminOrderItemOption {
+  groupId?: string
+  groupName?: string
+  optionId: string
+  name: string
+  kind: string
+  priceCents: number
+}
+
+export interface AdminOrderItem {
+  productId: string
+  name: string
+  unitPriceCents: number
+  quantity: number
+  options: AdminOrderItemOption[]
+  note?: string
+  lineTotalCents: number
+}
+
+export interface AdminOrderZone {
+  id: string
+  name: string
+  feeCents: number
+}
+
+export interface AdminOrderAddress extends OrderAddress {
+  reference?: string
+}
+
+export interface AdminOrderStatusChange {
+  status: string
+  at: string
+  actorId?: string
+}
+
+export interface AdminOrderDetail {
+  id: string
+  orderNumber: number
+  publicId: string
+  status: string
+  fulfillment: Fulfillment
+  customer: OrderCustomer
+  address?: AdminOrderAddress
+  zone?: AdminOrderZone
+  items: AdminOrderItem[]
+  subtotalCents: number
+  deliveryFeeCents: number
+  totalCents: number
+  payment: {
+    method: PaymentMethod
+    changeForCents?: number
+  }
+  note?: string
+  statusHistory: AdminOrderStatusChange[]
+  confirmedAt?: string
+  cancelledAt?: string
+  cancelReason?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminOrderListQuery {
+  page?: number
+  pageSize?: number
+  status?: string
+  fulfillment?: Fulfillment
+  from?: string
+  to?: string
+  q?: string
+  sort?: 'createdAt' | 'number' | 'status' | 'totalCents'
+  order?: 'asc' | 'desc'
+}
+
+export interface AdminOrderStatusRequest {
+  status: string
+  reason?: string
+}

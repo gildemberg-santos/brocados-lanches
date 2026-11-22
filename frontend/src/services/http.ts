@@ -123,3 +123,26 @@ export async function postEmpty(path: string): Promise<void> {
     throw await parseError(response)
   }
 }
+
+export async function patch<T>(path: string, value: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'PATCH',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(value),
+  })
+
+  if (!response.ok) {
+    throw await parseError(response)
+  }
+
+  return (await response.json()) as T
+}
+
+export async function patchData<T>(path: string, value: unknown): Promise<T> {
+  const body = await patch<{ data: T }>(path, value)
+  return body.data
+}

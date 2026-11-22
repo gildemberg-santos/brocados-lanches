@@ -10,7 +10,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // O login admin rotaciona todas as sessões do usuário; testes paralelos com a
+  // mesma conta se invalidam. Por isso o E2E roda com um worker por vez.
+  workers: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: WEB_URL,
@@ -51,6 +53,10 @@ export default defineConfig({
         PORT: String(API_PORT),
         MONGO_URI: process.env.MONGO_URI ?? 'mongodb://127.0.0.1:27017',
         MONGO_DB: process.env.MONGO_DB ?? 'brocados_test',
+        // Usuário fictício do E2E: o bootstrap só cria o owner quando a coleção está vazia.
+        ADMIN_BOOTSTRAP_NAME: 'Dono de Teste',
+        ADMIN_BOOTSTRAP_EMAIL: 'dono@teste.local',
+        ADMIN_BOOTSTRAP_PASSWORD: 'senha-de-teste-12345',
       },
     },
   ],
