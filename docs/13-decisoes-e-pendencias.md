@@ -146,3 +146,5 @@ Elas entram em P2 ou no roadmap seguinte.
 | 22/11/2026 | US-023 e US-024 concluídas: home, cardápio, busca/filtros, detalhe e personalização com opções, adicionais e total estimado; testes unitários e smoke E2E de navegação |
 | 22/11/2026 | US-032 concluída: cotação server-side sem persistir, com `domain.BuildQuote` como única fonte de cálculo |
 | 22/11/2026 | US-033/US-034 e US-040 a US-043 concluídas: checkout, pedido persistido e idempotente, handoff WhatsApp, confirmação com limpeza do carrinho e acompanhamento público; D-019 e D-020 registrados |
+| 22/11/2026 | US-060, US-061, US-022 e US-065 concluídas: autenticação, shell/guard do painel, API CRUD de catálogo e API da loja |
+| 22/11/2026 | US-070 a US-072 (API) concluídas: fila com PII mascarada, detalhe e transições com CAS/auditoria; D-021 e D-022 registrados |
