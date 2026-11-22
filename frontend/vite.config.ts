@@ -2,6 +2,14 @@ import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
+// No desenvolvimento o Vite roda em outra porta da API. O proxy alinha o
+// Origin ao Host repassado para não falsificar a proteção CSRF do backend.
+const apiProxy = {
+  target: 'http://127.0.0.1:8080',
+  changeOrigin: true,
+  headers: { Origin: 'http://127.0.0.1:8080' },
+}
+
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
   server: {
@@ -11,9 +19,9 @@ export default defineConfig({
       allow: ['..'],
     },
     proxy: {
-      '/api': 'http://localhost:8080',
-      '/healthz': 'http://localhost:8080',
-      '/readyz': 'http://localhost:8080',
+      '/api': apiProxy,
+      '/healthz': apiProxy,
+      '/readyz': apiProxy,
     },
   },
   preview: {

@@ -29,6 +29,7 @@ export async function get<T>(path: string): Promise<T> {
     headers: {
       Accept: 'application/json',
     },
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -106,4 +107,19 @@ export async function postData<T>(
 ): Promise<T> {
   const body = await post<{ data: T }>(path, value, options)
   return body.data
+}
+
+/** POST sem corpo, para endpoints que respondem 204 (ex.: logout). */
+export async function postEmpty(path: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+    },
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw await parseError(response)
+  }
 }

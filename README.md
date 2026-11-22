@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação administrativa entregues; demais telas e APIs do painel ainda não implementadas.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação e shell/guard do painel entregues; demais telas e APIs administrativas ainda não implementadas.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -50,6 +50,7 @@ O esqueleto da Fase 1 já inclui:
 - criação de pedido em `POST /api/v1/orders`, com idempotência, snapshot congelado, número sequencial, `publicId` opaco e link `wa.me` gerado após a persistência;
 - acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`;
 - autenticação administrativa em `/api/v1/admin/auth`: login/logout/me com Argon2id, sessão opaca hasheada em cookie `HttpOnly`, rotação, expiração ociosa/absoluta, CSRF por origem e rate limit de login; bootstrap do primeiro `owner` por `ADMIN_BOOTSTRAP_*`;
+- shell e guard do painel em `/admin`: login, rotas lazy, `me` no servidor, menu por papel (`owner`/`operator`), redirecionamento `401` para login e tela `403`; o proxy de desenvolvimento alinha `Origin`/`Host` à API;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
@@ -61,7 +62,7 @@ O esqueleto da Fase 1 já inclui:
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
 - testes de frontend com Vitest + Vue Test Utils;
 - seed de desenvolvimento e teste a partir de `design-system/seed.json`, com valores em centavos e marcação de dado fictício;
-- harness E2E com Playwright, smoke da home e navegação para o cardápio em desktop e mobile, com API isolada em `brocados_test`;
+- harness E2E com Playwright: smoke da home, navegação para o cardápio e acesso anônimo/credenciais inválidas ao painel em desktop e mobile, com API isolada em `brocados_test`;
 - CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E;
 - Dockerfiles de API e web, Nginx same-origin e `compose.yaml` com MongoDB;
 - validação de documentação e design system no gate de commit.
@@ -328,8 +329,8 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
 2. Cobrir no E2E o fluxo completo de checkout, pedido persistido e confirmação (Épicos 3 e 4).
-3. Cobrir no E2E o login admin e o acesso anônimo/por papel às rotas protegidas (Épico 6).
-4. Implementar o shell/guard do admin (US-061), o CRUD administrativo, a fila e as transições (Épicos 6 e 7).
+3. Cobrir no E2E o login admin com usuário semeado e o acesso por papel às rotas protegidas (Épico 6).
+4. Implementar o CRUD administrativo, a fila e as transições (Épicos 6 e 7).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 
 ---

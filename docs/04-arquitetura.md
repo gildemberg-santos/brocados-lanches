@@ -225,7 +225,7 @@ O carrinho guarda uma versão de schema. Se a versão mudar, migra ou limpa com 
 
 ### 5.5 Guard de rota
 
-O guard consulta `GET /api/v1/admin/auth/me` e redireciona para login se não houver sessão. Ele é conveniência de UX; a autorização real é sempre no servidor.
+O guard consulta `GET /api/v1/admin/auth/me` através da store `useAdminAuthStore` (uma vez por carregamento, com recarga explícita). Sem sessão (`401`), redireciona para `/admin/login` mantendo o destino em `?redirect=`. Se a rota exigir papel que o usuário não possui, redireciona para `/admin/sem-acesso` (`403`). O cliente HTTP usa `credentials: 'include'`; no desenvolvimento o proxy do Vite alinha `Origin` ao `Host` repassado à API para que a proteção CSRF não bloqueie requisições locais. O guard é conveniência de UX; a autorização real é sempre no servidor.
 
 ---
 

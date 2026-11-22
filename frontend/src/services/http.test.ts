@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, get, getData, post, postData } from './http'
+import { ApiError, get, getData, post, postData, postEmpty } from './http'
 
 interface MockResponse {
   ok: boolean
@@ -40,6 +40,7 @@ describe('http', () => {
       headers: {
         Accept: 'application/json',
       },
+      credentials: 'include',
     })
   })
 
@@ -118,6 +119,34 @@ describe('http', () => {
       name: 'ApiError',
       status: 409,
       code: 'CONFLICT',
+    })
+  })
+
+  it('posts without a body and accepts 204', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(postEmpty('/api/v1/admin/auth/logout')).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/auth/logout', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+      },
+      credentials: 'include',
+    })
+  })
+
+  it('maps empty POST errors to ApiError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(jsonResponse({ error: { code: 'FORBIDDEN', message: 'Negado.' } }, 403)),
+    )
+
+    await expect(postEmpty('/api/v1/admin/auth/logout')).rejects.toMatchObject({
+      status: 403,
+      code: 'FORBIDDEN',
     })
   })
 })

@@ -21,6 +21,7 @@ async function mountApp() {
       { path: '/', component: StubView },
       { path: '/cardapio', component: StubView },
       { path: '/carrinho', component: StubView },
+      { path: '/admin', component: StubView, meta: { admin: true } },
     ],
   })
 
@@ -45,6 +46,26 @@ describe('App', () => {
   it('offers a skip link to the main content', async () => {
     const wrapper = await mountApp()
 
+    expect(wrapper.get('.skip-link').attributes('href')).toBe('#conteudo')
+  })
+
+  it('hides the public header on admin routes', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: StubView },
+        { path: '/admin', component: StubView, meta: { admin: true } },
+      ],
+    })
+    await router.push('/admin')
+    await router.isReady()
+
+    const wrapper = mount(App, { global: { plugins: [pinia, router] } })
+
+    expect(wrapper.find('.site-header').exists()).toBe(false)
     expect(wrapper.get('.skip-link').attributes('href')).toBe('#conteudo')
   })
 })

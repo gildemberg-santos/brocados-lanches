@@ -42,6 +42,7 @@
 | D-018 | 22/11/2026 | No carrinho, a taxa estimada é a menor taxa ativa até a escolha da zona no checkout | Decidido | Evita taxa inventada e deixa claro que o total definitivo é server-side | `07-design-system-e-experiencia.md` §5.4, `08-backlog.md` §7 |
 | D-019 | 22/11/2026 | Pedido gravado com snapshot, número sequencial, `publicId` opaco e chave idempotente; replay devolve `200` | Decidido e implementado | Nenhum duplo pedido; histórico não depende do catálogo atual | `06-contrato-api.md` §7, `08-backlog.md` §8 |
 | D-020 | 22/11/2026 | O link `wa.me` sai na criação e fica no `sessionStorage` por pedido para reenvio na mesma sessão; não é devolvido no acompanhamento | Decidido e implementado | Handoff recuperável sem expor PII na rota pública | `06-contrato-api.md` §7 e §8, `07-design-system-e-experiencia.md` §5.6 |
+| D-021 | 22/11/2026 | O guard do painel é apenas UX (`401` → login com `redirect`, `403` → `/admin/sem-acesso`); a autorização real continua no servidor. No desenvolvimento o proxy do Vite alinha `Origin` ao `Host` da API para não falsificar o CSRF | Decidido e implementado | Painel navegável em dev/produção sem enfraquecer a proteção | `04-arquitetura.md` §5.5, `frontend/vite.config.ts`, `08-backlog.md` §10 |
 
 ### 2.1 Contrato refletido no AGENTS
 

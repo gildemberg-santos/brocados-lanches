@@ -167,7 +167,7 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 
 | Componente | Uso |
 |---|---|
-| `AdminShell` | Sidebar desktop, bottom nav mobile, header |
+| `AdminShell` | Sidebar desktop, bottom nav mobile, header — **implementado em US-061** |
 | `AdminPageHeader` | Título, ação primária, breadcrumb |
 | `DataTable` | Produtos, pedidos, usuários, auditoria; paginação |
 | `TableEmpty` | Estado vazio com CTA |
@@ -308,7 +308,8 @@ Regras:
 - Erro genérico.
 - Loading e bloqueio de envio.
 - Sem “lembrar-me” na V1.
-- Após login, redirecionar para `/admin`.
+- Após login, redirecionar para `/admin` ou para o destino em `?redirect=`, desde que comece com `/admin`.
+- Implementado em `frontend/src/views/admin/AdminLoginView.vue` (US-061).
 
 ### 6.2 Dashboard — `/admin`
 

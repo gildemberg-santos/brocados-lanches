@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026; testes de integração do catálogo no CI e testes de service/handler da API pública em 21/11/2026; testes de home, cardápio e personalização em 22/11/2026.  
+**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026; testes de integração do catálogo no CI e testes de service/handler da API pública em 21/11/2026; testes de home, cardápio, personalização, autenticação e shell/guard do admin em 22/11/2026.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `06-contrato-api.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`.
 
 ---
@@ -192,9 +192,10 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 
 - **Dado** visitante sem sessão.
 - **Quando** acessa rota admin ou API admin.
-- **Então** `401`; nenhuma escrita ocorre.
+- **Então** `401`; nenhuma escrita ocorre e o frontend redireciona para `/admin/login` com `redirect`.
 - **Dado** operador tentando rota de owner.
-- **Então** `403`.
+- **Então** `403` na API; no frontend o guard leva a `/admin/sem-acesso`.
+- Coberto por testes de guard/store e pelo E2E anônimo (US-060 e US-061).
 
 ### 5.16 PII em log
 
@@ -272,7 +273,9 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 - Personalização: obrigatoriedade, mínimo/máximo, adicionais, observação, preço estimado, esgotado e produto não encontrado.
 - Carrinho: adicionar, somar quantidade, remover, limpar, persistir, migrar versão.
 - Checkout: delivery/retirada, zona, troco, cotação, erro.
-- Admin auth: login, logout, 401, papel.
+- Admin auth: login, logout, 401, papel, bootstrap de sessão único, recarga forçada e mensagens de erro por código.
+- Guard do admin: visitante redirecionado com `redirect`, operador bloqueado em rota de owner, owner liberado, login redirecionado quando já autenticado.
+- Shell do admin: menu por papel, atalhos mobile e logout.
 - Filtros e paginação.
 
 ### 7.2 Componentes
@@ -342,6 +345,12 @@ pnpm lint
 - Sem dependência de produção.
 - Evidência: vídeo/trace no CI em caso de falha.
 - Teste não depende de ordem; cada um prepara seu estado.
+
+### 8.4 Cobertura implementada
+
+- Smoke da home, navegação para o cardápio e health/readiness pelo proxy.
+- Acesso anônimo a rota protegida redirecionado para `/admin/login` com `redirect`, e credenciais inválidas exibindo mensagem genérica (US-061).
+- O fluxo ponta a ponta de pedido e as transições administrativas seguem pendentes.
 
 ---
 
