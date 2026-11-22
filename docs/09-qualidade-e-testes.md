@@ -467,7 +467,9 @@ Falha em gate bloqueia merge/lançamento; não usar `--no-verify` nem desativar 
 | US-042 | Geração de URL + falha de handoff no frontend |
 | US-050 | Handler público sem PII |
 | US-060 | Auth handler + cookie + rate limit |
-| US-072 | Matriz de status no domínio + handler |
+| US-070 | Filtros/paginação no service + repository + handler; PII mascarada |
+| US-071 | Detalhe no repository + handler com snapshot completo |
+| US-072 | Matriz de status no domínio + CAS/auditoria no repository + handler |
 | US-082 | axe + teste de teclado |
 | US-093 | Revisão de log + testes de segurança |
 

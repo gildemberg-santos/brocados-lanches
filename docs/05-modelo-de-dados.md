@@ -214,7 +214,11 @@ Adicionais são reutilizáveis; o vínculo com o produto é `products.addonIds`.
 | `confirmedAt` | datetime | não | |
 | `cancelledAt` | datetime | não | |
 | `cancelReason` | string | não | |
-| `statusHistory` | array | não | `{ status, at, actorId }` |
+| `statusHistory` | array | não | `{ status, at, actorId }`, um registro por transição |
+
+A fila administrativa usa os filtros `status`, `fulfillment`, `from`/`to` (intervalo de `createdAt`) e `q` (dígitos de número/telefone), com ordenação permitida apenas em `createdAt`, `number`, `status` e `totalCents`. O detalhe é buscado pelo `_id` hexadecimal; o `publicId` continua sendo o único acesso público.
+
+A transição de status usa compare-and-set em `status` e grava, na mesma operação quando o MongoDB suporta transação, o documento do pedido e um registro em `audit_logs` com `entity: "orders"`, snapshots mínimos (`status`, `fulfillment`, `totalCents`) e `actorId`. `confirmedAt` e `cancelledAt` são preenchidos nas transições correspondentes; `cancelReason` só existe em cancelamentos.
 
 `customer`:
 

@@ -99,6 +99,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	adminOrderService, err := service.NewAdminOrderService(orderRepository)
+	if err != nil {
+		return err
+	}
 
 	adminRepository, err := repository.NewAdminRepository(database)
 	if err != nil {
@@ -140,6 +144,7 @@ func run() error {
 			AdminAuth:    adminAuthService,
 			AdminCatalog: adminCatalogService,
 			AdminStore:   adminStoreService,
+			AdminOrders:  adminOrderService,
 			AdminCookie: httpapi.AdminCookieConfig{
 				Name:   cfg.AdminCookieNameEffective(),
 				Secure: cfg.AdminCookieSecure,

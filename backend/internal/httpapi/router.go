@@ -27,6 +27,7 @@ type Dependencies struct {
 	AdminCookie  AdminCookieConfig
 	AdminCatalog AdminCatalogService
 	AdminStore   AdminStoreService
+	AdminOrders  AdminOrderService
 	LoginLimiter *ratelimit.Limiter
 	Logger       *slog.Logger
 }
@@ -109,6 +110,10 @@ func NewRouter(deps Dependencies) http.Handler {
 
 				protected.Get("/store", handleAdminGetStore(deps.AdminStore, logger))
 				protected.Patch("/store", handleAdminUpdateStore(deps.AdminStore, logger))
+
+				protected.Get("/orders", handleAdminListOrders(deps.AdminOrders, logger))
+				protected.Get("/orders/{id}", handleAdminGetOrder(deps.AdminOrders, logger))
+				protected.Patch("/orders/{id}/status", handleAdminUpdateOrderStatus(deps.AdminOrders, logger))
 			})
 		})
 	}

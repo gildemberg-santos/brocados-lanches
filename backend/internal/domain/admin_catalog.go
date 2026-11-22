@@ -40,6 +40,7 @@ const (
 	AuditEntityAddon        = "addons"
 	AuditEntityDeliveryZone = "delivery_zones"
 	AuditEntityStore        = "store_settings"
+	AuditEntityOrder        = "orders"
 )
 
 // CategoryPatch descreve uma atualização parcial de categoria.

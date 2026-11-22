@@ -101,6 +101,9 @@ type Order struct {
 	IdempotencyKey   string
 	RequestHash      string
 	StatusHistory    []OrderStatusChange
+	ConfirmedAt      *time.Time
+	CancelledAt      *time.Time
+	CancelReason     string
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }

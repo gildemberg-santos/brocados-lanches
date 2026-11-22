@@ -540,11 +540,11 @@ Listagem:
 GET /api/v1/admin/orders?status=pending&from=2026-11-18T00:00:00Z&to=2026-11-19T00:00:00Z&page=1&pageSize=20&sort=createdAt:desc
 ```
 
-- `pageSize` máximo 100.
-- Filtros: `status`, `from`, `to`, `fulfillment`, `q` (número/telefone mascarado).
-- Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`.
-- Detalhe inclui snapshot, cliente, endereço, pagamento e histórico.
-- Dados pessoais só para admin autenticado; não vão para log.
+- Parâmetros: `page` (padrão `1`), `pageSize` (padrão `20`, máximo `100`), `sort` (padrão `createdAt`) e `order` (`asc` ou `desc`, padrão `desc`).
+- Filtros: `status`, `from`, `to` (RFC 3339 UTC), `fulfillment` (`delivery`/`pickup`) e `q` (número ou dígitos do telefone; aceita o telefone mascarado da fila).
+- Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`. Qualquer outro campo retorna `422 VALIDATION_ERROR`.
+- A fila devolve `customerName` com iniciais e `phone` com os últimos quatro dígitos (`****8708`); o detalhe completo exige sessão e inclui snapshot, cliente, endereço, zona, pagamento, itens e `statusHistory`.
+- Dados pessoais só para admin autenticado; não vão para log nem para auditoria.
 
 Transição:
 
@@ -563,9 +563,11 @@ Cancelamento:
 }
 ```
 
-- Transição inválida: `409 CONFLICT`.
-- `reason` obrigatório em cancelamento.
-- Cada transição gera auditoria e `statusHistory`.
+- A resposta de `PATCH` é o detalhe atualizado em `{ "data": ... }`.
+- Transição inválida (inclusive estado final, mesmo status e desfecho incompatível com `fulfillment`): `409 CONFLICT`.
+- `reason` é obrigatório em `cancelled`, com no máximo 280 caracteres; o texto é operacional e não deve conter dados do cliente.
+- Cada transição atualiza `status`, `updatedAt`, `statusHistory` e, quando aplicável, `confirmedAt`/`cancelledAt` + `cancelReason`. A gravação usa compare-and-set no status lido: uma transição concorrente retorna `409` em vez de sobrescrever a primeira.
+- Auditoria registra somente `status`, `fulfillment` e `totalCents` antes/depois, com `actorId`, `action: update`, `entity: orders` e `entityId` (ID hexadecimal do pedido).
 
 ---
 

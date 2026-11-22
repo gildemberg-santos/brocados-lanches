@@ -39,6 +39,9 @@ type orderDocument struct {
 	IdempotencyKey   string                 `bson:"idempotencyKey"`
 	RequestHash      string                 `bson:"requestHash"`
 	StatusHistory    []statusChangeDocument `bson:"statusHistory"`
+	ConfirmedAt      *time.Time             `bson:"confirmedAt,omitempty"`
+	CancelledAt      *time.Time             `bson:"cancelledAt,omitempty"`
+	CancelReason     string                 `bson:"cancelReason,omitempty"`
 	CreatedAt        time.Time              `bson:"createdAt"`
 	UpdatedAt        time.Time              `bson:"updatedAt"`
 }
@@ -337,6 +340,15 @@ func newOrderDocument(order domain.Order, number int64) (orderDocument, error) {
 			ActorID: change.ActorID,
 		})
 	}
+	if order.ConfirmedAt != nil {
+		confirmedAt := order.ConfirmedAt.UTC()
+		document.ConfirmedAt = &confirmedAt
+	}
+	if order.CancelledAt != nil {
+		cancelledAt := order.CancelledAt.UTC()
+		document.CancelledAt = &cancelledAt
+	}
+	document.CancelReason = order.CancelReason
 
 	return document, nil
 }
@@ -411,5 +423,14 @@ func (d orderDocument) toDomain() domain.Order {
 			ActorID: change.ActorID,
 		})
 	}
+	if d.ConfirmedAt != nil {
+		confirmedAt := d.ConfirmedAt.UTC()
+		order.ConfirmedAt = &confirmedAt
+	}
+	if d.CancelledAt != nil {
+		cancelledAt := d.CancelledAt.UTC()
+		order.CancelledAt = &cancelledAt
+	}
+	order.CancelReason = d.CancelReason
 	return order
 }

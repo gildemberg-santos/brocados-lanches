@@ -130,9 +130,11 @@
 - ~~shell e guard~~ (US-061 concluída);
 - ~~API CRUD de catálogo~~ (US-022 concluída);
 - ~~API de configuração da loja~~ (US-065 concluída);
+- ~~API da fila de pedidos~~ (US-070 concluída);
+- ~~API de detalhe do pedido~~ (US-071 concluída);
+- ~~API de transições de status~~ (US-072 concluída);
 - telas de produtos, categorias, adicionais, zonas e loja (US-062 a US-065 no front);
-- fila de pedidos;
-- detalhe e transições;
+- telas de fila, detalhe e ações contextuais no painel;
 - consulta de auditoria;
 - usuários.
 
