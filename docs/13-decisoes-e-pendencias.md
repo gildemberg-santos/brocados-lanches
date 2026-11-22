@@ -136,3 +136,4 @@ Elas entram em P2 ou no roadmap seguinte.
 | 20/11/2026 | D-016 (GitHub Actions); P-015 resolvido; decisão de seed registrada; §2.1 verificada sem divergência |
 | 21/11/2026 | US-020 concluída: domínio, validação, repositórios e índices idempotentes de catálogo; job Backend do CI passa a rodar testes de integração com MongoDB 8 |
 | 21/11/2026 | US-021 concluída: API pública de catálogo com `GET /menu` e `GET /delivery-zones`, filtros de ativos/disponibilidade, envelope de erro e testes de service/handler |
+| 22/11/2026 | US-023 concluída: home, cardápio, busca/filtros, grid, esgotado, estados e testes unitários; smoke E2E de navegação |

@@ -1,8 +1,8 @@
 # Backlog — Brocados Lanches V1
 
 **Versão:** 1.1  
-**Atualizado em:** 21/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020 e US-021 concluídas e US-023 próxima; nenhuma interface de produto implementada.  
+**Atualizado em:** 22/11/2026  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021 e US-023 concluídas; US-024 e US-025 próximas.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -144,7 +144,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-012 | Fixtures e seed de desenvolvimento | P0 | M | `brocados_dev` e `brocados_test` separados; reset idempotente; dados fictícios marcados |
 | US-013 | Harness E2E | P1 | M | Playwright sobe ambiente isolado e executa um smoke de cardápio |
 
-**Status em 20/11/2026:** US-010 e US-012 concluídos. US-013 com harness pronto e smoke da base em desktop/mobile; o smoke de cardápio entra junto com US-023. US-011 já está entregue no esqueleto (request ID, logs JSON e health checks); falta um teste dedicado de correlação e mascaramento de PII.
+**Status em 22/11/2026:** US-010 e US-012 concluídos. US-013 com harness pronto e smoke da home + navegação para o cardápio em desktop/mobile. US-011 já está entregue no esqueleto (request ID, logs JSON e health checks); falta um teste dedicado de correlação e mascaramento de PII.
 
 **Tarefas:**
 
@@ -171,7 +171,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-024 | Detalhe e personalização | P0 | G | US-021 | Opções obrigatórias, min/máx, adicionais e preço; testes |
 | US-025 | Informações da loja | P1 | M | US-021 | Status, horários, endereço, contato e prazo; estados |
 
-**Status em 21/11/2026:** US-020 concluída (domínio, validação, repositórios, índices idempotentes e testes de integração com MongoDB real). US-021 concluída (`GET /menu` e `GET /delivery-zones`, filtros e testes de service/handler). US-023 a US-025 planejadas.
+**Status em 22/11/2026:** US-020 concluída (domínio, validação, repositórios, índices idempotentes e testes de integração com MongoDB real). US-021 concluída (`GET /menu` e `GET /delivery-zones`, filtros e testes de service/handler). US-023 concluída (home, cardápio, busca sem acento/caixa, filtro por categoria, grid, esgotado, estados e testes). US-024 e US-025 planejadas.
 
 **Tarefas técnicas:**
 
@@ -180,11 +180,12 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Criar índices idempotentes.
 - [x] Implementar `GET /menu`, `GET /delivery-zones`.
 - [x] Implementar filtros de ativos e disponibilidade.
-- [ ] Criar stores e services tipados no frontend.
-- [ ] Criar `ProductCard`, `CategoryPill`, `OptionGroup`, `AddonRow`, `PriceText`.
-- [ ] Implementar busca sem acento/caixa.
+- [x] Criar stores e services tipados no frontend.
+- [x] Criar `ProductCard`, `CategoryPill`, `PriceText` e componentes de estado.
+- [ ] Criar `OptionGroup` e `AddonRow` para personalização.
+- [x] Implementar busca sem acento/caixa.
 - [x] Testar produto esgotado, categoria vazia e erro de leitura no backend.
-- [ ] Testar busca sem resultado e erro de rede no frontend.
+- [x] Testar busca sem resultado, erro de rede, retry e estados vazios no frontend.
 - [x] Atualizar contrato da API.
 
 ---

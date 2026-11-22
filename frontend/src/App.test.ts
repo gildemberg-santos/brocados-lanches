@@ -10,22 +10,36 @@ const StubView = defineComponent({
   render: () => h('div', 'stub'),
 })
 
+async function mountApp() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/', component: StubView },
+      { path: '/cardapio', component: StubView },
+    ],
+  })
+
+  await router.push('/')
+  await router.isReady()
+
+  return mount(App, {
+    global: {
+      plugins: [router],
+    },
+  })
+}
+
 describe('App', () => {
-  it('renders the active route through RouterView', async () => {
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [{ path: '/', component: StubView }],
-    })
+  it('renders the shared header and the active route through RouterView', async () => {
+    const wrapper = await mountApp()
 
-    await router.push('/')
-    await router.isReady()
-
-    const wrapper = mount(App, {
-      global: {
-        plugins: [router],
-      },
-    })
-
+    expect(wrapper.text()).toContain('BROCADOS')
     expect(wrapper.text()).toContain('stub')
+  })
+
+  it('offers a skip link to the main content', async () => {
+    const wrapper = await mountApp()
+
+    expect(wrapper.get('.skip-link').attributes('href')).toBe('#conteudo')
   })
 })

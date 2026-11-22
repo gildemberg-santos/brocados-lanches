@@ -1,8 +1,8 @@
 # Roadmap — Brocados Lanches V1
 
 **Versão:** 1.1  
-**Atualizado em:** 21/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020 e US-021 concluídas; cardápio e detalhe (US-023/US-024) próximos.  
+**Atualizado em:** 22/11/2026  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021 e US-023 concluídas; US-024 (detalhe e personalização) e US-025 pendentes.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -87,7 +87,7 @@
 - estados de carregando/vazio/erro/sucesso;
 - imagens e informações da loja.
 
-**Status em 21/11/2026:** US-020 concluída com domínio, validação, repositórios e índices idempotentes; US-021 concluída com `GET /menu` e `GET /delivery-zones`; interface do cardápio e detalhe pendentes.
+**Status em 22/11/2026:** US-020 concluída com domínio, validação, repositórios e índices idempotentes; US-021 concluída com `GET /menu` e `GET /delivery-zones`; US-023 concluída com home, cardápio e busca/filtros. US-024 e US-025 pendentes, assim como a validação do catálogo real com o cliente.
 
 **Saída:** M2. Demonstração em staging sem criação de pedido.
 

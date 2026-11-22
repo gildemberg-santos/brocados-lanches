@@ -1,8 +1,8 @@
 # Qualidade e Testes — Brocados Lanches
 
 **Versão:** 1.1  
-**Atualizado em:** 21/11/2026  
-**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026; testes de integração do catálogo no CI e testes de service/handler da API pública em 21/11/2026.  
+**Atualizado em:** 22/11/2026  
+**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026; testes de integração do catálogo no CI e testes de service/handler da API pública em 21/11/2026; testes de home e cardápio em 22/11/2026.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `06-contrato-api.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`.
 
 ---
@@ -67,7 +67,7 @@ make test-e2e          # Playwright com API isolada em brocados_test
 - `make seed` e `make seed-reset` recusam `APP_ENV=production`, o banco `brocados` e nomes sem sufixo `_dev` ou `_test`.
 - `make test-e2e` exige MongoDB acessível em `localhost:27017` (ou `MONGO_URI` definido) e sobe a API na porta 8080 com `brocados_test`.
 - O E2E não faz parte de `make test`; o gate de commit continua rápido e sem navegador.
-- O smoke atual cobre a base (home, health, readiness e alvo de toque em 375 px). O fluxo de cardápio entra com US-023.
+- O smoke atual cobre home, health, readiness, alvo de toque em 375 px e navegação da home para o cardápio.
 - O job Backend do CI sobe MongoDB 8 e define `MONGO_TEST_URI`; localmente, sem essa variável, os testes de integração são pulados.
 
 ---
@@ -264,8 +264,11 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 
 ## 7. Frontend
 
-### 7.1 Stores
+### 7.1 Stores e fluxos
 
+- Catálogo: carregar uma vez, forçar recarga, erro, retry, produto/categoria por slug e somente destaques disponíveis.
+- Home: estados de carregando, vazio, erro e sucesso; navegação para o cardápio com categoria.
+- Cardápio: busca sem acento/caixa, filtro por categoria, contagem, busca sem resultado e produto esgotado.
 - Carrinho: adicionar, somar quantidade, remover, limpar, persistir, migrar versão.
 - Checkout: delivery/retirada, zona, troco, cotação, erro.
 - Admin auth: login, logout, 401, papel.
@@ -446,7 +449,7 @@ Falha em gate bloqueia merge/lançamento; não usar `--no-verify` nem desativar 
 
 | História | Teste principal |
 |---|---|
-| US-024 | Opções e adicionais no service + componente `OptionGroup` |
+| US-023 | Home/cardápio no Vitest + smoke E2E de navegação |
 | US-032 | Cotação no service + handler + store |
 | US-040 | Criação de pedido no service + handler + repository |
 | US-041 | Concorrência de idempotência no repository |

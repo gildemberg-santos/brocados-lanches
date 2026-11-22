@@ -1,7 +1,7 @@
 # AGENTS.md — Brocados Lanches
 
 **Versão:** 1.1  
-**Atualizado em:** 21/11/2026  
+**Atualizado em:** 22/11/2026  
 **Stack:** Go + Chi · Vue 3 + Vite + TypeScript · MongoDB  
 **Aplica-se a:** todo o repositório
 
@@ -17,7 +17,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Objetivo da V1:** o cliente monta o pedido e ele é **registrado no servidor antes de qualquer envio**; a operação gerencia catálogo, zonas e pedidos pelo painel; preços, taxas e disponibilidade são sempre validados no backend.
 
-**Estado em 21/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; o catálogo já tem domínio, validação, repositórios, índices idempotentes e API pública de leitura (`GET /menu` e `GET /delivery-zones`), mas interface do catálogo, checkout e painel administrativo ainda não foram implementados.
+**Estado em 22/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; o catálogo já tem domínio, validação, repositórios, índices idempotentes, API pública de leitura (`GET /menu` e `GET /delivery-zones`), home e cardápio com busca/filtros. Detalhe, personalização, carrinho, checkout e painel administrativo ainda não foram implementados.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
 
@@ -112,13 +112,14 @@ brocados-lanches/
 │   │   ├── router/
 │   │   ├── stores/
 │   │   ├── services/        # cliente HTTP e endpoints tipados
-│   │   ├── components/      # componentes reutilizáveis (fase seguinte)
+│   │   ├── components/      # componentes reutilizáveis
 │   │   ├── views/           # páginas do cliente e do admin
-│   │   ├── features/        # regras de UI por domínio (fase seguinte)
+│   │   ├── features/        # regras de UI por domínio
 │   │   ├── composables/      # (fase seguinte)
-│   │   ├── types/            # (fase seguinte)
+│   │   ├── types/            # tipos compartilhados
+│   │   ├── utils/            # normalização e utilitários puros
 │   │   └── styles/
-│   ├── e2e/                  # Playwright (smoke da base; cardápio na fase seguinte)
+│   ├── e2e/                  # Playwright (smoke da home e navegação para o cardápio)
 │   ├── Dockerfile
 │   ├── Dockerfile.runtime
 │   ├── nginx.conf

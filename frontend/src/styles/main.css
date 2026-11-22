@@ -35,3 +35,42 @@ a {
   outline: 2px solid var(--brand-neon);
   outline-offset: 2px;
 }
+
+#app {
+  min-height: 100vh;
+}
+
+.page-shell {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 8px;
+  z-index: 100;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--brand-primary);
+  color: var(--bg-primary);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 8px;
+}
+
+@media (min-width: 768px) {
+  .page-shell {
+    padding: 32px 24px 80px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
