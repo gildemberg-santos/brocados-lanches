@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 21/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 iniciada com US-020 (domínio e repositórios de catálogo); US-021 próxima.  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020 e US-021 concluídas; cardápio e detalhe (US-023/US-024) próximos.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -87,7 +87,7 @@
 - estados de carregando/vazio/erro/sucesso;
 - imagens e informações da loja.
 
-**Status em 21/11/2026:** US-020 concluída com domínio, validação, repositórios e índices idempotentes; API e interface do catálogo pendentes.
+**Status em 21/11/2026:** US-020 concluída com domínio, validação, repositórios e índices idempotentes; US-021 concluída com `GET /menu` e `GET /delivery-zones`; interface do cardápio e detalhe pendentes.
 
 **Saída:** M2. Demonstração em staging sem criação de pedido.
 

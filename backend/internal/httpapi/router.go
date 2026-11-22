@@ -18,8 +18,9 @@ type Pinger interface {
 
 // Dependencies reúne o que o roteador precisa para funcionar.
 type Dependencies struct {
-	Pinger Pinger
-	Logger *slog.Logger
+	Pinger  Pinger
+	Catalog CatalogService
+	Logger  *slog.Logger
 }
 
 type healthResponse struct {
@@ -49,6 +50,8 @@ func NewRouter(deps Dependencies) http.Handler {
 
 	router.Route("/api/v1", func(router chi.Router) {
 		router.Get("/", handleAPIRoot)
+		router.Get("/menu", handleMenu(deps.Catalog, logger))
+		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
 	})
 
 	return router

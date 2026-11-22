@@ -1,8 +1,8 @@
 # Contrato de API — Brocados Lanches
 
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Base:** `/api/v1`  
-**Atualizado em:** 18/11/2026  
+**Atualizado em:** 21/11/2026  
 **Relacionados:** `04-arquitetura.md`, `05-modelo-de-dados.md`, `09-qualidade-e-testes.md`.
 
 ---
@@ -137,8 +137,11 @@ Regras:
 
 - Produto ativo e `available: false` aparece para permitir “Esgotado”.
 - Produto inativo não aparece.
-- Categoria vazia pode ser omitida ou retornada com lista vazia; escolher uma e testar.
-- Adicional só aparece se ativo e vinculado ao produto.
+- Categoria sem produto ativo é omitida.
+- Adicional só aparece se ativo e vinculado ao produto; como só adicionais ativos são retornados, `available` é `true` na V1.
+- Opção indisponível não aparece. Um grupo sem nenhuma opção disponível permanece com `options: []` para que o cliente bloqueie a compra.
+- Categorias, produtos, opções e adicionais são ordenados por `sortOrder` e, em empate, por `name`; grupos de opções preservam a ordem definida no produto.
+- `updatedAt` é o maior `updatedAt` entre categorias, produtos e adicionais retornados; é omitido quando o cardápio está vazio.
 - O cliente não envia preço; o servidor é a fonte.
 - Cache HTTP curto pode ser usado; nenhuma resposta cacheada pode sobreviver a uma mudança crítica sem invalidação.
 
@@ -155,7 +158,7 @@ Regras:
 }
 ```
 
-Somente zonas ativas. A taxa é sempre do servidor.
+Somente zonas ativas, ordenadas por `sortOrder` e, em empate, por `name`. A taxa é sempre do servidor. Lista vazia retorna `data: []`.
 
 ---
 

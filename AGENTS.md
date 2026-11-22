@@ -17,7 +17,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Objetivo da V1:** o cliente monta o pedido e ele é **registrado no servidor antes de qualquer envio**; a operação gerencia catálogo, zonas e pedidos pelo painel; preços, taxas e disponibilidade são sempre validados no backend.
 
-**Estado em 21/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; o catálogo já tem domínio, validação, repositórios e índices idempotentes, mas API e interface do catálogo, checkout e painel administrativo ainda não foram implementados.
+**Estado em 21/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; o catálogo já tem domínio, validação, repositórios, índices idempotentes e API pública de leitura (`GET /menu` e `GET /delivery-zones`), mas interface do catálogo, checkout e painel administrativo ainda não foram implementados.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
 
@@ -96,8 +96,8 @@ brocados-lanches/
 │   ├── internal/
 │   │   ├── config/           # env, timeouts, validação de configuração
 │   │   ├── httpapi/          # router, handlers, middleware, respostas
-│   │   ├── domain/           # entidades, enums, erros de negócio (fase seguinte)
-│   │   ├── service/          # regras de negócio (fase seguinte)
+│   │   ├── domain/           # entidades, enums, erros de negócio
+│   │   ├── service/          # regras de negócio e casos de uso
 │   │   ├── repository/       # MongoDB
 │   │   └── platform/         # clock, IDs, log, senha, WhatsApp (fase seguinte)
 │   ├── scripts/seed/         # seed de desenvolvimento e teste

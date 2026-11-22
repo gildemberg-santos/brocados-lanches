@@ -16,6 +16,7 @@ import (
 	"github.com/brocados-lanches/api/internal/config"
 	"github.com/brocados-lanches/api/internal/httpapi"
 	"github.com/brocados-lanches/api/internal/repository"
+	"github.com/brocados-lanches/api/internal/service"
 )
 
 func main() {
@@ -59,9 +60,22 @@ func run() error {
 	}
 	logger.Info("catalog indexes ensured", "database", cfg.MongoDB)
 
+	catalogRepository, err := repository.NewCatalogRepository(database)
+	if err != nil {
+		return err
+	}
+	catalogService, err := service.NewCatalogService(catalogRepository)
+	if err != nil {
+		return err
+	}
+
 	server := &http.Server{
-		Addr:              cfg.Addr(),
-		Handler:           httpapi.NewRouter(httpapi.Dependencies{Pinger: mongoClient, Logger: logger}),
+		Addr: cfg.Addr(),
+		Handler: httpapi.NewRouter(httpapi.Dependencies{
+			Pinger:  mongoClient,
+			Catalog: catalogService,
+			Logger:  logger,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,

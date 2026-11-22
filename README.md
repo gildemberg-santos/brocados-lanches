@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 iniciada com domínio e repositórios de catálogo; API, interface, checkout e painel ainda não implementados.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 iniciada com domínio, repositórios e API pública de leitura do catálogo; interface, checkout e painel ainda não implementados.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -45,6 +45,7 @@ O esqueleto da Fase 1 já inclui:
 - API Go + Chi com `/healthz`, `/readyz` e raiz versionada em `/api/v1`;
 - conexão com MongoDB e verificação real no readiness;
 - domínio e repositórios de catálogo com validação, índices idempotentes e testes de integração com MongoDB real;
+- API pública de catálogo com `GET /api/v1/menu` e `GET /api/v1/delivery-zones`, filtros de ativos/disponibilidade e testes de service e handler;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - tela inicial que consulta o readiness da API;
@@ -95,7 +96,7 @@ brocados-lanches/
 │   │   ├── httpapi/          # router, handlers e middleware
 │   │   ├── repository/       # conexão MongoDB e repositórios de catálogo
 │   │   ├── domain/           # entidades, enums e erros de domínio
-│   │   ├── service/          # regras de negócio (próximas fases)
+│   │   ├── service/          # regras de negócio e casos de uso
 │   │   └── platform/         # clock, IDs, log e integrações
 │   ├── scripts/seed/         # seed de desenvolvimento e teste
 │   ├── vendor/               # dependências Go versionadas para build offline
