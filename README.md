@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização e carrinho entregues; checkout, pedido e painel ainda não implementados.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho e cotação server-side entregues; checkout, pedido e painel ainda não implementados.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -46,6 +46,7 @@ O esqueleto da Fase 1 já inclui:
 - conexão com MongoDB e verificação real no readiness;
 - domínio e repositórios de catálogo com validação, índices idempotentes e testes de integração com MongoDB real;
 - API pública de catálogo com `GET /api/v1/menu` e `GET /api/v1/delivery-zones`, filtros de ativos/disponibilidade e testes de service e handler;
+- cotação server-side em `POST /api/v1/orders/quote`, sem persistência, com validação de itens/opções/adicionais/zona/status da loja e cálculo centralizado em `domain.BuildQuote`;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;

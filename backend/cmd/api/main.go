@@ -69,11 +69,21 @@ func run() error {
 		return err
 	}
 
+	operationLocation, err := time.LoadLocation("America/Fortaleza")
+	if err != nil {
+		return err
+	}
+	orderService, err := service.NewOrderService(catalogRepository, operationLocation)
+	if err != nil {
+		return err
+	}
+
 	server := &http.Server{
 		Addr: cfg.Addr(),
 		Handler: httpapi.NewRouter(httpapi.Dependencies{
 			Pinger:  mongoClient,
 			Catalog: catalogService,
+			Orders:  orderService,
 			Logger:  logger,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,

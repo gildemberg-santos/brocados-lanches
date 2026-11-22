@@ -176,12 +176,20 @@ Content-Type: application/json
 ```json
 {
   "items": [
-    { "productId": "665f1c2a9b1e4a0012a3b4c6", "quantity": 2, "optionIds": ["medium", "665f1c2a9b1e4a0012a3b4d1"] }
+    {
+      "productId": "665f1c2a9b1e4a0012a3b4c6",
+      "quantity": 2,
+      "optionIds": ["medium"],
+      "addonIds": ["665f1c2a9b1e4a0012a3b4d1"],
+      "note": "sem cebola"
+    }
   ],
   "fulfillment": "delivery",
   "zoneId": "665f1c2a9b1e4a0012a3b4e1"
 }
 ```
+
+O cliente envia somente identificadores, quantidades e escolhas. `optionIds` contém escolhas dos grupos de opções do produto; `addonIds` contém adicionais vinculados ao produto. Campos desconhecidos são rejeitados. Limites: 50 itens, quantidade de 1 a 99 por item e observação de até 140 caracteres. Corpo JSON de até 1 MB.
 
 ### Response `200`
 
@@ -213,13 +221,13 @@ Content-Type: application/json
 
 Regras:
 
-- Não cria pedido, não reserva estoque e não gera número.
-- Valida loja, produto, opções, adicionais e zona.
+- Não cria pedido, não reserva estoque e não gera número. Não há necessidade de `Idempotency-Key` porque nada é gravado.
+- Valida loja, produto, opções, adicionais e zona. Status efetivo da loja = kill switch ligado **e** horário vigente em `America/Fortaleza`; quando não há `openingHours` cadastrados, o kill switch decide.
 - `pickup` ignora `zoneId` e retorna taxa zero.
 - `unitPriceCents` é o preço base do produto; `optionsPriceCents` soma opções e adicionais; `lineTotalCents = (unitPriceCents + optionsPriceCents) * quantity`.
 - Pode retornar `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE` ou `VALIDATION_ERROR`.
-- Rate limit: 30/min por IP.
-- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou.
+- Rate limit previsto: 30/min por IP. O middleware ainda não está ativo no esqueleto e será ligado quando o endpoint for exposto publicamente.
+- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou. O cálculo está centralizado em `domain.BuildQuote` e será reutilizado pelo `POST /orders`.
 
 ---
 
@@ -241,7 +249,8 @@ Idempotency-Key: 4d1f6b1e-7c2a-4e2f-9f2a-1c3d5e7f9a0b
     {
       "productId": "665f1c2a9b1e4a0012a3b4c6",
       "quantity": 2,
-      "optionIds": ["medium", "665f1c2a9b1e4a0012a3b4d1"],
+      "optionIds": ["medium"],
+      "addonIds": ["665f1c2a9b1e4a0012a3b4d1"],
       "note": "sem cebola"
     }
   ],

@@ -275,6 +275,24 @@ func TestWriteError(t *testing.T) {
 			wantCode:   codeConflict,
 		},
 		{
+			name:       "loja fechada",
+			err:        fmt.Errorf("quote: %w", domain.ErrStoreClosed),
+			wantStatus: http.StatusConflict,
+			wantCode:   codeStoreClosed,
+		},
+		{
+			name:       "zona indisponível",
+			err:        fmt.Errorf("quote: %w", domain.ErrZoneUnavailable),
+			wantStatus: http.StatusConflict,
+			wantCode:   codeZoneUnavailable,
+		},
+		{
+			name:       "produto indisponível",
+			err:        fmt.Errorf("quote: %w", domain.ErrProductUnavailable),
+			wantStatus: http.StatusConflict,
+			wantCode:   codeProductUnavailable,
+		},
+		{
 			name:       "erro interno",
 			err:        errors.New("mongo down"),
 			wantStatus: http.StatusInternalServerError,

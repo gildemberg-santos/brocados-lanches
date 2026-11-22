@@ -11,10 +11,13 @@ import (
 
 // Códigos estáveis do envelope de erro da API.
 const (
-	codeValidationError = "VALIDATION_ERROR"
-	codeNotFound        = "NOT_FOUND"
-	codeConflict        = "CONFLICT"
-	codeInternalError   = "INTERNAL_ERROR"
+	codeValidationError    = "VALIDATION_ERROR"
+	codeNotFound           = "NOT_FOUND"
+	codeConflict           = "CONFLICT"
+	codeStoreClosed        = "STORE_CLOSED"
+	codeZoneUnavailable    = "ZONE_UNAVAILABLE"
+	codeProductUnavailable = "PRODUCT_UNAVAILABLE"
+	codeInternalError      = "INTERNAL_ERROR"
 )
 
 type errorEnvelope struct {
@@ -60,6 +63,24 @@ func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err
 		body = errorBody{
 			Code:    codeValidationError,
 			Message: "Dados inválidos.",
+		}
+	case errors.Is(err, domain.ErrStoreClosed):
+		status = http.StatusConflict
+		body = errorBody{
+			Code:    codeStoreClosed,
+			Message: "A loja está fechada no momento.",
+		}
+	case errors.Is(err, domain.ErrZoneUnavailable):
+		status = http.StatusConflict
+		body = errorBody{
+			Code:    codeZoneUnavailable,
+			Message: "A zona de entrega informada não está disponível.",
+		}
+	case errors.Is(err, domain.ErrProductUnavailable):
+		status = http.StatusConflict
+		body = errorBody{
+			Code:    codeProductUnavailable,
+			Message: "Um ou mais itens não estão disponíveis.",
 		}
 	case errors.Is(err, domain.ErrNotFound):
 		status = http.StatusNotFound

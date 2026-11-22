@@ -82,6 +82,7 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 - **Decisão:** `POST /orders/quote` valida itens, opções, adicionais e zona, e devolve subtotal, taxa e total sem persistir.
 - **Consequência:** o frontend não calcula total; o `POST /orders` recalcula e pode rejeitar se algo mudou.
 - **Risco:** duplicação de lógica entre quote e order. Mitigação: uma única função de cálculo no domínio/service.
+- **Estado em 22/11/2026:** US-032 implementada. `domain.BuildQuote` é a função única de cálculo; o service carrega catálogo, zonas e `store_settings`, e o handler expõe `POST /api/v1/orders/quote` sem gravar. O `POST /orders` ainda será implementado sobre a mesma função. O status efetivo da loja usa o kill switch e, quando existem horários cadastrados, a faixa vigente em `America/Fortaleza`.
 
 ### 4.2 Acompanhamento público mínimo
 

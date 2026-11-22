@@ -193,7 +193,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Objetivo:** permitir montar o pedido, cotar no servidor e preencher o checkout sem perder dados.
 
-**Status em 22/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo) e US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e totais estimados). O CTA “Continuar” está desabilitado até a US-033. A taxa estimada usa a menor zona ativa enquanto nenhuma zona foi escolhida; o total definitivo virá da cotação da US-032.
+**Status em 22/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e totais estimados) e US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência; testes de domínio, service, handler e repositório). O CTA “Continuar” está desabilitado até a US-033. A taxa estimada usa a menor zona ativa enquanto nenhuma zona foi escolhida; o total definitivo agora vem da cotação da US-032. O limite de taxa previsto no contrato ainda não está ativo no esqueleto.
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -209,7 +209,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Implementar `useCartStore` com setup e testes.
 - [x] Validar IDs contra o catálogo carregado.
 - [x] Criar `CartLine`, `CartSummary`, `QuantityStepper`.
-- [ ] Implementar cotação no backend com as mesmas regras do pedido.
+- [x] Implementar cotação no backend com as mesmas regras do pedido.
 - [ ] Criar `CheckoutForm` com validação Zod e erros por campo.
 - [ ] Normalizar telefone no cliente e no servidor.
 - [ ] Implementar troca de delivery/retirada e troca de zona.

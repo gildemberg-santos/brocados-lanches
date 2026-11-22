@@ -20,6 +20,7 @@ type Pinger interface {
 type Dependencies struct {
 	Pinger  Pinger
 	Catalog CatalogService
+	Orders  OrderService
 	Logger  *slog.Logger
 }
 
@@ -52,6 +53,7 @@ func NewRouter(deps Dependencies) http.Handler {
 		router.Get("/", handleAPIRoot)
 		router.Get("/menu", handleMenu(deps.Catalog, logger))
 		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
+		router.Post("/orders/quote", handleQuote(deps.Orders, logger))
 	})
 
 	return router

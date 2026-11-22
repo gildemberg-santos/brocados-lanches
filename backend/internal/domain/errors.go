@@ -7,9 +7,12 @@ import (
 
 // Erros sentinela devolvidos pelo domínio e traduzidos pela camada HTTP.
 var (
-	ErrValidation = errors.New("validation error")
-	ErrNotFound   = errors.New("not found")
-	ErrConflict   = errors.New("conflict")
+	ErrValidation         = errors.New("validation error")
+	ErrNotFound           = errors.New("not found")
+	ErrConflict           = errors.New("conflict")
+	ErrStoreClosed        = errors.New("store closed")
+	ErrZoneUnavailable    = errors.New("delivery zone unavailable")
+	ErrProductUnavailable = errors.New("product unavailable")
 )
 
 // Códigos estáveis de validação usados no envelope de erro da API.
