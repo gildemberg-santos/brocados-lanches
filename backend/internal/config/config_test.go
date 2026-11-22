@@ -23,6 +23,18 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Addr() != ":8080" {
 		t.Errorf("Addr() = %q, want :8080", cfg.Addr())
 	}
+	if cfg.AdminCookieName != "brocados_admin" {
+		t.Errorf("AdminCookieName = %q, want brocados_admin", cfg.AdminCookieName)
+	}
+	if cfg.AdminCookieSecure {
+		t.Error("AdminCookieSecure = true in development, want false")
+	}
+	if cfg.AdminCookieNameEffective() != "brocados_admin" {
+		t.Errorf("AdminCookieNameEffective() = %q", cfg.AdminCookieNameEffective())
+	}
+	if cfg.HasAdminBootstrap() {
+		t.Error("HasAdminBootstrap() = true without environment variables")
+	}
 }
 
 func TestLoadOverrides(t *testing.T) {
@@ -56,6 +68,8 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		{name: "port zero", env: map[string]string{"PORT": "0"}},
 		{name: "port too high", env: map[string]string{"PORT": "65536"}},
 		{name: "invalid mongo uri", env: map[string]string{"MONGO_URI": "http://localhost:27017"}},
+		{name: "invalid cookie name", env: map[string]string{"ADMIN_SESSION_COOKIE": "cookie com espaco"}},
+		{name: "partial bootstrap", env: map[string]string{"ADMIN_BOOTSTRAP_EMAIL": "dono@example.com"}},
 	}
 
 	for _, test := range tests {
@@ -65,5 +79,38 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 				t.Fatal("Load() error = nil, want error")
 			}
 		})
+	}
+}
+
+func TestLoadAdminCookieInProduction(t *testing.T) {
+	cfg, err := Load(func(key string) string {
+		if key == "APP_ENV" {
+			return "production"
+		}
+		return ""
+	})
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if !cfg.AdminCookieSecure {
+		t.Error("AdminCookieSecure = false in production, want true")
+	}
+	if cfg.AdminCookieNameEffective() != "__Host-brocados_admin" {
+		t.Errorf("AdminCookieNameEffective() = %q, want __Host-brocados_admin", cfg.AdminCookieNameEffective())
+	}
+}
+
+func TestLoadAdminBootstrap(t *testing.T) {
+	env := map[string]string{
+		"ADMIN_BOOTSTRAP_NAME":     "Dono",
+		"ADMIN_BOOTSTRAP_EMAIL":    "dono@example.com",
+		"ADMIN_BOOTSTRAP_PASSWORD": "senha-forte-com-12-caracteres",
+	}
+	cfg, err := Load(func(key string) string { return env[key] })
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if !cfg.HasAdminBootstrap() {
+		t.Error("HasAdminBootstrap() = false, want true")
 	}
 }

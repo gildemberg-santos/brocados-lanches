@@ -52,8 +52,12 @@ Regras:
 | `HTTP_ADDR` | sim | Endereço/porta da API |
 | `MONGO_URI` | sim | Conexão MongoDB |
 | `MONGO_DATABASE` | sim | Nome do banco |
-| `SESSION_SECRET` | sim | Assinatura/hash auxiliar, se aplicável |
-| `ADMIN_SESSION_COOKIE` | sim | Nome do cookie |
+| `SESSION_SECRET` | não | Reservado; a V1 usa token opaco com hash SHA-256, sem segredo de assinatura |
+| `ADMIN_SESSION_COOKIE` | não | Nome do cookie; padrão `brocados_admin`, com prefixo `__Host-` em produção |
+| `ADMIN_COOKIE_SECURE` | não | Força `Secure` fora de produção; em produção é sempre true |
+| `ADMIN_BOOTSTRAP_NAME` | não | Nome do primeiro `owner`; deve ser usado junto com e-mail e senha |
+| `ADMIN_BOOTSTRAP_EMAIL` | não | E-mail do primeiro `owner`; só cria usuário se `admin_users` estiver vazio |
+| `ADMIN_BOOTSTRAP_PASSWORD` | não | Senha do primeiro `owner` (mínimo 12 caracteres); remover após o bootstrap |
 | `PUBLIC_BASE_URL` | sim | URL pública same-origin |
 | `WHATSAPP_NUMBER` | sim | Número E.164 da loja |
 | `LOG_LEVEL` | sim | `info`/`debug` |

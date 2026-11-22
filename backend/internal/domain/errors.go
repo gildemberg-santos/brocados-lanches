@@ -13,6 +13,9 @@ var (
 	ErrStoreClosed        = errors.New("store closed")
 	ErrZoneUnavailable    = errors.New("delivery zone unavailable")
 	ErrProductUnavailable = errors.New("product unavailable")
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrForbidden          = errors.New("forbidden")
+	ErrRateLimited        = errors.New("rate limited")
 )
 
 // Códigos estáveis de validação usados no envelope de erro da API.

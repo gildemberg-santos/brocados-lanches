@@ -15,6 +15,7 @@ import (
 
 	"github.com/brocados-lanches/api/internal/config"
 	"github.com/brocados-lanches/api/internal/httpapi"
+	"github.com/brocados-lanches/api/internal/platform/ratelimit"
 	"github.com/brocados-lanches/api/internal/repository"
 	"github.com/brocados-lanches/api/internal/service"
 )
@@ -61,6 +62,9 @@ func run() error {
 	if err := repository.EnsureOrderIndexes(startupContext, database); err != nil {
 		return err
 	}
+	if err := repository.EnsureAdminIndexes(startupContext, database); err != nil {
+		return err
+	}
 	logger.Info("database indexes ensured", "database", cfg.MongoDB)
 
 	catalogRepository, err := repository.NewCatalogRepository(database)
@@ -85,13 +89,50 @@ func run() error {
 		return err
 	}
 
+	adminRepository, err := repository.NewAdminRepository(database)
+	if err != nil {
+		return err
+	}
+	adminAuthService, err := service.NewAdminAuthService(
+		adminRepository,
+		service.AdminSessionIdleDuration,
+		service.AdminSessionAbsoluteDuration,
+	)
+	if err != nil {
+		return err
+	}
+	if cfg.HasAdminBootstrap() {
+		created, err := adminAuthService.BootstrapOwner(
+			startupContext,
+			cfg.AdminBootstrapName,
+			cfg.AdminBootstrapEmail,
+			cfg.AdminBootstrapPassword,
+		)
+		if err != nil {
+			return err
+		}
+		if created {
+			logger.Info("bootstrap admin owner created")
+		}
+	}
+	loginLimiter, err := ratelimit.New(5, time.Minute)
+	if err != nil {
+		return err
+	}
+
 	server := &http.Server{
 		Addr: cfg.Addr(),
 		Handler: httpapi.NewRouter(httpapi.Dependencies{
-			Pinger:  mongoClient,
-			Catalog: catalogService,
-			Orders:  orderService,
-			Logger:  logger,
+			Pinger:    mongoClient,
+			Catalog:   catalogService,
+			Orders:    orderService,
+			AdminAuth: adminAuthService,
+			AdminCookie: httpapi.AdminCookieConfig{
+				Name:   cfg.AdminCookieNameEffective(),
+				Secure: cfg.AdminCookieSecure,
+			},
+			LoginLimiter: loginLimiter,
+			Logger:       logger,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,

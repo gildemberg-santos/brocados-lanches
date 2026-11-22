@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas.  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 concluída.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -274,7 +274,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-060 | Autenticação admin | P0 | G | E1 | Login/logout/me, Argon2id, cookie, rate limit, CSRF; testes |
+| US-060 | Autenticação admin | P0 | G | E1 | **Concluída** — login/logout/me, Argon2id, cookie, rate limit, CSRF; testes |
 | US-061 | Shell e guard do admin | P0 | M | US-060 | Rotas lazy, guard, 401/403, menu por papel; testes |
 | US-022 | API admin de catálogo | P0 | G | US-020, US-060 | CRUD de categorias/produtos/adicionais/zonas; auditoria; testes |
 | US-062 | Gestão de produtos | P0 | G | US-022, US-061 | Lista/form/editar/ativar/disponível/destaque; testes |
@@ -285,10 +285,11 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Tarefas técnicas:**
 
-- [ ] Implementar Argon2id e política de senha.
-- [ ] Implementar sessão com TTL e rotação.
-- [ ] Implementar CSRF por Origin/Referer.
-- [ ] Criar middleware de auth e autorização.
+- [x] Implementar Argon2id e política de senha (US-060).
+- [x] Implementar sessão com TTL e rotação (US-060).
+- [x] Implementar CSRF por Origin/Referer (US-060).
+- [x] Criar middleware de auth e autorização (US-060).
+- [x] Rate limit de login por IP+e-mail (US-060).
 - [ ] Implementar CRUD admin de categorias, produtos, adicionais e zonas.
 - [ ] Criar `AdminShell`, `DataTable`, `AdminPageHeader`.
 - [ ] Criar formulários com validação e conversão de centavos.

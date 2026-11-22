@@ -17,6 +17,9 @@ const (
 	codeStoreClosed        = "STORE_CLOSED"
 	codeZoneUnavailable    = "ZONE_UNAVAILABLE"
 	codeProductUnavailable = "PRODUCT_UNAVAILABLE"
+	codeUnauthorized       = "UNAUTHORIZED"
+	codeForbidden          = "FORBIDDEN"
+	codeRateLimited        = "RATE_LIMITED"
 	codeInternalError      = "INTERNAL_ERROR"
 )
 
@@ -117,6 +120,24 @@ func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err
 		body = errorBody{
 			Code:    codeConflict,
 			Message: "Conflito ao processar a solicitação.",
+		}
+	case errors.Is(err, domain.ErrUnauthorized):
+		status = http.StatusUnauthorized
+		body = errorBody{
+			Code:    codeUnauthorized,
+			Message: "Credenciais inválidas ou sessão expirada.",
+		}
+	case errors.Is(err, domain.ErrForbidden):
+		status = http.StatusForbidden
+		body = errorBody{
+			Code:    codeForbidden,
+			Message: "Acesso não autorizado.",
+		}
+	case errors.Is(err, domain.ErrRateLimited):
+		status = http.StatusTooManyRequests
+		body = errorBody{
+			Code:    codeRateLimited,
+			Message: "Muitas tentativas. Tente novamente em instantes.",
 		}
 	}
 

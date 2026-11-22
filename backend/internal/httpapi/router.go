@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/brocados-lanches/api/internal/platform/ratelimit"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -18,10 +19,13 @@ type Pinger interface {
 
 // Dependencies reúne o que o roteador precisa para funcionar.
 type Dependencies struct {
-	Pinger  Pinger
-	Catalog CatalogService
-	Orders  OrderService
-	Logger  *slog.Logger
+	Pinger       Pinger
+	Catalog      CatalogService
+	Orders       OrderService
+	AdminAuth    AdminAuthService
+	AdminCookie  AdminCookieConfig
+	LoginLimiter *ratelimit.Limiter
+	Logger       *slog.Logger
 }
 
 type healthResponse struct {
@@ -42,7 +46,9 @@ func NewRouter(deps Dependencies) http.Handler {
 
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
+	// ClientIPFromRemoteAddr não confia em X-Forwarded-For/X-Real-IP, que podem
+	// ser forjados pelo cliente e burlar o rate limit de login.
+	router.Use(middleware.ClientIPFromRemoteAddr)
 	router.Use(middleware.Recoverer)
 	router.Use(requestLogger(logger))
 
@@ -57,6 +63,29 @@ func NewRouter(deps Dependencies) http.Handler {
 		router.Post("/orders", handleCreateOrder(deps.Orders, logger))
 		router.Get("/orders/{publicId}", handleTrackOrder(deps.Orders, logger))
 	})
+
+	if deps.AdminAuth != nil {
+		cookieConfig := deps.AdminCookie
+		if cookieConfig.Name == "" {
+			cookieConfig.Name = "brocados_admin"
+		}
+		limiter := deps.LoginLimiter
+		if limiter == nil {
+			// Parâmetros constantes e válidos; erro seria apenas de programação.
+			limiter, _ = ratelimit.New(5, time.Minute)
+		}
+
+		router.Route("/api/v1/admin", func(admin chi.Router) {
+			admin.Use(csrfProtection)
+			admin.Post("/auth/login", handleAdminLogin(deps.AdminAuth, cookieConfig, limiter, logger))
+			admin.Post("/auth/logout", handleAdminLogout(deps.AdminAuth, cookieConfig, logger))
+
+			admin.Group(func(protected chi.Router) {
+				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger))
+				protected.Get("/auth/me", handleAdminMe(logger))
+			})
+		})
+	}
 
 	return router
 }

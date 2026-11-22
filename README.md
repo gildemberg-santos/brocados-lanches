@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; painel administrativo ainda não implementado.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação administrativa entregues; demais telas e APIs do painel ainda não implementadas.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -49,6 +49,7 @@ O esqueleto da Fase 1 já inclui:
 - cotação server-side em `POST /api/v1/orders/quote`, sem persistência, com validação de itens/opções/adicionais/zona/status da loja e cálculo centralizado em `domain.BuildQuote`;
 - criação de pedido em `POST /api/v1/orders`, com idempotência, snapshot congelado, número sequencial, `publicId` opaco e link `wa.me` gerado após a persistência;
 - acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`;
+- autenticação administrativa em `/api/v1/admin/auth`: login/logout/me com Argon2id, sessão opaca hasheada em cookie `HttpOnly`, rotação, expiração ociosa/absoluta, CSRF por origem e rate limit de login; bootstrap do primeiro `owner` por `ADMIN_BOOTSTRAP_*`;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
@@ -326,9 +327,9 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 ## 7. Próximos passos
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
-2. Estender o smoke E2E para o fluxo de catálogo e carrinho.
-3. Cobrir no E2E o fluxo de checkout, pedido persistido e confirmação (Épicos 3 e 4).
-4. Implementar autenticação, catálogo admin, fila e transições (Épicos 6 e 7).
+2. Cobrir no E2E o fluxo completo de checkout, pedido persistido e confirmação (Épicos 3 e 4).
+3. Cobrir no E2E o login admin e o acesso anônimo/por papel às rotas protegidas (Épico 6).
+4. Implementar o shell/guard do admin (US-061), o CRUD administrativo, a fila e as transições (Épicos 6 e 7).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 
 ---

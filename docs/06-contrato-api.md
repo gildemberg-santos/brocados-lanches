@@ -395,6 +395,10 @@ Após recarregar a confirmação, o cliente vê número, status, itens e total p
 
 ## 9. Admin — autenticação
 
+Todas as rotas administrativas aplicam CSRF por `Origin`/`Referer` em métodos mutáveis. Requisições sem esses cabeçalhos dependem do `SameSite=Lax` do cookie. A autorização real é sempre verificada no servidor.
+
+O primeiro usuário `owner` é criado no bootstrap da API com `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O bootstrap é idempotente e só atua quando `admin_users` está vazio; depois disso, a gestão de usuários passa pelo painel (US-066). Nenhuma rota pública cria usuário admin.
+
 ### 9.1 `POST /admin/auth/login`
 
 ```json
@@ -419,19 +423,20 @@ Resposta `200`:
 }
 ```
 
-- Cookie `HttpOnly`, `SameSite=Lax`, `Path=/`; `Secure` e prefixo `__Host-` em produção.
-- Sessão ociosa de 8 h; absoluta de 7 dias.
-- Login rotaciona a sessão.
-- Erro genérico `401 UNAUTHORIZED`; não revelar se o e-mail existe.
-- Rate limit: 5/min por IP + e-mail.
+- Cookie `HttpOnly`, `SameSite=Lax`, `Path=/`; `Secure` e prefixo `__Host-` em produção (nome padrão: `brocados_admin`).
+- Sessão ociosa de 8 h; absoluta de 7 dias. O token opaco de 32 bytes é gravado apenas como SHA-256 em `sessions`.
+- Login rotaciona a sessão e atualiza `lastLoginAt`.
+- Erro genérico `401 UNAUTHORIZED`; não revelar se o e-mail existe nem se a conta está inativa.
+- Corpo com campos desconhecidos retorna `400 VALIDATION_ERROR`.
+- Rate limit ativo: 5/min por IP + e-mail (o e-mail entra no limite como hash); resposta `429 RATE_LIMITED` com `Retry-After: 60`.
 
 ### 9.2 `POST /admin/auth/logout`
 
-Resposta `204`. Apaga a sessão e o cookie.
+Resposta `204`. Apaga a sessão e o cookie. É idempotente: sessão inexistente também retorna `204` e limpa o cookie.
 
 ### 9.3 `GET /admin/auth/me`
 
-Retorna usuário e papel; `401` se não houver sessão.
+Retorna `{ "data": { "user": { "id", "name", "email", "role" } } }`; `401 UNAUTHORIZED` se não houver sessão válida ou se a conta estiver inativa. Nunca devolve `passwordHash` nem dados de sessão.
 
 ---
 
