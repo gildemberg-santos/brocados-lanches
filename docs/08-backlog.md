@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 e US-031 concluídas; US-032 próxima.  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -193,7 +193,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Objetivo:** permitir montar o pedido, cotar no servidor e preencher o checkout sem perder dados.
 
-**Status em 22/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e totais estimados) e US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência; testes de domínio, service, handler e repositório). O CTA “Continuar” está desabilitado até a US-033. A taxa estimada usa a menor zona ativa enquanto nenhuma zona foi escolhida; o total definitivo agora vem da cotação da US-032. O limite de taxa previsto no contrato ainda não está ativo no esqueleto.
+**Status em 22/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e totais estimados), US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência) e US-033/US-034 concluídas (`/checkout` com entrega/retirada, zona, endereço, pagamento, troco, validação por campo, foco no primeiro erro, cotação no servidor, bloqueio de envio e estados de carregamento/erro/sucesso). O CTA “Continuar” do carrinho leva ao checkout. A taxa estimada usa a menor zona ativa enquanto nenhuma zona foi escolhida; o total definitivo vem da cotação da US-032. O limite de taxa previsto no contrato ainda não está ativo no esqueleto.
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -210,17 +210,19 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Validar IDs contra o catálogo carregado.
 - [x] Criar `CartLine`, `CartSummary`, `QuantityStepper`.
 - [x] Implementar cotação no backend com as mesmas regras do pedido.
-- [ ] Criar `CheckoutForm` com validação Zod e erros por campo.
-- [ ] Normalizar telefone no cliente e no servidor.
-- [ ] Implementar troca de delivery/retirada e troca de zona.
-- [ ] Testar loja fechada, zona inativa, item esgotado e troco inválido.
-- [ ] Preservar carrinho em falha.
+- [x] Criar `CheckoutForm` com validação e erros por campo (helpers puros em `features/checkout`).
+- [x] Normalizar telefone no cliente e no servidor.
+- [x] Implementar troca de delivery/retirada e troca de zona.
+- [x] Testar loja fechada, zona inativa, item esgotado e troco inválido.
+- [x] Preservar carrinho em falha.
 
 ---
 
 ## 8. Épico 4 — Pedido e WhatsApp
 
 **Objetivo:** criar o pedido persistido, idempotente e com handoff recuperável.
+
+**Status em 22/11/2026:** US-040 concluída (`POST /orders` recalcula o total com `domain.BuildQuote`, persiste snapshot com número via contador atômico, `publicId` opaco, índices únicos e `201` com `Location`), US-041 concluída (chave de 16 a 128 caracteres, `requestHash` canônico, replay `200` com `Idempotent-Replayed` e conflito `409`), US-042 concluída (link `wa.me` gerado após a persistência, com reenvio na mesma sessão), US-043 concluída (`/pedido/:publicId` mostra número/status/totais e limpa o carrinho somente após sucesso). US-044 ainda depende de teste E2E de rede.
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -232,14 +234,14 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Tarefas técnicas:**
 
-- [ ] Implementar `POST /orders` com validação completa.
-- [ ] Gerar `number` via contador atômico.
-- [ ] Gerar `publicId` com 128 bits.
-- [ ] Calcular e congelar snapshot.
-- [ ] Criar índice único de `idempotencyKey` e `requestHash`.
-- [ ] Retornar `200` no replay idempotente.
-- [ ] Montar `whatsappUrl` sem logar.
-- [ ] Criar tela de confirmação e botão de reenvio.
+- [x] Implementar `POST /orders` com validação completa.
+- [x] Gerar `number` via contador atômico.
+- [x] Gerar `publicId` com 128 bits.
+- [x] Calcular e congelar snapshot.
+- [x] Criar índice único de `idempotencyKey` e gravar `requestHash` canônico.
+- [x] Retornar `200` no replay idempotente.
+- [x] Montar `whatsappUrl` sem logar.
+- [x] Criar tela de confirmação e botão de reenvio.
 - [ ] Testar falha de Mongo, falha de link e duplo clique.
 - [ ] Testar concorrência com a mesma chave.
 

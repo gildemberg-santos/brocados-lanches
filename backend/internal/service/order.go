@@ -3,25 +3,28 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
 )
 
-// OrderReader é a superfície do repositório necessária para cotar e, no futuro,
-// persistir pedidos. O cálculo permanece centralizado em domain.BuildQuote.
+// OrderReader é a superfície do repositório necessária para cotar, persistir e
+// acompanhar pedidos. O cálculo permanece centralizado em domain.BuildQuote.
 type OrderReader interface {
 	ListActiveProducts(ctx context.Context) ([]domain.Product, error)
 	ListActiveAddons(ctx context.Context) ([]domain.Addon, error)
 	ListActiveDeliveryZones(ctx context.Context) ([]domain.DeliveryZone, error)
 	GetStoreSettings(ctx context.Context) (domain.StoreSettings, error)
+	FindByIdempotencyKey(ctx context.Context, key string) (domain.Order, bool, error)
+	FindByPublicID(ctx context.Context, publicID string) (domain.Order, error)
+	Create(ctx context.Context, order domain.Order) (domain.Order, error)
 }
 
 // OrderService aplica as regras de pedido usando dados autoritativos do banco.
 type OrderService struct {
 	reader   OrderReader
 	location *time.Location
+	publicID publicIDGenerator
 }
 
 // NewOrderService vincula o service ao repositório e ao fuso da operação.
@@ -32,7 +35,7 @@ func NewOrderService(reader OrderReader, location *time.Location) (*OrderService
 	if location == nil {
 		return nil, errors.New("operation timezone is required")
 	}
-	return &OrderService{reader: reader, location: location}, nil
+	return &OrderService{reader: reader, location: location, publicID: newPublicID}, nil
 }
 
 // Quote valida a requisição e devolve subtotal, taxa e total sem gravar nada.
@@ -42,29 +45,9 @@ func (s *OrderService) Quote(ctx context.Context, request domain.QuoteRequest) (
 		return domain.Quote{}, err
 	}
 
-	products, err := s.reader.ListActiveProducts(ctx)
+	catalog, err := s.loadCatalog(ctx)
 	if err != nil {
-		return domain.Quote{}, fmt.Errorf("list active products: %w", err)
+		return domain.Quote{}, err
 	}
-	addons, err := s.reader.ListActiveAddons(ctx)
-	if err != nil {
-		return domain.Quote{}, fmt.Errorf("list active addons: %w", err)
-	}
-	zones, err := s.reader.ListActiveDeliveryZones(ctx)
-	if err != nil {
-		return domain.Quote{}, fmt.Errorf("list active delivery zones: %w", err)
-	}
-	store, err := s.reader.GetStoreSettings(ctx)
-	if err != nil {
-		return domain.Quote{}, fmt.Errorf("get store settings: %w", err)
-	}
-
-	return domain.BuildQuote(request, domain.QuoteCatalog{
-		Products: products,
-		Addons:   addons,
-		Zones:    zones,
-		Store:    store,
-		Location: s.location,
-		Now:      time.Now(),
-	})
+	return domain.BuildQuote(request, catalog)
 }

@@ -476,6 +476,9 @@ func openCatalogTestDatabase(t *testing.T) *mongo.Database {
 	if err := EnsureCatalogIndexes(ctx, database); err != nil {
 		t.Fatalf("EnsureCatalogIndexes() error = %v", err)
 	}
+	if err := EnsureOrderIndexes(ctx, database); err != nil {
+		t.Fatalf("EnsureOrderIndexes() error = %v", err)
+	}
 
 	return database
 }

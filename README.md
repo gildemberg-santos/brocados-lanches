@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho e cotação server-side entregues; checkout, pedido e painel ainda não implementados.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; painel administrativo ainda não implementado.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -47,11 +47,14 @@ O esqueleto da Fase 1 já inclui:
 - domínio e repositórios de catálogo com validação, índices idempotentes e testes de integração com MongoDB real;
 - API pública de catálogo com `GET /api/v1/menu` e `GET /api/v1/delivery-zones`, filtros de ativos/disponibilidade e testes de service e handler;
 - cotação server-side em `POST /api/v1/orders/quote`, sem persistência, com validação de itens/opções/adicionais/zona/status da loja e cálculo centralizado em `domain.BuildQuote`;
+- criação de pedido em `POST /api/v1/orders`, com idempotência, snapshot congelado, número sequencial, `publicId` opaco e link `wa.me` gerado após a persistência;
+- acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
 - carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e totais estimados pela menor taxa ativa;
-- estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo e do carrinho;
+- checkout com entrega/retirada, zona, endereço, pagamento, troco e validação por campo; confirmação que limpa o carrinho somente após `201` e permite reenviar/copiar o link do WhatsApp;
+- estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo, carrinho, checkout e pedido;
 - componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText` e outros) e services/stores tipados;
 - tokens do design system importados diretamente de `design-system/tokens.css`;
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
@@ -311,9 +314,9 @@ O protótipo **não** entrega:
 
 O esqueleto **ainda não** entrega:
 
-- checkout e cotação server-side;
-- criação e acompanhamento de pedidos;
 - login e painel administrativo;
+- fila, transições de status e auditoria administrativa;
+- limites de taxa (rate limit) previstos no contrato;
 - deploy de produção.
 
 Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. O site público de referência está analisado em `docs/12-referencia-ola-click.md`.
@@ -324,7 +327,7 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
 2. Estender o smoke E2E para o fluxo de catálogo e carrinho.
-3. Implementar cotação, checkout e pedido persistido (Épicos 3 e 4).
+3. Cobrir no E2E o fluxo de checkout, pedido persistido e confirmação (Épicos 3 e 4).
 4. Implementar autenticação, catálogo admin, fila e transições (Épicos 6 e 7).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 

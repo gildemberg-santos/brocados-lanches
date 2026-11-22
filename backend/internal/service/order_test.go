@@ -21,6 +21,17 @@ type fakeOrderReader struct {
 	zonesErr    error
 	storeErr    error
 
+	existing      domain.Order
+	existingFound bool
+	existingErr   error
+	created       domain.Order
+	createErr     error
+	byPublicID    domain.Order
+	byPublicIDErr error
+
+	receivedKey   string
+	receivedOrder domain.Order
+
 	calls []string
 }
 
@@ -42,6 +53,25 @@ func (f *fakeOrderReader) ListActiveDeliveryZones(context.Context) ([]domain.Del
 func (f *fakeOrderReader) GetStoreSettings(context.Context) (domain.StoreSettings, error) {
 	f.calls = append(f.calls, "store")
 	return f.store, f.storeErr
+}
+
+func (f *fakeOrderReader) FindByIdempotencyKey(_ context.Context, key string) (domain.Order, bool, error) {
+	f.calls = append(f.calls, "findByIdempotency")
+	return f.existing, f.existingFound, f.existingErr
+}
+
+func (f *fakeOrderReader) FindByPublicID(context.Context, string) (domain.Order, error) {
+	f.calls = append(f.calls, "findByPublicID")
+	return f.byPublicID, f.byPublicIDErr
+}
+
+func (f *fakeOrderReader) Create(_ context.Context, order domain.Order) (domain.Order, error) {
+	f.calls = append(f.calls, "create")
+	f.receivedOrder = order
+	if f.createErr != nil {
+		return domain.Order{}, f.createErr
+	}
+	return f.created, nil
 }
 
 func orderServiceFixture() (*fakeOrderReader, *OrderService) {

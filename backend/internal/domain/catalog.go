@@ -71,6 +71,8 @@ type OptionGroup struct {
 // Option é uma escolha dentro de um grupo de opções.
 type Option struct {
 	ID         string
+	GroupID    string
+	GroupName  string
 	Name       string
 	PriceCents int64
 	Available  bool

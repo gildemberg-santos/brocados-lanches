@@ -14,6 +14,12 @@ const (
 	CurrencyBRL      = "BRL"
 )
 
+// Tipos de entrada congelados no snapshot do pedido.
+const (
+	QuoteOptionKindOption = "option"
+	QuoteOptionKindAddon  = "addon"
+)
+
 // Fulfillment é a forma de entrega do pedido.
 type Fulfillment string
 
@@ -46,6 +52,7 @@ type Quote struct {
 	DeliveryFeeCents int64
 	TotalCents       int64
 	Currency         string
+	Zone             *OrderZone
 	Items            []QuoteLine
 	Warnings         []string
 }
@@ -63,7 +70,11 @@ type QuoteLine struct {
 
 // QuoteOption é uma opção ou adicional com nome e preço vindos do catálogo.
 type QuoteOption struct {
+	GroupID    string
+	GroupName  string
+	OptionID   string
 	Name       string
+	Kind       string
 	PriceCents int64
 }
 
@@ -143,16 +154,19 @@ func BuildQuote(request QuoteRequest, catalog QuoteCatalog) (Quote, error) {
 	}
 
 	var deliveryFeeCents int64
+	var quoteZone *OrderZone
 	if request.Fulfillment == FulfillmentDelivery {
 		zone, err := findActiveZone(request.ZoneID, catalog.Zones)
 		if err != nil {
 			return Quote{}, err
 		}
 		deliveryFeeCents = zone.FeeCents
+		quoteZone = &OrderZone{ID: zone.ID, Name: zone.Name, FeeCents: zone.FeeCents}
 	}
 
 	quote := Quote{
 		Currency: CurrencyBRL,
+		Zone:     quoteZone,
 		Items:    make([]QuoteLine, 0, len(request.Items)),
 		Warnings: []string{},
 	}
@@ -171,7 +185,7 @@ func BuildQuote(request QuoteRequest, catalog QuoteCatalog) (Quote, error) {
 		options := make([]QuoteOption, 0, len(item.OptionIDs)+len(item.AddonIDs))
 		var optionsPriceCents int64
 		for _, option := range selectedOptions {
-			options = append(options, QuoteOption{Name: option.Name, PriceCents: option.PriceCents})
+			options = append(options, newQuoteOption(option, QuoteOptionKindOption))
 			optionsPriceCents, err = addCents(optionsPriceCents, option.PriceCents)
 			if err != nil {
 				return Quote{}, err
@@ -187,7 +201,7 @@ func BuildQuote(request QuoteRequest, catalog QuoteCatalog) (Quote, error) {
 					Message: "is not available for this product",
 				}
 			}
-			options = append(options, QuoteOption{Name: addon.Name, PriceCents: addon.PriceCents})
+			options = append(options, newQuoteOption(addonToOption(addon), QuoteOptionKindAddon))
 			optionsPriceCents, err = addCents(optionsPriceCents, addon.PriceCents)
 			if err != nil {
 				return Quote{}, err
@@ -247,6 +261,8 @@ func validateSelectedOptions(item QuoteItem, product Product, itemIndex int) ([]
 	byID := make(map[string]Option)
 	for _, group := range product.OptionGroups {
 		for _, option := range group.Options {
+			option.GroupID = group.ID
+			option.GroupName = group.Name
 			byID[option.ID] = option
 		}
 	}
@@ -294,11 +310,32 @@ func validateSelectedOptions(item QuoteItem, product Product, itemIndex int) ([]
 	for _, group := range product.OptionGroups {
 		for _, option := range group.Options {
 			if _, ok := selected[option.ID]; ok {
+				option.GroupID = group.ID
+				option.GroupName = group.Name
 				ordered = append(ordered, option)
 			}
 		}
 	}
 	return ordered, nil
+}
+
+func newQuoteOption(option Option, kind string) QuoteOption {
+	groupID, groupName := option.GroupID, option.GroupName
+	if kind == QuoteOptionKindAddon {
+		groupID, groupName = "addons", "Adicionais"
+	}
+	return QuoteOption{
+		GroupID:    groupID,
+		GroupName:  groupName,
+		OptionID:   option.ID,
+		Name:       option.Name,
+		Kind:       kind,
+		PriceCents: option.PriceCents,
+	}
+}
+
+func addonToOption(addon Addon) Option {
+	return Option{ID: addon.ID, Name: addon.Name, PriceCents: addon.PriceCents}
 }
 
 func productHasAddon(product Product, addonID string) bool {

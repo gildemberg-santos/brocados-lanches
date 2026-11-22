@@ -1,7 +1,7 @@
 # Decisões e Pendências — Brocados Lanches
 
 **Versão:** 1.1  
-**Atualizado em:** 21/11/2026  
+**Atualizado em:** 22/11/2026  
 **Status:** registro vivo.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `08-backlog.md`, `adr/`.
 
@@ -40,6 +40,8 @@
 | D-016 | 20/11/2026 | CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E | Decidido | Pipeline versionado em `.github/workflows/ci.yml`; PR bloqueado por falha | `.github/workflows/ci.yml` |
 | D-017 | 22/11/2026 | Total do item no detalhe é estimado a partir dos preços do catálogo | Decidido | A cotação e o pedido recalculam no servidor; nenhum valor do cliente é confiável | `08-backlog.md`, `09-qualidade-e-testes.md`, `AGENTS.md` §8.2 |
 | D-018 | 22/11/2026 | No carrinho, a taxa estimada é a menor taxa ativa até a escolha da zona no checkout | Decidido | Evita taxa inventada e deixa claro que o total definitivo é server-side | `07-design-system-e-experiencia.md` §5.4, `08-backlog.md` §7 |
+| D-019 | 22/11/2026 | Pedido gravado com snapshot, número sequencial, `publicId` opaco e chave idempotente; replay devolve `200` | Decidido e implementado | Nenhum duplo pedido; histórico não depende do catálogo atual | `06-contrato-api.md` §7, `08-backlog.md` §8 |
+| D-020 | 22/11/2026 | O link `wa.me` sai na criação e fica no `sessionStorage` por pedido para reenvio na mesma sessão; não é devolvido no acompanhamento | Decidido e implementado | Handoff recuperável sem expor PII na rota pública | `06-contrato-api.md` §7 e §8, `07-design-system-e-experiencia.md` §5.6 |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -82,13 +84,13 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 - **Decisão:** `POST /orders/quote` valida itens, opções, adicionais e zona, e devolve subtotal, taxa e total sem persistir.
 - **Consequência:** o frontend não calcula total; o `POST /orders` recalcula e pode rejeitar se algo mudou.
 - **Risco:** duplicação de lógica entre quote e order. Mitigação: uma única função de cálculo no domínio/service.
-- **Estado em 22/11/2026:** US-032 implementada. `domain.BuildQuote` é a função única de cálculo; o service carrega catálogo, zonas e `store_settings`, e o handler expõe `POST /api/v1/orders/quote` sem gravar. O `POST /orders` ainda será implementado sobre a mesma função. O status efetivo da loja usa o kill switch e, quando existem horários cadastrados, a faixa vigente em `America/Fortaleza`.
+- **Estado em 22/11/2026:** US-032 implementada e reutilizada pelo `POST /orders` (US-040). `domain.BuildQuote` é a função única de cálculo; o service carrega catálogo, zonas e `store_settings`, e os handlers expõem `POST /api/v1/orders/quote` sem gravar e `POST /api/v1/orders` com persistência. O status efetivo da loja usa o kill switch e, quando existem horários cadastrados, a faixa vigente em `America/Fortaleza`.
 
 ### 4.2 Acompanhamento público mínimo
 
 - **Problema:** link público não pode expor PII.
-- **Decisão:** retornar número, status, itens (nome/quantidade), total, prazo e link do WhatsApp; nunca telefone, endereço, observação ou `_id`.
-- **Consequência:** o cliente vê o essencial; a loja continua sendo contatada pelo WhatsApp.
+- **Decisão:** retornar número, status, itens (nome/quantidade), total e prazo; nunca link do WhatsApp, telefone, endereço, observação ou `_id`.
+- **Consequência:** o cliente vê o essencial sem PII; o link completo com PII só aparece na criação do pedido e pode ser reenviado pelo `sessionStorage` na mesma sessão (D-020).
 
 ### 4.3 Usuários e auditoria
 
@@ -140,3 +142,5 @@ Elas entram em P2 ou no roadmap seguinte.
 | 21/11/2026 | US-020 concluída: domínio, validação, repositórios e índices idempotentes de catálogo; job Backend do CI passa a rodar testes de integração com MongoDB 8 |
 | 21/11/2026 | US-021 concluída: API pública de catálogo com `GET /menu` e `GET /delivery-zones`, filtros de ativos/disponibilidade, envelope de erro e testes de service/handler |
 | 22/11/2026 | US-023 e US-024 concluídas: home, cardápio, busca/filtros, detalhe e personalização com opções, adicionais e total estimado; testes unitários e smoke E2E de navegação |
+| 22/11/2026 | US-032 concluída: cotação server-side sem persistir, com `domain.BuildQuote` como única fonte de cálculo |
+| 22/11/2026 | US-033/US-034 e US-040 a US-043 concluídas: checkout, pedido persistido e idempotente, handoff WhatsApp, confirmação com limpeza do carrinho e acompanhamento público; D-019 e D-020 registrados |

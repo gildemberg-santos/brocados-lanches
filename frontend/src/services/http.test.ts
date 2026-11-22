@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, get, getData } from './http'
+import { ApiError, get, getData, post, postData } from './http'
 
 interface MockResponse {
   ok: boolean
@@ -82,6 +82,42 @@ describe('http', () => {
     expect(error).toMatchObject({
       status: 500,
       code: 'HTTP_ERROR',
+    })
+  })
+
+  it('posts JSON with the idempotency header and unwraps data', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'abc' } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      postData('/api/v1/orders', { items: [] }, { idempotencyKey: 'chave-idempotente' }),
+    ).resolves.toEqual({ id: 'abc' })
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/orders', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'chave-idempotente',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ items: [] }),
+    })
+  })
+
+  it('maps POST errors to ApiError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          jsonResponse({ error: { code: 'CONFLICT', message: 'Pedido duplicado.' } }, 409),
+        ),
+    )
+
+    await expect(post('/api/v1/orders', {})).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 409,
+      code: 'CONFLICT',
     })
   })
 })

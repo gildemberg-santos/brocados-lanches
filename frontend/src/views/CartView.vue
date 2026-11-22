@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import BaseButton from '../components/BaseButton.vue'
 import CartLine from '../components/CartLine.vue'
@@ -16,6 +16,7 @@ import { useMenuStore } from '../stores/menu'
 const cart = useCartStore()
 const menu = useMenuStore()
 const zones = useDeliveryZonesStore()
+const router = useRouter()
 
 const isLoading = computed(() => menu.state === 'idle' || menu.state === 'loading')
 const lines = computed(() => buildCartLines(cart.items, menu.products).lines)
@@ -95,8 +96,10 @@ onMounted(async () => {
           :item-count="cart.count"
         >
           <template #action>
-            <BaseButton disabled>Continuar</BaseButton>
-            <p class="cart-cta-note">O checkout será conectado na próxima etapa.</p>
+            <BaseButton :disabled="lines.length === 0" @click="router.push({ name: 'checkout' })">
+              Continuar
+            </BaseButton>
+            <p class="cart-cta-note">O total é calculado no servidor no próximo passo.</p>
           </template>
         </CartSummary>
       </div>

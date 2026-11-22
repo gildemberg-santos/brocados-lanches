@@ -104,6 +104,7 @@ async function mountCart(options: MountOptions = {}) {
       { path: '/cardapio', name: 'menu', component: StubView },
       { path: '/produto/:slug', name: 'product', component: StubView },
       { path: '/carrinho', name: 'cart', component: StubView },
+      { path: '/checkout', name: 'checkout', component: StubView },
     ],
   })
   await router.push('/carrinho')
@@ -112,7 +113,7 @@ async function mountCart(options: MountOptions = {}) {
   const wrapper = mount(CartView, { global: { plugins: [pinia, router] } })
   await flushPromises()
 
-  return { wrapper, cart }
+  return { wrapper, cart, router }
 }
 
 describe('CartView', () => {
@@ -136,7 +137,7 @@ describe('CartView', () => {
     expect(wrapper.text()).toContain('23,00')
     expect(wrapper.text()).toContain('8,00')
     expect(wrapper.text()).toContain('31,00')
-    expect(wrapper.text()).toContain('O checkout será conectado na próxima etapa.')
+    expect(wrapper.text()).toContain('O total é calculado no servidor no próximo passo.')
   })
 
   it('shows the selected options and note', async () => {
@@ -194,5 +195,16 @@ describe('CartView', () => {
     expect(wrapper.text()).toContain('A calcular no checkout')
     expect(wrapper.text()).toContain('Total parcial')
     expect(wrapper.text()).toContain('23,00')
+  })
+
+  it('navigates to checkout from the cart CTA', async () => {
+    const { wrapper, router } = await mountCart({ seed: true })
+    const continueButton = wrapper.findAll('button').find((button) => button.text() === 'Continuar')
+
+    expect(continueButton?.attributes('disabled')).toBeUndefined()
+    await continueButton!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.name).toBe('checkout')
   })
 })

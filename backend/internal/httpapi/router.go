@@ -54,6 +54,8 @@ func NewRouter(deps Dependencies) http.Handler {
 		router.Get("/menu", handleMenu(deps.Catalog, logger))
 		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
 		router.Post("/orders/quote", handleQuote(deps.Orders, logger))
+		router.Post("/orders", handleCreateOrder(deps.Orders, logger))
+		router.Get("/orders/{publicId}", handleTrackOrder(deps.Orders, logger))
 	})
 
 	return router

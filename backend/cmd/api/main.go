@@ -58,7 +58,10 @@ func run() error {
 	if err := repository.EnsureCatalogIndexes(startupContext, database); err != nil {
 		return err
 	}
-	logger.Info("catalog indexes ensured", "database", cfg.MongoDB)
+	if err := repository.EnsureOrderIndexes(startupContext, database); err != nil {
+		return err
+	}
+	logger.Info("database indexes ensured", "database", cfg.MongoDB)
 
 	catalogRepository, err := repository.NewCatalogRepository(database)
 	if err != nil {
@@ -69,11 +72,15 @@ func run() error {
 		return err
 	}
 
+	orderRepository, err := repository.NewOrderRepository(database)
+	if err != nil {
+		return err
+	}
 	operationLocation, err := time.LoadLocation("America/Fortaleza")
 	if err != nil {
 		return err
 	}
-	orderService, err := service.NewOrderService(catalogRepository, operationLocation)
+	orderService, err := service.NewOrderService(orderRepository, operationLocation)
 	if err != nil {
 		return err
 	}

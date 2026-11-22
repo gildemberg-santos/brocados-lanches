@@ -36,6 +36,18 @@ type errorDetail struct {
 	Message string `json:"message"`
 }
 
+// malformedRequestError representa problema de sintaxe/transporte (400),
+// distinto de regra semântica de negócio (422).
+type malformedRequestError struct {
+	field   string
+	code    string
+	message string
+}
+
+func (e *malformedRequestError) Error() string {
+	return e.field + ": " + e.message
+}
+
 // writeError traduz erros de domínio para o envelope público. Erros internos
 // são registrados com contexto e nunca expõem detalhe do banco ao cliente.
 func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err error) {
@@ -45,10 +57,22 @@ func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err
 		Message: "Não foi possível processar a solicitação.",
 	}
 
+	var malformed *malformedRequestError
 	var validationError *domain.ValidationError
 	switch {
-	case errors.As(err, &validationError):
+	case errors.As(err, &malformed):
 		status = http.StatusBadRequest
+		body = errorBody{
+			Code:    codeValidationError,
+			Message: "Dados inválidos.",
+			Details: []errorDetail{{
+				Field:   malformed.field,
+				Code:    malformed.code,
+				Message: malformed.message,
+			}},
+		}
+	case errors.As(err, &validationError):
+		status = http.StatusUnprocessableEntity
 		body = errorBody{
 			Code:    codeValidationError,
 			Message: "Dados inválidos.",
@@ -59,7 +83,7 @@ func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err
 			}},
 		}
 	case errors.Is(err, domain.ErrValidation):
-		status = http.StatusBadRequest
+		status = http.StatusUnprocessableEntity
 		body = errorBody{
 			Code:    codeValidationError,
 			Message: "Dados inválidos.",

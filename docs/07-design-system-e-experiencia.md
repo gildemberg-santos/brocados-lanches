@@ -245,7 +245,7 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 - Subtotal, taxa estimada e total.
 - Aviso de que o total final é confirmado no checkout.
 - Antes da escolha da zona, a taxa estimada usa a menor taxa ativa; se a API falhar, o resumo mostra “A calcular no checkout” e total parcial.
-- CTA “Continuar” (desabilitado até o checkout da US-033).
+- CTA “Continuar” habilitado quando há itens disponíveis; leva a `/checkout`.
 - Estado vazio com CTA para o cardápio.
 
 ### 5.5 Checkout — `/checkout`
@@ -267,29 +267,28 @@ Regras:
 - Telefone com máscara e normalização.
 - Erros por campo, com foco no primeiro erro.
 - Total vem de `/orders/quote`; se a cotação falhar, não enviar.
-- Botão de envio desabilitado durante a requisição.
+- Botão de envio desabilitado durante a requisição e enquanto a cotação não chega.
 - Se a loja fechar, mensagem clara e ação de voltar ao cardápio.
-- Se o pedido for criado, limpar carrinho e ir para confirmação.
-- Se falhar, preservar carrinho e dados.
+- Se o pedido for criado (`201`), limpar carrinho e ir para confirmação; no replay idempotente (`200`), o mesmo destino é usado.
+- Se falhar, preservar carrinho e dados; a chave idempotente é mantida em retries do mesmo pedido e renovada somente quando o conteúdo da requisição muda.
 
 ### 5.6 Confirmação — `/pedido/:publicId`
 
 **Objetivo:** confirmar e orientar o próximo passo.
 
-- Número do pedido, status, total e prazo.
+- Número do pedido, status, itens, total e prazo.
 - Botão “Abrir WhatsApp” e link copiável.
 - Aviso de que o pedido já está registrado.
-- Link para acompanhar.
-- Se o WhatsApp falhar, manter pedido e oferecer reenvio.
+- Link para voltar ao cardápio; o próprio caminho `/pedido/:publicId` serve de acompanhamento.
+- Se o WhatsApp falhar, manter pedido e oferecer reenvio pelo link guardado no `sessionStorage` na mesma sessão.
 
 ### 5.7 Acompanhamento — `/pedido/:publicId`
 
 **Objetivo:** consultar status sem expor PII.
 
-- Timeline: pending → confirmed → preparing → ready → out_for_delivery/picked_up → delivered/picked_up.
-- Itens e total.
-- Contato da loja.
-- Atualizar manualmente.
+- Timeline: pending → confirmed → preparing → ready → out_for_delivery/picked_up → delivered/picked_up (histórico completo depende da fila administrativa).
+- Itens e total nesta entrega.
+- Contato da loja e atualização manual previstos para a US-051.
 - Estado inválido/não encontrado sem revelar dados.
 
 ### 5.8 Contato e privacidade

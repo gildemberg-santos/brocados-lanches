@@ -227,7 +227,7 @@ Regras:
 - `unitPriceCents` é o preço base do produto; `optionsPriceCents` soma opções e adicionais; `lineTotalCents = (unitPriceCents + optionsPriceCents) * quantity`.
 - Pode retornar `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE` ou `VALIDATION_ERROR`.
 - Rate limit previsto: 30/min por IP. O middleware ainda não está ativo no esqueleto e será ligado quando o endpoint for exposto publicamente.
-- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou. O cálculo está centralizado em `domain.BuildQuote` e será reutilizado pelo `POST /orders`.
+- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou. O cálculo está centralizado em `domain.BuildQuote` e é reutilizado pelo `POST /orders`.
 
 ---
 
@@ -309,7 +309,10 @@ Headers:
 
 ```http
 Location: /api/v1/orders/3Jk9Qm2pX7vR5sT1aB8cD4
+Cache-Control: no-store
 ```
+
+No replay idempotente, o header `Idempotent-Replayed: true` também é devolvido.
 
 ### Idempotência
 
@@ -319,6 +322,7 @@ Location: /api/v1/orders/3Jk9Qm2pX7vR5sT1aB8cD4
 - Chave ausente: `400 VALIDATION_ERROR`.
 - Chave com 16 a 128 caracteres; recomendado UUID v4.
 - O corpo canônico é usado para `requestHash`; campos desconhecidos são rejeitados.
+- O cliente reutiliza a chave em retries do mesmo conteúdo e gera outra quando o pedido muda; isso evita duplicata se a resposta da primeira requisição se perder.
 
 ### Validações
 
@@ -383,9 +387,9 @@ Não retorna:
 - histórico interno de auditoria;
 - `whatsappUrl` (a URL contém a mensagem com PII e só é devolvida na criação do pedido).
 
-Após recarregar a confirmação, o cliente vê o número do pedido e o contato da loja; para reenviar, informa o número no WhatsApp. O link completo não é persistido no navegador nem exposto pelo acompanhamento público.
+Após recarregar a confirmação, o cliente vê número, status, itens e total pelo `publicId`. A URL completa do WhatsApp não é devolvida pelo acompanhamento: ela fica apenas na resposta de criação e, para permitir o reenvio na mesma sessão, no `sessionStorage` do navegador sob a chave `brocados:handoff:{publicId}`. Ela não é gravada no servidor nem enviada em logs.
 
-`404 NOT_FOUND` para ID inválido ou inexistente. Rate limit: 60/min por IP.
+`404 NOT_FOUND` para ID inválido ou inexistente. Rate limit: 60/min por IP (previsto; ainda não ativo no esqueleto).
 
 ---
 

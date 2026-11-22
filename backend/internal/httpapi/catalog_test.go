@@ -252,14 +252,14 @@ func TestWriteError(t *testing.T) {
 				Code:    domain.CodeOutOfRange,
 				Message: "must be greater than zero",
 			},
-			wantStatus:  http.StatusBadRequest,
+			wantStatus:  http.StatusUnprocessableEntity,
 			wantCode:    codeValidationError,
 			wantDetails: 1,
 		},
 		{
 			name:       "validação sem detalhe",
 			err:        domain.ErrValidation,
-			wantStatus: http.StatusBadRequest,
+			wantStatus: http.StatusUnprocessableEntity,
 			wantCode:   codeValidationError,
 		},
 		{
