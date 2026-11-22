@@ -1,8 +1,8 @@
 # Backlog — Brocados Lanches V1
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); nenhuma história de produto implementada.  
+**Versão:** 1.1  
+**Atualizado em:** 21/11/2026  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020 concluída e US-021 próxima; nenhuma interface de produto implementada.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -171,11 +171,13 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-024 | Detalhe e personalização | P0 | G | US-021 | Opções obrigatórias, min/máx, adicionais e preço; testes |
 | US-025 | Informações da loja | P1 | M | US-021 | Status, horários, endereço, contato e prazo; estados |
 
+**Status em 21/11/2026:** US-020 concluída (domínio, validação, repositórios, índices idempotentes e testes de integração com MongoDB real). US-021 a US-025 planejadas.
+
 **Tarefas técnicas:**
 
-- [ ] Definir tipos de domínio para categoria, produto, opção, adicional e zona.
-- [ ] Implementar validação de slug, preço, ordem e vínculos.
-- [ ] Criar índices idempotentes.
+- [x] Definir tipos de domínio para categoria, produto, opção, adicional e zona.
+- [x] Implementar validação de slug, preço, ordem e vínculos.
+- [x] Criar índices idempotentes.
 - [ ] Implementar `GET /menu`, `GET /delivery-zones`.
 - [ ] Implementar filtros de ativos e disponibilidade.
 - [ ] Criar stores e services tipados no frontend.

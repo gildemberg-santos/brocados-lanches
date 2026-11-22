@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -48,6 +49,15 @@ func run() error {
 			logger.Error("mongo disconnect failed", "error", err)
 		}
 	}()
+
+	database := mongoClient.Database(cfg.MongoDB)
+	if database == nil {
+		return fmt.Errorf("mongo database %q is unavailable", cfg.MongoDB)
+	}
+	if err := repository.EnsureCatalogIndexes(startupContext, database); err != nil {
+		return err
+	}
+	logger.Info("catalog indexes ensured", "database", cfg.MongoDB)
 
 	server := &http.Server{
 		Addr:              cfg.Addr(),

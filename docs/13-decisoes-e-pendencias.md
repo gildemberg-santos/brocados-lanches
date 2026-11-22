@@ -1,7 +1,7 @@
 # Decisões e Pendências — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
+**Versão:** 1.1  
+**Atualizado em:** 21/11/2026  
 **Status:** registro vivo.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `08-backlog.md`, `adr/`.
 
@@ -134,3 +134,4 @@ Elas entram em P2 ou no roadmap seguinte.
 |---|---|
 | 18/11/2026 | Criação do registro; decisões da V1 e pendências iniciais |
 | 20/11/2026 | D-016 (GitHub Actions); P-015 resolvido; decisão de seed registrada; §2.1 verificada sem divergência |
+| 21/11/2026 | US-020 concluída: domínio, validação, repositórios e índices idempotentes de catálogo; job Backend do CI passa a rodar testes de integração com MongoDB 8 |

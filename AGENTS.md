@@ -1,7 +1,7 @@
 # AGENTS.md — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
+**Versão:** 1.1  
+**Atualizado em:** 21/11/2026  
 **Stack:** Go + Chi · Vue 3 + Vite + TypeScript · MongoDB  
 **Aplica-se a:** todo o repositório
 
@@ -17,7 +17,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Objetivo da V1:** o cliente monta o pedido e ele é **registrado no servidor antes de qualquer envio**; a operação gerencia catálogo, zonas e pedidos pelo painel; preços, taxas e disponibilidade são sempre validados no backend.
 
-**Estado em 20/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; catálogo, checkout e painel administrativo ainda não foram implementados.
+**Estado em 21/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; o catálogo já tem domínio, validação, repositórios e índices idempotentes, mas API e interface do catálogo, checkout e painel administrativo ainda não foram implementados.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
 
@@ -437,7 +437,7 @@ Regras:
 
 - Backend: testes de tabela (table-driven) para service, `httptest` para handlers e testcontainers para repositório. Rode `go test -race ./...`.
 - Scripts Python: `unittest` para os validadores de documentação e design system, executado por `make test-docs`, `make test-design` e pelo hook de commit.
-- Teste de integração do repositório: pula por padrão; use `cd backend && MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -run TestConnectIntegration -v` com um Mongo real e descartável.
+- Testes de integração do repositório: pulam por padrão; use `cd backend && MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v` com um Mongo real e descartável. O job Backend do CI sobe MongoDB 8 e define a variável.
 - Frontend: Vitest + Vue Test Utils para componentes e stores; Playwright para o fluxo crítico.
 - Fluxo E2E mínimo: cardápio → personalizar → carrinho → checkout → pedido persistido → pedido aparece no admin → mudança de status.
 - Não use snapshot como única prova de UI crítica.

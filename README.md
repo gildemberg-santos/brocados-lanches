@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; catálogo, checkout e painel ainda não implementados.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 iniciada com domínio e repositórios de catálogo; API, interface, checkout e painel ainda não implementados.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -44,6 +44,7 @@ O esqueleto da Fase 1 já inclui:
 
 - API Go + Chi com `/healthz`, `/readyz` e raiz versionada em `/api/v1`;
 - conexão com MongoDB e verificação real no readiness;
+- domínio e repositórios de catálogo com validação, índices idempotentes e testes de integração com MongoDB real;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - tela inicial que consulta o readiness da API;
@@ -92,8 +93,8 @@ brocados-lanches/
 │   ├── internal/
 │   │   ├── config/           # ambiente e validação
 │   │   ├── httpapi/          # router, handlers e middleware
-│   │   ├── repository/       # conexão MongoDB
-│   │   ├── domain/           # entidades e erros (próximas fases)
+│   │   ├── repository/       # conexão MongoDB e repositórios de catálogo
+│   │   ├── domain/           # entidades, enums e erros de domínio
 │   │   ├── service/          # regras de negócio (próximas fases)
 │   │   └── platform/         # clock, IDs, log e integrações
 │   ├── scripts/seed/         # seed de desenvolvimento e teste
@@ -275,7 +276,7 @@ O workflow `.github/workflows/ci.yml` roda em pull request, push para `main` e e
 | Job | Verifica |
 |---|---|
 | Documentação e design system | `docs-check`, `design-check` e testes dos validadores |
-| Backend | `gofmt`, `go vet`, `go test -race`, seed e build |
+| Backend | `gofmt`, `go vet`, `go test -race` com MongoDB 8, seed e build |
 | Frontend | Prettier, ESLint, `vue-tsc`, Vitest e build |
 | E2E | Chromium + Playwright com MongoDB 8 como serviço |
 
