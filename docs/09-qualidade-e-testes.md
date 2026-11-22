@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026; testes de integração do catálogo no CI e testes de service/handler da API pública em 21/11/2026; testes de home e cardápio em 22/11/2026.  
+**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026; testes de integração do catálogo no CI e testes de service/handler da API pública em 21/11/2026; testes de home, cardápio e personalização em 22/11/2026.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `06-contrato-api.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`.
 
 ---
@@ -269,6 +269,7 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 - Catálogo: carregar uma vez, forçar recarga, erro, retry, produto/categoria por slug e somente destaques disponíveis.
 - Home: estados de carregando, vazio, erro e sucesso; navegação para o cardápio com categoria.
 - Cardápio: busca sem acento/caixa, filtro por categoria, contagem, busca sem resultado e produto esgotado.
+- Personalização: obrigatoriedade, mínimo/máximo, adicionais, observação, preço estimado, esgotado e produto não encontrado.
 - Carrinho: adicionar, somar quantidade, remover, limpar, persistir, migrar versão.
 - Checkout: delivery/retirada, zona, troco, cotação, erro.
 - Admin auth: login, logout, 401, papel.
@@ -450,6 +451,7 @@ Falha em gate bloqueia merge/lançamento; não usar `--no-verify` nem desativar 
 | História | Teste principal |
 |---|---|
 | US-023 | Home/cardápio no Vitest + smoke E2E de navegação |
+| US-024 | Opções e adicionais no service + componente `OptionGroup` |
 | US-032 | Cotação no service + handler + store |
 | US-040 | Criação de pedido no service + handler + repository |
 | US-041 | Concorrência de idempotência no repository |

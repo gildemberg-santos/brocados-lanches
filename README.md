@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com home e cardápio entregues; detalhe, personalização, carrinho, checkout e painel ainda não implementados.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável e personalização em andamento; carrinho, checkout e painel ainda não implementados.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -48,9 +48,9 @@ O esqueleto da Fase 1 já inclui:
 - API pública de catálogo com `GET /api/v1/menu` e `GET /api/v1/delivery-zones`, filtros de ativos/disponibilidade e testes de service e handler;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
-- home e cardápio com busca, filtro por categoria, grid e estado de esgotado;
-- estados de carregando, vazio, erro e sucesso nas telas do catálogo;
-- componentes reutilizáveis (`BaseButton`, `ProductCard`, `PriceText` e outros) e services/stores tipados;
+- home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
+- estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo;
+- componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText` e outros) e services/stores tipados;
 - tokens do design system importados diretamente de `design-system/tokens.css`;
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
 - testes de frontend com Vitest + Vue Test Utils;
@@ -309,7 +309,6 @@ O protótipo **não** entrega:
 
 O esqueleto **ainda não** entrega:
 
-- detalhe e personalização do produto;
 - carrinho e checkout;
 - criação e acompanhamento de pedidos;
 - login e painel administrativo;

@@ -38,6 +38,7 @@
 | D-014 | 18/11/2026 | Não usar CDN, Google Fonts ou analytics sem consentimento em produção | Decidido | Segurança, privacidade e performance | `../AGENTS.md`, `10-operacao-e-lancamento.md` |
 | D-015 | 18/11/2026 | Hospedagem, domínio, MongoDB gerenciado e retenção final ainda não decididos | Pendente | Bloqueia deploy/go-live | Este documento |
 | D-016 | 20/11/2026 | CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E | Decidido | Pipeline versionado em `.github/workflows/ci.yml`; PR bloqueado por falha | `.github/workflows/ci.yml` |
+| D-017 | 22/11/2026 | Total do item no detalhe é estimado a partir dos preços do catálogo | Decidido | A cotação e o pedido recalculam no servidor; nenhum valor do cliente é confiável | `08-backlog.md`, `09-qualidade-e-testes.md`, `AGENTS.md` §8.2 |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -51,7 +52,7 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 |---|---|---|---|---|---|
 | P-001 | Número do chamado, solicitante, prazo e prioridade | Governança e estimativa | Sim | Cliente/gestão | Pendente |
 | P-002 | O catálogo do site é o oficial? | Evita inventar cardápio | Sim | Cliente | Pendente |
-| P-003 | Quais grupos de opções/adicionais por produto? | Personalização e preço | Sim | Cliente | Pendente |
+| P-003 | Quais grupos de opções/adicionais por produto? | Personalização e preço | Sim | Cliente | Pendente; UI pronta e testada com fixtures, mas o seed ainda não contém grupos/adicionais reais |
 | P-004 | Quais bairros e taxas valem hoje? | Checkout e entrega | Sim | Cliente | Pendente |
 | P-005 | Horários, feriados e prazo reais | Status da loja | Sim | Cliente | Pendente |
 | P-006 | WhatsApp, endereço, Instagram e Pix | Contato e handoff | Sim | Cliente | Pendente |
@@ -136,4 +137,4 @@ Elas entram em P2 ou no roadmap seguinte.
 | 20/11/2026 | D-016 (GitHub Actions); P-015 resolvido; decisão de seed registrada; §2.1 verificada sem divergência |
 | 21/11/2026 | US-020 concluída: domínio, validação, repositórios e índices idempotentes de catálogo; job Backend do CI passa a rodar testes de integração com MongoDB 8 |
 | 21/11/2026 | US-021 concluída: API pública de catálogo com `GET /menu` e `GET /delivery-zones`, filtros de ativos/disponibilidade, envelope de erro e testes de service/handler |
-| 22/11/2026 | US-023 concluída: home, cardápio, busca/filtros, grid, esgotado, estados e testes unitários; smoke E2E de navegação |
+| 22/11/2026 | US-023 e US-024 concluídas: home, cardápio, busca/filtros, detalhe e personalização com opções, adicionais e total estimado; testes unitários e smoke E2E de navegação |

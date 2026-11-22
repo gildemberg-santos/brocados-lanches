@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021 e US-023 concluídas; US-024 (detalhe e personalização) e US-025 pendentes.  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; informações da loja (US-025) e validação do catálogo pendentes.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -87,7 +87,7 @@
 - estados de carregando/vazio/erro/sucesso;
 - imagens e informações da loja.
 
-**Status em 22/11/2026:** US-020 concluída com domínio, validação, repositórios e índices idempotentes; US-021 concluída com `GET /menu` e `GET /delivery-zones`; US-023 concluída com home, cardápio e busca/filtros. US-024 e US-025 pendentes, assim como a validação do catálogo real com o cliente.
+**Status em 22/11/2026:** US-020 concluída com domínio, validação, repositórios e índices idempotentes; US-021 concluída com `GET /menu` e `GET /delivery-zones`; US-023 e US-024 concluídas com home, cardápio, busca/filtros, detalhe e personalização. Falta US-025 e a validação do catálogo real com o cliente. O total do item é estimado a partir do catálogo; cotação e pedido continuam server-side.
 
 **Saída:** M2. Demonstração em staging sem criação de pedido.
 

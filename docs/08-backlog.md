@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021 e US-023 concluídas; US-024 e US-025 próximas.  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; US-025 próxima.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -171,7 +171,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-024 | Detalhe e personalização | P0 | G | US-021 | Opções obrigatórias, min/máx, adicionais e preço; testes |
 | US-025 | Informações da loja | P1 | M | US-021 | Status, horários, endereço, contato e prazo; estados |
 
-**Status em 22/11/2026:** US-020 concluída (domínio, validação, repositórios, índices idempotentes e testes de integração com MongoDB real). US-021 concluída (`GET /menu` e `GET /delivery-zones`, filtros e testes de service/handler). US-023 concluída (home, cardápio, busca sem acento/caixa, filtro por categoria, grid, esgotado, estados e testes). US-024 e US-025 planejadas.
+**Status em 22/11/2026:** US-020 concluída (domínio, validação, repositórios, índices idempotentes e testes de integração com MongoDB real). US-021 concluída (`GET /menu` e `GET /delivery-zones`, filtros e testes de service/handler). US-023 concluída (home, cardápio, busca sem acento/caixa, filtro por categoria, grid, esgotado, estados e testes). US-024 concluída (detalhe, grupos obrigatórios com mínimo/máximo, adicionais, observação, total estimado e testes). O CTA de adicionar valida a personalização; a conexão com o carrinho entra na US-030. US-025 planejada.
 
 **Tarefas técnicas:**
 
@@ -181,8 +181,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Implementar `GET /menu`, `GET /delivery-zones`.
 - [x] Implementar filtros de ativos e disponibilidade.
 - [x] Criar stores e services tipados no frontend.
-- [x] Criar `ProductCard`, `CategoryPill`, `PriceText` e componentes de estado.
-- [ ] Criar `OptionGroup` e `AddonRow` para personalização.
+- [x] Criar `ProductCard`, `CategoryPill`, `OptionGroup`, `AddonRow`, `PriceText`.
 - [x] Implementar busca sem acento/caixa.
 - [x] Testar produto esgotado, categoria vazia e erro de leitura no backend.
 - [x] Testar busca sem resultado, erro de rede, retry e estados vazios no frontend.

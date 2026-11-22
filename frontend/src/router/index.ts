@@ -19,7 +19,7 @@ const router = createRouter({
     {
       path: '/produto/:slug',
       name: 'product',
-      redirect: '/cardapio',
+      component: () => import('../views/ProductView.vue'),
     },
   ],
 })
