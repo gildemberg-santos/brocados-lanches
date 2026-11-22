@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchMenu } from '../services/menu'
+import { useCartStore } from '../stores/cart'
 import {
   makeAddon,
   makeCategory,
@@ -63,6 +64,7 @@ async function mountProduct(path = '/produto/brocado-cheddar') {
       { path: '/', name: 'home', component: StubView },
       { path: '/cardapio', name: 'menu', component: StubView },
       { path: '/produto/:slug', name: 'product', component: StubView },
+      { path: '/carrinho', name: 'cart', component: StubView },
     ],
   })
 
@@ -80,6 +82,7 @@ async function mountProduct(path = '/produto/brocado-cheddar') {
 
 describe('ProductView', () => {
   beforeEach(() => {
+    localStorage.clear()
     vi.clearAllMocks()
   })
 
@@ -112,10 +115,10 @@ describe('ProductView', () => {
 
     expect(wrapper.text()).toContain('Revise as opções obrigatórias antes de adicionar.')
     expect(wrapper.text()).toContain('Escolha uma opção.')
-    expect(wrapper.text()).not.toContain('Personalização validada.')
+    expect(wrapper.text()).not.toContain('Adicionado ao carrinho.')
   })
 
-  it('updates the item total from the catalog and validates a complete configuration', async () => {
+  it('adds the configured item to the cart with IDs and choices only', async () => {
     mockedFetchMenu.mockResolvedValue(menu)
 
     const { wrapper } = await mountProduct()
@@ -132,8 +135,35 @@ describe('ProductView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Personalização validada.')
+    expect(wrapper.text()).toContain('Adicionado ao carrinho.')
     expect(wrapper.text()).not.toContain('Revise as opções obrigatórias')
+
+    const cart = useCartStore()
+    expect(cart.count).toBe(1)
+    expect(cart.items[0]).toMatchObject({
+      productId: 'product-1',
+      optionIds: ['well-done'],
+      addonIds: ['bacon'],
+      note: 'sem cebola',
+    })
+    expect(localStorage.getItem('brocados.cart')).not.toContain('3000')
+  })
+
+  it('merges repeated configurations into the same cart line', async () => {
+    mockedFetchMenu.mockResolvedValue(menu)
+
+    const { wrapper } = await mountProduct()
+    await flushPromises()
+
+    await wrapper.findAll('input[type="radio"]')[0].setValue()
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const cart = useCartStore()
+    expect(cart.items).toHaveLength(1)
+    expect(cart.count).toBe(2)
   })
 
   it('disables the add action when the product is sold out', async () => {

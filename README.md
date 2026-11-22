@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável e personalização em andamento; carrinho, checkout e painel ainda não implementados.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização e carrinho entregues; checkout, pedido e painel ainda não implementados.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -49,7 +49,8 @@ O esqueleto da Fase 1 já inclui:
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
-- estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo;
+- carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e totais estimados pela menor taxa ativa;
+- estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo e do carrinho;
 - componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText` e outros) e services/stores tipados;
 - tokens do design system importados diretamente de `design-system/tokens.css`;
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
@@ -309,7 +310,7 @@ O protótipo **não** entrega:
 
 O esqueleto **ainda não** entrega:
 
-- carrinho e checkout;
+- checkout e cotação server-side;
 - criação e acompanhamento de pedidos;
 - login e painel administrativo;
 - deploy de produção.
@@ -321,8 +322,8 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 ## 7. Próximos passos
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
-2. Implementar o catálogo somente leitura (Épico 2) e estender o smoke E2E para o cardápio.
-3. Implementar carrinho, cotação, checkout e pedido persistido (Épicos 3 e 4).
+2. Estender o smoke E2E para o fluxo de catálogo e carrinho.
+3. Implementar cotação, checkout e pedido persistido (Épicos 3 e 4).
 4. Implementar autenticação, catálogo admin, fila e transições (Épicos 6 e 7).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 

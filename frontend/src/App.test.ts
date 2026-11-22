@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { describe, expect, it } from 'vitest'
@@ -11,11 +12,15 @@ const StubView = defineComponent({
 })
 
 async function mountApp() {
+  const pinia = createPinia()
+  setActivePinia(pinia)
+
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       { path: '/', component: StubView },
       { path: '/cardapio', component: StubView },
+      { path: '/carrinho', component: StubView },
     ],
   })
 
@@ -24,7 +29,7 @@ async function mountApp() {
 
   return mount(App, {
     global: {
-      plugins: [router],
+      plugins: [pinia, router],
     },
   })
 }

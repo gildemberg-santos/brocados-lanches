@@ -39,6 +39,7 @@
 | D-015 | 18/11/2026 | Hospedagem, domínio, MongoDB gerenciado e retenção final ainda não decididos | Pendente | Bloqueia deploy/go-live | Este documento |
 | D-016 | 20/11/2026 | CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E | Decidido | Pipeline versionado em `.github/workflows/ci.yml`; PR bloqueado por falha | `.github/workflows/ci.yml` |
 | D-017 | 22/11/2026 | Total do item no detalhe é estimado a partir dos preços do catálogo | Decidido | A cotação e o pedido recalculam no servidor; nenhum valor do cliente é confiável | `08-backlog.md`, `09-qualidade-e-testes.md`, `AGENTS.md` §8.2 |
+| D-018 | 22/11/2026 | No carrinho, a taxa estimada é a menor taxa ativa até a escolha da zona no checkout | Decidido | Evita taxa inventada e deixa claro que o total definitivo é server-side | `07-design-system-e-experiencia.md` §5.4, `08-backlog.md` §7 |
 
 ### 2.1 Contrato refletido no AGENTS
 

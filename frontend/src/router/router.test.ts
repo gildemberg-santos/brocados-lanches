@@ -20,4 +20,10 @@ describe('router', () => {
 
     expect(route?.path).toBe('/produto/:slug')
   })
+
+  it('registers the cart route', () => {
+    const route = router.getRoutes().find((candidate) => candidate.name === 'cart')
+
+    expect(route?.path).toBe('/carrinho')
+  })
 })

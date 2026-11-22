@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+
+import { useCartStore } from '../stores/cart'
+
+const cart = useCartStore()
 </script>
 
 <template>
@@ -13,6 +17,16 @@ import { RouterLink } from 'vue-router'
       <nav class="site-header__nav" aria-label="Navegação principal">
         <RouterLink class="site-header__link" to="/">Início</RouterLink>
         <RouterLink class="site-header__link" to="/cardapio">Cardápio</RouterLink>
+        <RouterLink
+          class="site-header__link site-header__link--cart"
+          to="/carrinho"
+          :aria-label="cart.count > 0 ? `Carrinho, ${cart.count} itens` : 'Carrinho'"
+        >
+          Carrinho
+          <span v-if="cart.count > 0" class="site-header__badge" aria-hidden="true">
+            {{ cart.count }}
+          </span>
+        </RouterLink>
       </nav>
     </div>
   </header>
@@ -83,6 +97,22 @@ import { RouterLink } from 'vue-router'
   color: var(--text-main);
 }
 
+.site-header__link--cart {
+  gap: 6px;
+}
+
+.site-header__badge {
+  display: inline-grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--brand-primary);
+  color: var(--bg-primary);
+  font-size: var(--font-size-caption);
+  font-weight: 800;
+}
+
 @media (max-width: 519px) {
   .site-header__brand-name {
     font-size: 26px;
@@ -93,11 +123,9 @@ import { RouterLink } from 'vue-router'
   }
 
   .site-header__link {
-    padding-inline: 10px;
+    padding-inline: 8px;
   }
-}
 
-@media (max-width: 359px) {
   .site-header__nav .site-header__link:first-child {
     display: none;
   }

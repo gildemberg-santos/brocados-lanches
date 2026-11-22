@@ -17,12 +17,14 @@ import {
   validateOptionGroups,
 } from '../features/catalog/customization'
 import type { OptionSelections } from '../features/catalog/customization'
+import { useCartStore } from '../stores/cart'
 import { useMenuStore } from '../stores/menu'
 import type { MenuProduct } from '../types/catalog'
 
 const MAX_NOTE_LENGTH = 140
 
 const menu = useMenuStore()
+const cart = useCartStore()
 const route = useRoute()
 
 const slug = computed(() => (typeof route.params.slug === 'string' ? route.params.slug : ''))
@@ -36,6 +38,7 @@ const selectedAddonIds = ref<string[]>([])
 const note = ref('')
 const submitAttempted = ref(false)
 const added = ref(false)
+const addFailed = ref(false)
 
 const validationErrors = computed(() => validateOptionGroups(optionGroups.value, selections))
 const hasValidationErrors = computed(() => Object.keys(validationErrors.value).length > 0)
@@ -67,6 +70,7 @@ function resetConfiguration(item: MenuProduct | undefined): void {
   note.value = ''
   submitAttempted.value = false
   added.value = false
+  addFailed.value = false
 }
 
 function setSelection(groupId: string, ids: string[]): void {
@@ -105,9 +109,17 @@ async function handleAdd(): Promise<void> {
 
   submitAttempted.value = true
   added.value = false
+  addFailed.value = false
 
   if (!isConfigurationValid.value) {
     await focusFirstInvalidGroup()
+    return
+  }
+
+  const addedToCart = cart.add(product.value, selections, selectedAddonIds.value, note.value, 1)
+
+  if (!addedToCart) {
+    addFailed.value = true
     return
   }
 
@@ -226,8 +238,15 @@ onMounted(() => {
             Revise as opções obrigatórias antes de adicionar.
           </p>
 
+          <p v-if="addFailed" class="form-error" role="alert">
+            Não foi possível adicionar este item. Confira as opções e tente novamente.
+          </p>
+
           <p v-if="added" class="config-success" role="status">
-            Personalização validada. O carrinho será conectado na próxima etapa.
+            Adicionado ao carrinho.
+            <RouterLink class="config-success__link" :to="{ name: 'cart' }">
+              Ver carrinho
+            </RouterLink>
           </p>
 
           <div class="product-action">
@@ -450,6 +469,16 @@ onMounted(() => {
 .config-success {
   border: 1px solid var(--status-open);
   color: var(--status-open);
+}
+
+.config-success__link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-left: 8px;
+  color: var(--brand-primary);
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .product-action {

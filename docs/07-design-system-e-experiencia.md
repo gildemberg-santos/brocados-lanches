@@ -244,7 +244,8 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 - Itens com opções, observação, quantidade e remover.
 - Subtotal, taxa estimada e total.
 - Aviso de que o total final é confirmado no checkout.
-- CTA “Continuar”.
+- Antes da escolha da zona, a taxa estimada usa a menor taxa ativa; se a API falhar, o resumo mostra “A calcular no checkout” e total parcial.
+- CTA “Continuar” (desabilitado até o checkout da US-033).
 - Estado vazio com CTA para o cardápio.
 
 ### 5.5 Checkout — `/checkout`
