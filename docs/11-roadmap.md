@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 22/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060 e US-061 concluídas. Informações da loja (US-025), CRUD catálogo, fila e transições pendentes.  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060, US-061, US-022 e US-065 (API) concluídas. Informações públicas da loja (US-025), telas de catálogo/loja, fila e transições pendentes.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -128,11 +128,12 @@
 
 - ~~auth admin~~ (US-060 concluída);
 - ~~shell e guard~~ (US-061 concluída);
-- CRUD de catálogo;
-- zonas e loja;
+- ~~API CRUD de catálogo~~ (US-022 concluída);
+- ~~API de configuração da loja~~ (US-065 concluída);
+- telas de produtos, categorias, adicionais, zonas e loja (US-062 a US-065 no front);
 - fila de pedidos;
 - detalhe e transições;
-- auditoria;
+- consulta de auditoria;
 - usuários.
 
 **Saída:** M4. Operador treinado em staging.

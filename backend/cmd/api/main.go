@@ -65,6 +65,9 @@ func run() error {
 	if err := repository.EnsureAdminIndexes(startupContext, database); err != nil {
 		return err
 	}
+	if err := repository.EnsureAuditIndexes(startupContext, database); err != nil {
+		return err
+	}
 	logger.Info("database indexes ensured", "database", cfg.MongoDB)
 
 	catalogRepository, err := repository.NewCatalogRepository(database)
@@ -72,6 +75,14 @@ func run() error {
 		return err
 	}
 	catalogService, err := service.NewCatalogService(catalogRepository)
+	if err != nil {
+		return err
+	}
+	adminCatalogService, err := service.NewAdminCatalogService(catalogRepository)
+	if err != nil {
+		return err
+	}
+	adminStoreService, err := service.NewAdminStoreService(catalogRepository)
 	if err != nil {
 		return err
 	}
@@ -123,10 +134,12 @@ func run() error {
 	server := &http.Server{
 		Addr: cfg.Addr(),
 		Handler: httpapi.NewRouter(httpapi.Dependencies{
-			Pinger:    mongoClient,
-			Catalog:   catalogService,
-			Orders:    orderService,
-			AdminAuth: adminAuthService,
+			Pinger:       mongoClient,
+			Catalog:      catalogService,
+			Orders:       orderService,
+			AdminAuth:    adminAuthService,
+			AdminCatalog: adminCatalogService,
+			AdminStore:   adminStoreService,
 			AdminCookie: httpapi.AdminCookieConfig{
 				Name:   cfg.AdminCookieNameEffective(),
 				Secure: cfg.AdminCookieSecure,

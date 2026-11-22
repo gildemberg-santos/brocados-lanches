@@ -87,8 +87,8 @@ make test-e2e          # Playwright com API isolada em brocados_test
 | Acompanhamento | ID válido, inválido, status final, sem PII | US-050, US-051 |
 | Auth | Login, logout, me, sessão expirada, senha errada, rate limit | US-060 |
 | Papéis | Operator vs owner, 401 vs 403, último owner | US-061, US-066 |
-| Catálogo admin | Criar/editar/desativar, centavos, slug único, auditoria | US-062–US-064 |
-| Loja admin | Horários, kill switch, contato, auditoria | US-065 |
+| Catálogo admin (API) | Criar/editar/desativar, centavos, slug único, paginação, allowlist de ordenação, 401/403/CSRF, auditoria | US-022, US-062–US-064 |
+| Loja admin (API) | Horários válidos/não sobrepostos, E.164, kill switch, PATCH parcial, auditoria sem PII | US-065 |
 | Pedidos admin | Filtros, paginação, detalhe, PII mascarada | US-070, US-071 |
 | Status | Todas as transições válidas e inválidas, motivo, concorrência | US-072 |
 | Auditoria | Mutação gera log, owner lê, sem PII | US-073 |

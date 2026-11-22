@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/brocados-lanches/api/internal/domain"
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,6 +25,8 @@ type Dependencies struct {
 	Orders       OrderService
 	AdminAuth    AdminAuthService
 	AdminCookie  AdminCookieConfig
+	AdminCatalog AdminCatalogService
+	AdminStore   AdminStoreService
 	LoginLimiter *ratelimit.Limiter
 	Logger       *slog.Logger
 }
@@ -83,6 +86,29 @@ func NewRouter(deps Dependencies) http.Handler {
 			admin.Group(func(protected chi.Router) {
 				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger))
 				protected.Get("/auth/me", handleAdminMe(logger))
+			})
+
+			admin.Group(func(protected chi.Router) {
+				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner, domain.AdminRoleOperator))
+
+				protected.Get("/categories", handleAdminListCategories(deps.AdminCatalog, logger))
+				protected.Post("/categories", handleAdminCreateCategory(deps.AdminCatalog, logger))
+				protected.Patch("/categories/{id}", handleAdminUpdateCategory(deps.AdminCatalog, logger))
+
+				protected.Get("/products", handleAdminListProducts(deps.AdminCatalog, logger))
+				protected.Post("/products", handleAdminCreateProduct(deps.AdminCatalog, logger))
+				protected.Patch("/products/{id}", handleAdminUpdateProduct(deps.AdminCatalog, logger))
+
+				protected.Get("/addons", handleAdminListAddons(deps.AdminCatalog, logger))
+				protected.Post("/addons", handleAdminCreateAddon(deps.AdminCatalog, logger))
+				protected.Patch("/addons/{id}", handleAdminUpdateAddon(deps.AdminCatalog, logger))
+
+				protected.Get("/delivery-zones", handleAdminListZones(deps.AdminCatalog, logger))
+				protected.Post("/delivery-zones", handleAdminCreateZone(deps.AdminCatalog, logger))
+				protected.Patch("/delivery-zones/{id}", handleAdminUpdateZone(deps.AdminCatalog, logger))
+
+				protected.Get("/store", handleAdminGetStore(deps.AdminStore, logger))
+				protected.Patch("/store", handleAdminUpdateStore(deps.AdminStore, logger))
 			})
 		})
 	}

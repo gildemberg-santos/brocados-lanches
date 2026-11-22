@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação e shell/guard do painel entregues; demais telas e APIs administrativas ainda não implementadas.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação, shell/guard do painel e APIs administrativas de catálogo e configuração da loja entregues; demais telas administrativas, fila e transições ainda não implementadas.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -51,6 +51,8 @@ O esqueleto da Fase 1 já inclui:
 - acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`;
 - autenticação administrativa em `/api/v1/admin/auth`: login/logout/me com Argon2id, sessão opaca hasheada em cookie `HttpOnly`, rotação, expiração ociosa/absoluta, CSRF por origem e rate limit de login; bootstrap do primeiro `owner` por `ADMIN_BOOTSTRAP_*`;
 - shell e guard do painel em `/admin`: login, rotas lazy, `me` no servidor, menu por papel (`owner`/`operator`), redirecionamento `401` para login e tela `403`; o proxy de desenvolvimento alinha `Origin`/`Host` à API;
+- API administrativa de catálogo em `/api/v1/admin`: `GET/POST/PATCH` de categorias, produtos, adicionais e zonas com paginação, filtros, allowlist de ordenação, validação, autorização por papel, CSRF e auditoria;
+- configuração da loja em `GET/PATCH /api/v1/admin/store`: kill switch, horários e contato validados no servidor, com auditoria sem dados pessoais;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;

@@ -369,8 +369,8 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 |---|---|---|---|
 | `_id` | ObjectID | sim | |
 | `actorId` | ObjectID | sim | Usuário admin |
-| `action` | string | sim | Ex.: `product.update` |
-| `entity` | string | sim | Ex.: `products` |
+| `action` | string | sim | `create` ou `update` |
+| `entity` | string | sim | `categories`, `products`, `addons`, `delivery_zones` ou `store_settings` |
 | `entityId` | string | sim | ID alvo |
 | `before` | object | não | Snapshot mínimo |
 | `after` | object | não | Snapshot mínimo |
@@ -385,7 +385,8 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 Regras:
 
 - Não guardar senha, token, telefone, endereço ou observação.
-- `before`/`after` guardam apenas campos relevantes e não PII.
+- `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`.
+- A mutação e a auditoria são gravadas na mesma transação quando o MongoDB suporta; em standalone, em sequência.
 - Retenção de 12 meses; após isso, arquivar ou anonimizar.
 
 ### 3.10 `counters`

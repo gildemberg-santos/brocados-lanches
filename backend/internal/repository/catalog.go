@@ -35,6 +35,7 @@ type CatalogRepository struct {
 	addons        *mongo.Collection
 	deliveryZones *mongo.Collection
 	storeSettings *mongo.Collection
+	auditLogs     *mongo.Collection
 }
 
 // NewCatalogRepository vincula o repositório a um banco.
@@ -49,6 +50,7 @@ func NewCatalogRepository(database *mongo.Database) (*CatalogRepository, error) 
 		addons:        database.Collection(CollectionAddons),
 		deliveryZones: database.Collection(CollectionDeliveryZones),
 		storeSettings: database.Collection(CollectionStoreSettings),
+		auditLogs:     database.Collection(CollectionAuditLogs),
 	}, nil
 }
 

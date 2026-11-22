@@ -276,11 +276,11 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 |---|---|---|---|---|---|
 | US-060 | Autenticação admin | P0 | G | E1 | **Concluída** — login/logout/me, Argon2id, cookie, rate limit, CSRF; testes |
 | US-061 | Shell e guard do admin | P0 | M | US-060 | **Concluída** — rotas lazy, guard, 401/403, menu por papel; testes |
-| US-022 | API admin de catálogo | P0 | G | US-020, US-060 | CRUD de categorias/produtos/adicionais/zonas; auditoria; testes |
+| US-022 | API admin de catálogo | P0 | G | US-020, US-060 | **Concluída** — CRUD paginado de categorias/produtos/adicionais/zonas; validação, autorização, CSRF, auditoria e testes |
 | US-062 | Gestão de produtos | P0 | G | US-022, US-061 | Lista/form/editar/ativar/disponível/destaque; testes |
 | US-063 | Categorias e adicionais | P0 | G | US-022, US-061 | CRUD, slug, ordem, ativo; testes |
 | US-064 | Zonas e taxas | P0 | M | US-022, US-061 | CRUD, taxa em centavos, ativo; testes |
-| US-065 | Configuração da loja | P0 | M | US-061 | Kill switch, horários, contato, prazo; auditoria; testes |
+| US-065 | Configuração da loja (API) | P0 | M | US-061 | **Concluída** — `GET/PATCH /admin/store`, validação de horários em `America/Fortaleza`, E.164, auditoria e testes; tela do painel ainda pendente |
 | US-066 | Usuários e papéis | P1 | M | US-060 | Owner cria/edita/desativa; último owner protegido; testes |
 
 **Tarefas técnicas:**
@@ -290,11 +290,12 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Implementar CSRF por Origin/Referer (US-060).
 - [x] Criar middleware de auth e autorização (US-060).
 - [x] Rate limit de login por IP+e-mail (US-060).
-- [ ] Implementar CRUD admin de categorias, produtos, adicionais e zonas.
+- [x] Implementar CRUD admin de categorias, produtos, adicionais e zonas (US-022).
 - [x] Criar `AdminShell` e a tela de login (US-061).
+- [x] Implementar `GET/PATCH /admin/store` com validação e auditoria (US-065).
 - [ ] Criar `DataTable` e `AdminPageHeader`.
 - [ ] Criar formulários com validação e conversão de centavos.
-- [ ] Implementar auditoria em toda mutação.
+- [x] Implementar auditoria nas mutações de catálogo e configuração da loja (US-022/US-065).
 - [x] Testar acesso anônimo e papel errado no guard e no E2E (US-061).
 - [ ] Testar sessão expirada no fluxo completo.
 

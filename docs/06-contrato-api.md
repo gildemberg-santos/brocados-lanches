@@ -442,31 +442,45 @@ Retorna `{ "data": { "user": { "id", "name", "email", "role" } } }`; `401 UNAUTH
 
 ## 10. Admin — catálogo
 
-Todas as rotas exigem sessão e autorização. Mutações geram auditoria.
+Todas as rotas exigem sessão válida, papel `operator` ou `owner` e origem same-origin (CSRF por `Origin`/`Referer` em `POST`/`PATCH`). Mutações geram auditoria em `audit_logs`.
 
 | Método | Rota | Papel | Função |
 |---|---|---|---|
 | GET | `/admin/products` | operator/owner | Lista com paginação/filtros |
-| POST | `/admin/products` | operator/owner | Cria produto |
+| POST | `/admin/products` | operator/owner | Cria produto (`201`) |
 | PATCH | `/admin/products/{id}` | operator/owner | Atualiza produto |
 | GET | `/admin/categories` | operator/owner | Lista categorias |
-| POST | `/admin/categories` | operator/owner | Cria categoria |
+| POST | `/admin/categories` | operator/owner | Cria categoria (`201`) |
 | PATCH | `/admin/categories/{id}` | operator/owner | Atualiza categoria |
 | GET | `/admin/addons` | operator/owner | Lista adicionais |
-| POST | `/admin/addons` | operator/owner | Cria adicional |
+| POST | `/admin/addons` | operator/owner | Cria adicional (`201`) |
 | PATCH | `/admin/addons/{id}` | operator/owner | Atualiza adicional |
 | GET | `/admin/delivery-zones` | operator/owner | Lista zonas |
-| POST | `/admin/delivery-zones` | operator/owner | Cria zona |
+| POST | `/admin/delivery-zones` | operator/owner | Cria zona (`201`) |
 | PATCH | `/admin/delivery-zones/{id}` | operator/owner | Atualiza zona |
+
+Listagens usam o envelope paginado `{ "data": [...], "meta": { "page": 1, "pageSize": 20, "total": 0, "totalPages": 0 } }` e aceitam:
+
+```http
+GET /api/v1/admin/products?page=1&pageSize=20&active=true&categoryId=...&q=burguer&sort=priceCents&order=desc
+```
+
+- `page` ≥ 1, `pageSize` entre 1 e 100 (padrão 20); valores inválidos retornam `422`.
+- `q` busca em nome/slug (regex escapada no servidor); `active` filtra por visibilidade.
+- Ordenação permitida: `name`, `slug`, `sortOrder`, `createdAt`, `updatedAt` para todas as entidades; `priceCents` para produtos e adicionais; `feeCents` para zonas. `order` aceita `asc`/`desc`. Qualquer outro campo retorna `422`.
+- `categoryId` só filtra produtos e precisa ser um ID hexadecimal de 24 caracteres.
+- `q`, `active`, `sort` e `order` são opcionais.
+
+Corpo de criação (`POST`) usa os campos canônicos de `docs/05-modelo-de-dados.md`; `id`, `createdAt` e `updatedAt` são atribuídos pelo servidor. `active` e `available` são `true` por padrão quando omitidos; `featured` é `false`. `PATCH` aceita apenas os campos enviados; corpo vazio, campo desconhecido ou JSON inválido retornam erro (`422` e `400`, respectivamente). O resultado validado é devolvido em `{ "data": ... }`.
 
 Regras:
 
 - Não há `DELETE`; desative com `active: false`.
-- `priceCents`/`feeCents` são inteiros.
-- `slug` é único.
-- `PATCH` é parcial; campos desconhecidos são rejeitados.
-- Produto pode ter `optionGroups` e `addonIds`.
-- Alterações refletem no cardápio após o cache curto.
+- `priceCents`/`feeCents` são inteiros em centavos; valores negativos retornam `422`.
+- `slug` é único por coleção; duplicata retorna `409 CONFLICT`.
+- ID desconhecido ou malformado retorna `404 NOT_FOUND`.
+- Produto pode ter `optionGroups` e `addonIds` (IDs existentes); os grupos são validados quanto a mínimo/máximo e opções duplicadas.
+- Toda criação/atualização registra `action` (`create`/`update`), `entity`, `entityId`, `actorId` e snapshots mínimos sem PII.
 
 Exemplo de `PATCH /admin/products/{id}`:
 
@@ -484,23 +498,31 @@ Exemplo de `PATCH /admin/products/{id}`:
 
 | Método | Rota | Papel | Função |
 |---|---|---|---|
-| GET | `/admin/store` | operator/owner | Configuração completa |
+| GET | `/admin/store` | operator/owner | Configuração completa em `{ "data": ... }` |
 | PATCH | `/admin/store` | operator/owner | Atualiza status, horários e contato |
 
-Exemplo:
+Exemplo de resposta/corpo parcial:
 
 ```json
 {
+  "name": "Brocados Lanches",
   "isOpen": false,
+  "openingHours": [
+    { "day": "sunday", "closed": false, "intervals": [{ "open": "18:00", "close": "23:30" }] }
+  ],
   "deliveryTime": "30-90 min",
-  "whatsapp": "+5585992358708"
+  "whatsapp": "+5585992358708",
+  "instagram": "@brocados",
+  "address": "Rua das Palmeiras, 123, Aquiraz-CE"
 }
 ```
 
-- `PATCH` é parcial.
-- Alterar `isOpen` é auditado.
-- Horários precisam ser válidos e não sobrepostos no mesmo dia.
-- `whatsapp` em E.164.
+- `PATCH` é parcial e rejeita campos desconhecidos (`400`) e corpo vazio (`422`).
+- A configuração resultante é validada por completo: `name`, `deliveryTime`, `whatsapp` e `address` são obrigatórios; `whatsapp` usa E.164 (`+` e 8 a 15 dígitos).
+- `openingHours` aceita no máximo 7 dias (`sunday`…`saturday`), sem duplicata; dia `closed: true` ignora intervalos; demais dias exigem ao menos um intervalo `HH:MM`, com `close` diferente de `open` e sem sobreposição. `close` menor que `open` indica virada de meia-noite.
+- Alterar `isOpen` (ou qualquer outro campo) gera auditoria com snapshots mínimos de `name`, `isOpen` e `deliveryTime`; endereço e contato não entram na auditoria.
+- Horários são avaliados em `America/Fortaleza`; o status efetivo exige kill switch ligado **e** horário vigente.
+- A escrita usa `_id: "main"` com upsert; `createdAt` é preservado.
 
 ---
 
