@@ -1,22 +1,23 @@
 # Blueprint de deploy no Render.
 # Aplique em Render > New > Blueprint e informe os segredos solicitados.
 #
-# A API roda como private service para não ficar exposta na internet.
-# A web fala com a API pela rede privada usando API_HOSTPORT.
-# A API lê MONGODB_URI (ou MONGO_URI) e MONGO_DB.
+# Container único: nginx serve a SPA e faz proxy /api para a API Go local.
+# O Render injeta PORT; a API interna usa API_PORT=3000.
 services:
-  - type: pserv
-    name: brocados-api
+  - type: web
+    name: brocados-lanches
     runtime: docker
-    # Private services exigem plano pago; 0.5c-512mb é o menor disponível.
-    plan: 0.5c-512mb
-    dockerfilePath: ./backend/Dockerfile
+    plan: free
+    dockerfilePath: ./Dockerfile
     dockerContext: .
+    healthCheckPath: /healthz
     envVars:
       - key: APP_ENV
         value: production
       - key: PORT
         value: "10000"
+      - key: API_PORT
+        value: "3000"
       - key: MONGO_DB
         value: brocados
       # A API aceita MONGO_URI ou MONGODB_URI; usamos o nome do Atlas/Render.
@@ -28,19 +29,3 @@ services:
         sync: false
       - key: ADMIN_BOOTSTRAP_PASSWORD
         sync: false
-
-  - type: web
-    name: brocados-web
-    runtime: docker
-    plan: free
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: .
-    healthCheckPath: /
-    envVars:
-      - key: PORT
-        value: "10000"
-      - key: API_HOSTPORT
-        fromService:
-          name: brocados-api
-          type: pserv
-          property: hostport

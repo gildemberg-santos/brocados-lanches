@@ -200,16 +200,13 @@ Ele compila o frontend no host (`make build-web`) e monta a imagem web com `fron
 
 ### Deploy no Render
 
-Este é um monorepo com dois Dockerfiles, então o Render precisa do blueprint para saber qual usar. O `render.yaml` define:
+O deploy usa **um único container** (estratégia do `restaurante-canto-verde`): o `Dockerfile` raiz compila a API Go (`backend/vendor`), compila a SPA Vue e monta um runtime com nginx + Go. O nginx escuta `PORT` do Render, serve `frontend/dist`, faz proxy de `/api/`, `/healthz` e `/readyz` para a API local em `API_PORT=3000` e preserva `X-Forwarded-Proto` para o CSRF.
 
-- `brocados-api`: private service com `backend/Dockerfile`, `APP_ENV=production`, `PORT=10000` e sem exposição pública;
-- `brocados-web`: web service com `frontend/Dockerfile`, health check `/` e proxy para a API pela rede privada via `API_HOSTPORT`.
+O `render.yaml` define um único web service `brocados-lanches` com `dockerfilePath: ./Dockerfile`, health check `/healthz` e plano `free` (cold start após inatividade).
 
-Para aplicar, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados`; ajuste se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais. Se já existir um serviço criado manualmente, remova-o depois de validar o novo stack.
+Para aplicar, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados` e `API_PORT=3000`; ajuste `MONGO_DB` se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais.
 
-O nginx escuta em `PORT` e repassa o `X-Forwarded-Proto` original, para o login continuar válido atrás do TLS do Render. Após o primeiro deploy, remova as variáveis de bootstrap do Render.
-
-A API precisa de instância paga para receber tráfego privado. A web pode ficar no plano free, mas dorme após inatividade; ajuste os planos conforme a operação. O MongoDB Atlas precisa aceitar a conexão da API (allowlist de rede ou PrivateLink).
+O MongoDB Atlas precisa aceitar a conexão do Render (allowlist `0.0.0.0/0` se não houver IP fixo, ou PrivateLink). Após o primeiro deploy e a criação do `owner`, remova `ADMIN_BOOTSTRAP_*` do Render.
 
 ### Desenvolvimento local
 

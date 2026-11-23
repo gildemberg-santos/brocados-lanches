@@ -505,14 +505,13 @@ Internet → TLS → Nginx → SPA + /api → Go API → MongoDB
 
 Hospedagem e provedor de CI ainda estão em aberto; ver `13-decisoes-e-pendencias.md`.
 
-### 4.1 Render (blueprint)
+### 4.1 Render (container único)
 
-O repositório inclui `render.yaml` com:
+O deploy segue a estratégia do `restaurante-canto-verde`: **um único container** no Render. O `Dockerfile` raiz faz build do backend Go com `backend/vendor` e do frontend Vue, depois monta um runtime com nginx + Go. O entrypoint renderiza o template do nginx, sobe a API em `127.0.0.1:${API_PORT}` e mantém o nginx em foreground escutando `${PORT}`.
 
-- `brocados-api`: private service (`backend/Dockerfile`), `APP_ENV=production`, `PORT=10000` e sem exposição pública;
-- `brocados-web`: web service (`frontend/Dockerfile`), health check `/`, nginx escutando em `PORT` e proxy para `API_HOSTPORT` da API.
+O `render.yaml` define um único web service `brocados-lanches` (`dockerfilePath: ./Dockerfile`, `healthCheckPath: /healthz`, `plan: free`). O nginx serve a SPA, faz proxy de `/api/`, `/healthz` e `/readyz` para a API local e preserva `X-Forwarded-Proto` para o CSRF aceitar login HTTPS.
 
-O nginx preserva o `X-Forwarded-Proto` recebido do Render para que a validação de origem do CSRF aceite o login HTTPS. Segredos: `MONGODB_URI` (MongoDB Atlas; `MONGO_URI` também é aceito) e `ADMIN_BOOTSTRAP_*` no primeiro deploy. A API precisa de instância paga para receber tráfego privado; a web pode ser free, com cold start. Remova `ADMIN_BOOTSTRAP_*` após criar o primeiro `owner`.
+Segredos: `MONGODB_URI` (MongoDB Atlas; `MONGO_URI` também é aceito) e `ADMIN_BOOTSTRAP_*` no primeiro deploy. O Atlas precisa permitir conexão do Render. Remova `ADMIN_BOOTSTRAP_*` após criar o primeiro `owner`.
 
 ---
 

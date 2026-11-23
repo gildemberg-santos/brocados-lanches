@@ -141,6 +141,15 @@ commit → fmt/lint/test/docs/design/build → imagem → preview → aprovaçã
 - Após deploy: smoke test de `/healthz`, `/readyz`, `/`, `/api/v1/store`, `/api/v1/menu`.
 - Se erro crítico: rollback imediato e comunicação.
 
+### 5.5 Render (container único)
+
+- Blueprint: `render.yaml` com serviço web `brocados-lanches`, `dockerfilePath: ./Dockerfile`, `healthCheckPath: /healthz`.
+- Runtime: nginx serve SPA e faz proxy `/api` para Go local (`API_PORT=3000`); Render injeta `PORT`.
+- Segredos: `MONGODB_URI`, `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`.
+- Banco: MongoDB Atlas acessível pelo Render; definir `MONGO_DB=brocados`.
+- Após bootstrap do primeiro `owner`, remover `ADMIN_BOOTSTRAP_*`.
+- Plano free tem cold start; considerar plano pago se houver necessidade operacional.
+
 ---
 
 ## 6. Banco de dados
