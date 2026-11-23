@@ -5,9 +5,10 @@ PORT=${PORT:-8080}
 API_PORT=${API_PORT:-3000}
 export PORT API_PORT
 
+mkdir -p /etc/nginx/conf.d
 envsubst '${PORT} ${API_PORT}' \
   < /etc/nginx/templates/default.conf.template \
-  > /etc/nginx/http.d/default.conf
+  > /etc/nginx/conf.d/default.conf
 
 # Go API escuta em localhost; nginx expõe a porta pública do Render.
 PORT=$API_PORT /app/api &
