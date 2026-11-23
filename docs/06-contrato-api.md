@@ -1,8 +1,8 @@
 # Contrato de API — Brocados Lanches
 
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Base:** `/api/v1`  
-**Atualizado em:** 18/11/2026  
+**Atualizado em:** 21/11/2026  
 **Relacionados:** `04-arquitetura.md`, `05-modelo-de-dados.md`, `09-qualidade-e-testes.md`.
 
 ---
@@ -137,8 +137,11 @@ Regras:
 
 - Produto ativo e `available: false` aparece para permitir “Esgotado”.
 - Produto inativo não aparece.
-- Categoria vazia pode ser omitida ou retornada com lista vazia; escolher uma e testar.
-- Adicional só aparece se ativo e vinculado ao produto.
+- Categoria sem produto ativo é omitida.
+- Adicional só aparece se ativo e vinculado ao produto; como só adicionais ativos são retornados, `available` é `true` na V1.
+- Opção indisponível não aparece. Um grupo sem nenhuma opção disponível permanece com `options: []` para que o cliente bloqueie a compra.
+- Categorias, produtos, opções e adicionais são ordenados por `sortOrder` e, em empate, por `name`; grupos de opções preservam a ordem definida no produto.
+- `updatedAt` é o maior `updatedAt` entre categorias, produtos e adicionais retornados; é omitido quando o cardápio está vazio.
 - O cliente não envia preço; o servidor é a fonte.
 - Cache HTTP curto pode ser usado; nenhuma resposta cacheada pode sobreviver a uma mudança crítica sem invalidação.
 
@@ -155,7 +158,7 @@ Regras:
 }
 ```
 
-Somente zonas ativas. A taxa é sempre do servidor.
+Somente zonas ativas, ordenadas por `sortOrder` e, em empate, por `name`. A taxa é sempre do servidor. Lista vazia retorna `data: []`.
 
 ---
 
@@ -173,12 +176,20 @@ Content-Type: application/json
 ```json
 {
   "items": [
-    { "productId": "665f1c2a9b1e4a0012a3b4c6", "quantity": 2, "optionIds": ["medium", "665f1c2a9b1e4a0012a3b4d1"] }
+    {
+      "productId": "665f1c2a9b1e4a0012a3b4c6",
+      "quantity": 2,
+      "optionIds": ["medium"],
+      "addonIds": ["665f1c2a9b1e4a0012a3b4d1"],
+      "note": "sem cebola"
+    }
   ],
   "fulfillment": "delivery",
   "zoneId": "665f1c2a9b1e4a0012a3b4e1"
 }
 ```
+
+O cliente envia somente identificadores, quantidades e escolhas. `optionIds` contém escolhas dos grupos de opções do produto; `addonIds` contém adicionais vinculados ao produto. Campos desconhecidos são rejeitados. Limites: 50 itens, quantidade de 1 a 99 por item e observação de até 140 caracteres. Corpo JSON de até 1 MB.
 
 ### Response `200`
 
@@ -210,13 +221,13 @@ Content-Type: application/json
 
 Regras:
 
-- Não cria pedido, não reserva estoque e não gera número.
-- Valida loja, produto, opções, adicionais e zona.
+- Não cria pedido, não reserva estoque e não gera número. Não há necessidade de `Idempotency-Key` porque nada é gravado.
+- Valida loja, produto, opções, adicionais e zona. Status efetivo da loja = kill switch ligado **e** horário vigente em `America/Fortaleza`; quando não há `openingHours` cadastrados, o kill switch decide.
 - `pickup` ignora `zoneId` e retorna taxa zero.
 - `unitPriceCents` é o preço base do produto; `optionsPriceCents` soma opções e adicionais; `lineTotalCents = (unitPriceCents + optionsPriceCents) * quantity`.
 - Pode retornar `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE` ou `VALIDATION_ERROR`.
-- Rate limit: 30/min por IP.
-- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou.
+- Rate limit previsto: 30/min por IP. O middleware ainda não está ativo no esqueleto e será ligado quando o endpoint for exposto publicamente.
+- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou. O cálculo está centralizado em `domain.BuildQuote` e é reutilizado pelo `POST /orders`.
 
 ---
 
@@ -238,7 +249,8 @@ Idempotency-Key: 4d1f6b1e-7c2a-4e2f-9f2a-1c3d5e7f9a0b
     {
       "productId": "665f1c2a9b1e4a0012a3b4c6",
       "quantity": 2,
-      "optionIds": ["medium", "665f1c2a9b1e4a0012a3b4d1"],
+      "optionIds": ["medium"],
+      "addonIds": ["665f1c2a9b1e4a0012a3b4d1"],
       "note": "sem cebola"
     }
   ],
@@ -297,7 +309,10 @@ Headers:
 
 ```http
 Location: /api/v1/orders/3Jk9Qm2pX7vR5sT1aB8cD4
+Cache-Control: no-store
 ```
+
+No replay idempotente, o header `Idempotent-Replayed: true` também é devolvido.
 
 ### Idempotência
 
@@ -307,6 +322,7 @@ Location: /api/v1/orders/3Jk9Qm2pX7vR5sT1aB8cD4
 - Chave ausente: `400 VALIDATION_ERROR`.
 - Chave com 16 a 128 caracteres; recomendado UUID v4.
 - O corpo canônico é usado para `requestHash`; campos desconhecidos são rejeitados.
+- O cliente reutiliza a chave em retries do mesmo conteúdo e gera outra quando o pedido muda; isso evita duplicata se a resposta da primeira requisição se perder.
 
 ### Validações
 
@@ -371,13 +387,17 @@ Não retorna:
 - histórico interno de auditoria;
 - `whatsappUrl` (a URL contém a mensagem com PII e só é devolvida na criação do pedido).
 
-Após recarregar a confirmação, o cliente vê o número do pedido e o contato da loja; para reenviar, informa o número no WhatsApp. O link completo não é persistido no navegador nem exposto pelo acompanhamento público.
+Após recarregar a confirmação, o cliente vê número, status, itens e total pelo `publicId`. A URL completa do WhatsApp não é devolvida pelo acompanhamento: ela fica apenas na resposta de criação e, para permitir o reenvio na mesma sessão, no `sessionStorage` do navegador sob a chave `brocados:handoff:{publicId}`. Ela não é gravada no servidor nem enviada em logs.
 
-`404 NOT_FOUND` para ID inválido ou inexistente. Rate limit: 60/min por IP.
+`404 NOT_FOUND` para ID inválido ou inexistente. Rate limit: 60/min por IP (previsto; ainda não ativo no esqueleto).
 
 ---
 
 ## 9. Admin — autenticação
+
+Todas as rotas administrativas aplicam CSRF por `Origin`/`Referer` em métodos mutáveis. Requisições sem esses cabeçalhos dependem do `SameSite=Lax` do cookie. A autorização real é sempre verificada no servidor.
+
+O primeiro usuário `owner` é criado no bootstrap da API com `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O bootstrap é idempotente e só atua quando `admin_users` está vazio; depois disso, a gestão de usuários passa pelo painel (US-066). Nenhuma rota pública cria usuário admin.
 
 ### 9.1 `POST /admin/auth/login`
 
@@ -403,49 +423,64 @@ Resposta `200`:
 }
 ```
 
-- Cookie `HttpOnly`, `SameSite=Lax`, `Path=/`; `Secure` e prefixo `__Host-` em produção.
-- Sessão ociosa de 8 h; absoluta de 7 dias.
-- Login rotaciona a sessão.
-- Erro genérico `401 UNAUTHORIZED`; não revelar se o e-mail existe.
-- Rate limit: 5/min por IP + e-mail.
+- Cookie `HttpOnly`, `SameSite=Lax`, `Path=/`; `Secure` e prefixo `__Host-` em produção (nome padrão: `brocados_admin`).
+- Sessão ociosa de 8 h; absoluta de 7 dias. O token opaco de 32 bytes é gravado apenas como SHA-256 em `sessions`.
+- Login rotaciona a sessão e atualiza `lastLoginAt`.
+- Erro genérico `401 UNAUTHORIZED`; não revelar se o e-mail existe nem se a conta está inativa.
+- Corpo com campos desconhecidos retorna `400 VALIDATION_ERROR`.
+- Rate limit ativo: 5/min por IP + e-mail (o e-mail entra no limite como hash); resposta `429 RATE_LIMITED` com `Retry-After: 60`.
 
 ### 9.2 `POST /admin/auth/logout`
 
-Resposta `204`. Apaga a sessão e o cookie.
+Resposta `204`. Apaga a sessão e o cookie. É idempotente: sessão inexistente também retorna `204` e limpa o cookie.
 
 ### 9.3 `GET /admin/auth/me`
 
-Retorna usuário e papel; `401` se não houver sessão.
+Retorna `{ "data": { "user": { "id", "name", "email", "role" } } }`; `401 UNAUTHORIZED` se não houver sessão válida ou se a conta estiver inativa. Nunca devolve `passwordHash` nem dados de sessão.
 
 ---
 
 ## 10. Admin — catálogo
 
-Todas as rotas exigem sessão e autorização. Mutações geram auditoria.
+Todas as rotas exigem sessão válida, papel `operator` ou `owner` e origem same-origin (CSRF por `Origin`/`Referer` em `POST`/`PATCH`). Mutações geram auditoria em `audit_logs`.
 
 | Método | Rota | Papel | Função |
 |---|---|---|---|
 | GET | `/admin/products` | operator/owner | Lista com paginação/filtros |
-| POST | `/admin/products` | operator/owner | Cria produto |
+| POST | `/admin/products` | operator/owner | Cria produto (`201`) |
 | PATCH | `/admin/products/{id}` | operator/owner | Atualiza produto |
 | GET | `/admin/categories` | operator/owner | Lista categorias |
-| POST | `/admin/categories` | operator/owner | Cria categoria |
+| POST | `/admin/categories` | operator/owner | Cria categoria (`201`) |
 | PATCH | `/admin/categories/{id}` | operator/owner | Atualiza categoria |
 | GET | `/admin/addons` | operator/owner | Lista adicionais |
-| POST | `/admin/addons` | operator/owner | Cria adicional |
+| POST | `/admin/addons` | operator/owner | Cria adicional (`201`) |
 | PATCH | `/admin/addons/{id}` | operator/owner | Atualiza adicional |
 | GET | `/admin/delivery-zones` | operator/owner | Lista zonas |
-| POST | `/admin/delivery-zones` | operator/owner | Cria zona |
+| POST | `/admin/delivery-zones` | operator/owner | Cria zona (`201`) |
 | PATCH | `/admin/delivery-zones/{id}` | operator/owner | Atualiza zona |
+
+Listagens usam o envelope paginado `{ "data": [...], "meta": { "page": 1, "pageSize": 20, "total": 0, "totalPages": 0 } }` e aceitam:
+
+```http
+GET /api/v1/admin/products?page=1&pageSize=20&active=true&categoryId=...&q=burguer&sort=priceCents&order=desc
+```
+
+- `page` ≥ 1, `pageSize` entre 1 e 100 (padrão 20); valores inválidos retornam `422`.
+- `q` busca em nome/slug (regex escapada no servidor); `active` filtra por visibilidade.
+- Ordenação permitida: `name`, `slug`, `sortOrder`, `createdAt`, `updatedAt` para todas as entidades; `priceCents` para produtos e adicionais; `feeCents` para zonas. `order` aceita `asc`/`desc`. Qualquer outro campo retorna `422`.
+- `categoryId` só filtra produtos e precisa ser um ID hexadecimal de 24 caracteres.
+- `q`, `active`, `sort` e `order` são opcionais.
+
+Corpo de criação (`POST`) usa os campos canônicos de `docs/05-modelo-de-dados.md`; `id`, `createdAt` e `updatedAt` são atribuídos pelo servidor. `active` e `available` são `true` por padrão quando omitidos; `featured` é `false`. `PATCH` aceita apenas os campos enviados; corpo vazio, campo desconhecido ou JSON inválido retornam erro (`422` e `400`, respectivamente). O resultado validado é devolvido em `{ "data": ... }`.
 
 Regras:
 
 - Não há `DELETE`; desative com `active: false`.
-- `priceCents`/`feeCents` são inteiros.
-- `slug` é único.
-- `PATCH` é parcial; campos desconhecidos são rejeitados.
-- Produto pode ter `optionGroups` e `addonIds`.
-- Alterações refletem no cardápio após o cache curto.
+- `priceCents`/`feeCents` são inteiros em centavos; valores negativos retornam `422`.
+- `slug` é único por coleção; duplicata retorna `409 CONFLICT`.
+- ID desconhecido ou malformado retorna `404 NOT_FOUND`.
+- Produto pode ter `optionGroups` e `addonIds` (IDs existentes); os grupos são validados quanto a mínimo/máximo e opções duplicadas.
+- Toda criação/atualização registra `action` (`create`/`update`), `entity`, `entityId`, `actorId` e snapshots mínimos sem PII.
 
 Exemplo de `PATCH /admin/products/{id}`:
 
@@ -463,23 +498,31 @@ Exemplo de `PATCH /admin/products/{id}`:
 
 | Método | Rota | Papel | Função |
 |---|---|---|---|
-| GET | `/admin/store` | operator/owner | Configuração completa |
+| GET | `/admin/store` | operator/owner | Configuração completa em `{ "data": ... }` |
 | PATCH | `/admin/store` | operator/owner | Atualiza status, horários e contato |
 
-Exemplo:
+Exemplo de resposta/corpo parcial:
 
 ```json
 {
+  "name": "Brocados Lanches",
   "isOpen": false,
+  "openingHours": [
+    { "day": "sunday", "closed": false, "intervals": [{ "open": "18:00", "close": "23:30" }] }
+  ],
   "deliveryTime": "30-90 min",
-  "whatsapp": "+5585992358708"
+  "whatsapp": "+5585992358708",
+  "instagram": "@brocados",
+  "address": "Rua das Palmeiras, 123, Aquiraz-CE"
 }
 ```
 
-- `PATCH` é parcial.
-- Alterar `isOpen` é auditado.
-- Horários precisam ser válidos e não sobrepostos no mesmo dia.
-- `whatsapp` em E.164.
+- `PATCH` é parcial e rejeita campos desconhecidos (`400`) e corpo vazio (`422`).
+- A configuração resultante é validada por completo: `name`, `deliveryTime`, `whatsapp` e `address` são obrigatórios; `whatsapp` usa E.164 (`+` e 8 a 15 dígitos).
+- `openingHours` aceita no máximo 7 dias (`sunday`…`saturday`), sem duplicata; dia `closed: true` ignora intervalos; demais dias exigem ao menos um intervalo `HH:MM`, com `close` diferente de `open` e sem sobreposição. `close` menor que `open` indica virada de meia-noite.
+- Alterar `isOpen` (ou qualquer outro campo) gera auditoria com snapshots mínimos de `name`, `isOpen` e `deliveryTime`; endereço e contato não entram na auditoria.
+- Horários são avaliados em `America/Fortaleza`; o status efetivo exige kill switch ligado **e** horário vigente.
+- A escrita usa `_id: "main"` com upsert; `createdAt` é preservado.
 
 ---
 
@@ -497,11 +540,11 @@ Listagem:
 GET /api/v1/admin/orders?status=pending&from=2026-11-18T00:00:00Z&to=2026-11-19T00:00:00Z&page=1&pageSize=20&sort=createdAt:desc
 ```
 
-- `pageSize` máximo 100.
-- Filtros: `status`, `from`, `to`, `fulfillment`, `q` (número/telefone mascarado).
-- Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`.
-- Detalhe inclui snapshot, cliente, endereço, pagamento e histórico.
-- Dados pessoais só para admin autenticado; não vão para log.
+- Parâmetros: `page` (padrão `1`), `pageSize` (padrão `20`, máximo `100`), `sort` (padrão `createdAt`) e `order` (`asc` ou `desc`, padrão `desc`).
+- Filtros: `status`, `from`, `to` (RFC 3339 UTC), `fulfillment` (`delivery`/`pickup`) e `q` (número ou dígitos do telefone; aceita o telefone mascarado da fila).
+- Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`. Qualquer outro campo retorna `422 VALIDATION_ERROR`.
+- A fila devolve `customerName` com iniciais e `phone` com os últimos quatro dígitos (`****8708`); o detalhe completo exige sessão e inclui snapshot, cliente, endereço, zona, pagamento, itens e `statusHistory`.
+- Dados pessoais só para admin autenticado; não vão para log nem para auditoria.
 
 Transição:
 
@@ -520,9 +563,11 @@ Cancelamento:
 }
 ```
 
-- Transição inválida: `409 CONFLICT`.
-- `reason` obrigatório em cancelamento.
-- Cada transição gera auditoria e `statusHistory`.
+- A resposta de `PATCH` é o detalhe atualizado em `{ "data": ... }`.
+- Transição inválida (inclusive estado final, mesmo status e desfecho incompatível com `fulfillment`): `409 CONFLICT`.
+- `reason` é obrigatório em `cancelled`, com no máximo 280 caracteres; o texto é operacional e não deve conter dados do cliente.
+- Cada transição atualiza `status`, `updatedAt`, `statusHistory` e, quando aplicável, `confirmedAt`/`cancelledAt` + `cancelReason`. A gravação usa compare-and-set no status lido: uma transição concorrente retorna `409` em vez de sobrescrever a primeira.
+- Auditoria registra somente `status`, `fulfillment` e `totalCents` antes/depois, com `actorId`, `action: update`, `entity: orders` e `entityId` (ID hexadecimal do pedido).
 
 ---
 

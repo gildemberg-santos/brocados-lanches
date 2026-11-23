@@ -1,8 +1,8 @@
 # Qualidade e Testes — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
-**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026.  
+**Versão:** 1.1  
+**Atualizado em:** 23/11/2026  
+**Status:** estratégia da V1 definida; seed e E2E implementados em 20/11/2026; testes de integração do catálogo no CI e testes de service/handler da API pública em 21/11/2026; testes de home, cardápio, personalização, autenticação, shell/guard, fila e transições do admin em 22/11/2026; testes de CRUD de catálogo e configuração da loja no painel em 23/11/2026.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `06-contrato-api.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`.
 
 ---
@@ -67,7 +67,8 @@ make test-e2e          # Playwright com API isolada em brocados_test
 - `make seed` e `make seed-reset` recusam `APP_ENV=production`, o banco `brocados` e nomes sem sufixo `_dev` ou `_test`.
 - `make test-e2e` exige MongoDB acessível em `localhost:27017` (ou `MONGO_URI` definido) e sobe a API na porta 8080 com `brocados_test`.
 - O E2E não faz parte de `make test`; o gate de commit continua rápido e sem navegador.
-- O smoke atual cobre a base (home, health, readiness e alvo de toque em 375 px). O fluxo de cardápio entra com US-023.
+- O smoke atual cobre home, health, readiness, alvo de toque em 375 px e navegação da home para o cardápio.
+- O job Backend do CI sobe MongoDB 8 e define `MONGO_TEST_URI`; localmente, sem essa variável, os testes de integração são pulados.
 
 ---
 
@@ -86,10 +87,11 @@ make test-e2e          # Playwright com API isolada em brocados_test
 | Acompanhamento | ID válido, inválido, status final, sem PII | US-050, US-051 |
 | Auth | Login, logout, me, sessão expirada, senha errada, rate limit | US-060 |
 | Papéis | Operator vs owner, 401 vs 403, último owner | US-061, US-066 |
-| Catálogo admin | Criar/editar/desativar, centavos, slug único, auditoria | US-062–US-064 |
-| Loja admin | Horários, kill switch, contato, auditoria | US-065 |
-| Pedidos admin | Filtros, paginação, detalhe, PII mascarada | US-070, US-071 |
-| Status | Todas as transições válidas e inválidas, motivo, concorrência | US-072 |
+| Catálogo admin (API) | Criar/editar/desativar, centavos, slug único, paginação, allowlist de ordenação, 401/403/CSRF, auditoria | US-022, US-062–US-064 |
+| Catálogo admin (painel) | Lista/filtro/paginação, formulários, slug, reais → centavos, opções, adicionais, estados de carregamento/vazio/erro | US-062–US-064 |
+| Loja admin (API e painel) | Horários válidos/não sobrepostos, E.164, kill switch, PATCH parcial, auditoria sem PII; formulário com validação por campo | US-065 |
+| Pedidos admin | Filtros, paginação, detalhe, PII mascarada; fila e detalhe no painel com estados de carregamento/vazio/erro | US-070, US-071 |
+| Status | Todas as transições válidas e inválidas, motivo, concorrência; ações contextuais e confirmação no painel | US-072 |
 | Auditoria | Mutação gera log, owner lê, sem PII | US-073 |
 | SEO | Título, descrição, JSON-LD, sitemap | US-081 |
 | A11y | Teclado, foco, rótulos, contraste, 44 px, reduced motion | US-082 |
@@ -191,9 +193,10 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 
 - **Dado** visitante sem sessão.
 - **Quando** acessa rota admin ou API admin.
-- **Então** `401`; nenhuma escrita ocorre.
+- **Então** `401`; nenhuma escrita ocorre e o frontend redireciona para `/admin/login` com `redirect`.
 - **Dado** operador tentando rota de owner.
-- **Então** `403`.
+- **Então** `403` na API; no frontend o guard leva a `/admin/sem-acesso`.
+- Coberto por testes de guard/store e pelo E2E anônimo (US-060 e US-061).
 
 ### 5.16 PII em log
 
@@ -256,19 +259,27 @@ Integração:
 
 ```bash
 cd backend
-MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -run TestConnectIntegration -v
+MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 ```
 
 ---
 
 ## 7. Frontend
 
-### 7.1 Stores
+### 7.1 Stores e fluxos
 
+- Catálogo: carregar uma vez, forçar recarga, erro, retry, produto/categoria por slug e somente destaques disponíveis.
+- Home: estados de carregando, vazio, erro e sucesso; navegação para o cardápio com categoria.
+- Cardápio: busca sem acento/caixa, filtro por categoria, contagem, busca sem resultado e produto esgotado.
+- Personalização: obrigatoriedade, mínimo/máximo, adicionais, observação, preço estimado, esgotado e produto não encontrado.
 - Carrinho: adicionar, somar quantidade, remover, limpar, persistir, migrar versão.
 - Checkout: delivery/retirada, zona, troco, cotação, erro.
-- Admin auth: login, logout, 401, papel.
+- Admin auth: login, logout, 401, papel, bootstrap de sessão único, recarga forçada e mensagens de erro por código.
+- Guard do admin: visitante redirecionado com `redirect`, operador bloqueado em rota de owner, owner liberado, login redirecionado quando já autenticado.
+- Shell do admin: menu por papel, atalhos mobile e logout.
 - Filtros e paginação.
+- Catálogo administrativo: carregar, filtrar, paginar, criar/editar e desativar categorias, adicionais, zonas e produtos; erro de sessão, conflito de slug, validação por campo e rejeição de valor monetário inválido (não convertido em zero).
+- Configuração da loja: carregar, validar horários/contato, salvar, sessão expirada e erro de permissão.
 
 ### 7.2 Componentes
 
@@ -278,12 +289,17 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -ru
 - `ProductCard`: esgotado, preço, imagem.
 - `CartLine`: opções, remoção, quantidade.
 - `StatusBadge`: texto além de cor.
-- `DataTable`: vazio, erro, paginação.
+- `DataTable`: vazio, erro, paginação (ainda não abstraído).
+- `AdminCatalogFilters`: busca, situação e limpeza.
+- `AdminCatalogList`: dados, ações, paginação, erro e vazio.
+- `AdminCatalogForm`: slug gerado, validação, edição e conversão de reais para centavos.
+- `AdminProductForm`: grupos/opções, adicionais, alergênicos e validação.
+- `AdminStoreView`: horários, dias da semana, validação de WhatsApp e salvamento.
 - `Modal`/`Drawer`: foco, ESC, retorno de foco.
 
 ### 7.3 Services
 
-- Cliente HTTP trata envelope de erro.
+- Cliente HTTP trata envelope de erro e preserva `details` por campo.
 - Timeout e erro de rede viram mensagem em português.
 - `credentials: 'include'`.
 - Nenhum componente chama `fetch`.
@@ -338,6 +354,13 @@ pnpm lint
 - Evidência: vídeo/trace no CI em caso de falha.
 - Teste não depende de ordem; cada um prepara seu estado.
 
+### 8.4 Cobertura implementada
+
+- Smoke da home, navegação para o cardápio e health/readiness pelo proxy.
+- Acesso anônimo a rota protegida redirecionado para `/admin/login` com `redirect`, e credenciais inválidas exibindo mensagem genérica (US-061).
+- Pedido ponta a ponta: cardápio → personalização → carrinho → checkout → confirmação → fila → detalhe → `Confirmar pedido`, em desktop e mobile (US-040 a US-043, US-070 a US-072).
+- CRUD de catálogo e configuração da loja cobertos por Vitest; E2E dessas telas ainda pendente.
+
 ---
 
 ## 9. Segurança e privacidade
@@ -361,7 +384,7 @@ pnpm lint
 
 ## 10. Acessibilidade
 
-- axe-core nas telas: home, cardápio, produto, carrinho, checkout, confirmação, admin login, admin pedidos.
+- axe-core nas telas: home, cardápio, produto, carrinho, checkout, confirmação, admin login, admin pedidos, admin catálogo e admin loja.
 - Navegação apenas por teclado no fluxo de checkout.
 - Foco visível e ordem lógica.
 - Modal/drawer com foco preso.
@@ -445,6 +468,7 @@ Falha em gate bloqueia merge/lançamento; não usar `--no-verify` nem desativar 
 
 | História | Teste principal |
 |---|---|
+| US-023 | Home/cardápio no Vitest + smoke E2E de navegação |
 | US-024 | Opções e adicionais no service + componente `OptionGroup` |
 | US-032 | Cotação no service + handler + store |
 | US-040 | Criação de pedido no service + handler + repository |
@@ -452,7 +476,13 @@ Falha em gate bloqueia merge/lançamento; não usar `--no-verify` nem desativar 
 | US-042 | Geração de URL + falha de handoff no frontend |
 | US-050 | Handler público sem PII |
 | US-060 | Auth handler + cookie + rate limit |
-| US-072 | Matriz de status no domínio + handler |
+| US-062 | `AdminProductForm` + `AdminProductsView` no Vitest; service/store do catálogo |
+| US-063 | `AdminCatalogForm` + views de categorias/adicionais no Vitest |
+| US-064 | `AdminZonesView` no Vitest; conversão de taxa em centavos |
+| US-065 | `AdminStoreView` no Vitest; validação de horários/E.164 + API |
+| US-070 | Filtros/paginação no service + repository + handler; PII mascarada |
+| US-071 | Detalhe no repository + handler com snapshot completo |
+| US-072 | Matriz de status no domínio + CAS/auditoria no repository + handler |
 | US-082 | axe + teste de teclado |
 | US-093 | Revisão de log + testes de segurança |
 

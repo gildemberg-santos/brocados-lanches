@@ -225,7 +225,7 @@ O carrinho guarda uma versão de schema. Se a versão mudar, migra ou limpa com 
 
 ### 5.5 Guard de rota
 
-O guard consulta `GET /api/v1/admin/auth/me` e redireciona para login se não houver sessão. Ele é conveniência de UX; a autorização real é sempre no servidor.
+O guard consulta `GET /api/v1/admin/auth/me` através da store `useAdminAuthStore` (uma vez por carregamento, com recarga explícita). Sem sessão (`401`), redireciona para `/admin/login` mantendo o destino em `?redirect=`. Se a rota exigir papel que o usuário não possui, redireciona para `/admin/sem-acesso` (`403`). O cliente HTTP usa `credentials: 'include'`; no desenvolvimento o proxy do Vite alinha `Origin` ao `Host` repassado à API para que a proteção CSRF não bloqueie requisições locais. O guard é conveniência de UX; a autorização real é sempre no servidor.
 
 ---
 
@@ -504,6 +504,14 @@ Internet → TLS → Nginx → SPA + /api → Go API → MongoDB
 - Backup diário e restauração testada.
 
 Hospedagem e provedor de CI ainda estão em aberto; ver `13-decisoes-e-pendencias.md`.
+
+### 4.1 Render (container único)
+
+O deploy segue a estratégia do `restaurante-canto-verde`: **um único container** no Render. O `Dockerfile` raiz faz build do backend Go com `backend/vendor` e do frontend Vue, depois monta um runtime com nginx + Go. O entrypoint renderiza o template do nginx, sobe a API em `127.0.0.1:${API_PORT}` e mantém o nginx em foreground escutando `${PORT}`.
+
+O `render.yaml` define um único web service `brocados-lanches` (`dockerfilePath: ./Dockerfile`, `healthCheckPath: /healthz`, `plan: free`). O nginx serve a SPA, faz proxy de `/api/`, `/healthz` e `/readyz` para a API local e preserva `X-Forwarded-Proto` para o CSRF aceitar login HTTPS.
+
+Segredos: `MONGODB_URI` (MongoDB Atlas; `MONGO_URI` também é aceito) e `ADMIN_BOOTSTRAP_*` no primeiro deploy. O Atlas precisa permitir conexão do Render. Remova `ADMIN_BOOTSTRAP_*` após criar o primeiro `owner`.
 
 ---
 

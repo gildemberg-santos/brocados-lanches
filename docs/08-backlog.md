@@ -1,8 +1,8 @@
 # Backlog — Brocados Lanches V1
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); nenhuma história de produto implementada.  
+**Versão:** 1.1  
+**Atualizado em:** 23/11/2026  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel).  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -144,7 +144,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-012 | Fixtures e seed de desenvolvimento | P0 | M | `brocados_dev` e `brocados_test` separados; reset idempotente; dados fictícios marcados |
 | US-013 | Harness E2E | P1 | M | Playwright sobe ambiente isolado e executa um smoke de cardápio |
 
-**Status em 20/11/2026:** US-010 e US-012 concluídos. US-013 com harness pronto e smoke da base em desktop/mobile; o smoke de cardápio entra junto com US-023. US-011 já está entregue no esqueleto (request ID, logs JSON e health checks); falta um teste dedicado de correlação e mascaramento de PII.
+**Status em 22/11/2026:** US-010 e US-012 concluídos. US-013 com harness pronto e smoke da home + navegação para o cardápio em desktop/mobile. US-011 já está entregue no esqueleto (request ID, logs JSON e health checks); falta um teste dedicado de correlação e mascaramento de PII.
 
 **Tarefas:**
 
@@ -169,26 +169,31 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-021 | API pública de catálogo | P0 | M | US-020 | `GET /menu` e `GET /delivery-zones` filtram ativos; testes de handler |
 | US-023 | Home e cardápio | P0 | G | US-021 | Home, busca, filtros, grid e esgotado; estados completos; testes |
 | US-024 | Detalhe e personalização | P0 | G | US-021 | Opções obrigatórias, min/máx, adicionais e preço; testes |
-| US-025 | Informações da loja | P1 | M | US-021 | Status, horários, endereço, contato e prazo; estados |
+| US-025 | Informações da loja | P1 | M | US-021 | **Concluída** — `GET /store` com status efetivo/`nextOpeningAt`, home com status e painel com preview; testes |
+
+**Status em 23/11/2026:** US-020 a US-025 concluídas. O catálogo público tem `GET /menu` e `GET /delivery-zones`; a home e o cardápio consomem catálogo e status; o detalhe tem personalização; `GET /store` calcula status efetivo e `nextOpeningAt` em `America/Fortaleza`, e o painel exibe o preview na configuração da loja.
 
 **Tarefas técnicas:**
 
-- [ ] Definir tipos de domínio para categoria, produto, opção, adicional e zona.
-- [ ] Implementar validação de slug, preço, ordem e vínculos.
-- [ ] Criar índices idempotentes.
-- [ ] Implementar `GET /menu`, `GET /delivery-zones`.
-- [ ] Implementar filtros de ativos e disponibilidade.
-- [ ] Criar stores e services tipados no frontend.
-- [ ] Criar `ProductCard`, `CategoryPill`, `OptionGroup`, `AddonRow`, `PriceText`.
-- [ ] Implementar busca sem acento/caixa.
-- [ ] Testar produto esgotado, categoria vazia, busca sem resultado e erro de rede.
-- [ ] Atualizar contrato e design system se necessário.
+- [x] Definir tipos de domínio para categoria, produto, opção, adicional e zona.
+- [x] Implementar validação de slug, preço, ordem e vínculos.
+- [x] Criar índices idempotentes.
+- [x] Implementar `GET /menu`, `GET /delivery-zones`.
+- [x] Implementar filtros de ativos e disponibilidade.
+- [x] Criar stores e services tipados no frontend.
+- [x] Criar `ProductCard`, `CategoryPill`, `OptionGroup`, `AddonRow`, `PriceText`.
+- [x] Implementar busca sem acento/caixa.
+- [x] Testar produto esgotado, categoria vazia e erro de leitura no backend.
+- [x] Testar busca sem resultado, erro de rede, retry e estados vazios no frontend.
+- [x] Atualizar contrato da API.
 
 ---
 
 ## 7. Épico 3 — Carrinho e checkout
 
 **Objetivo:** permitir montar o pedido, cotar no servidor e preencher o checkout sem perder dados.
+
+**Status em 22/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e totais estimados), US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência) e US-033/US-034 concluídas (`/checkout` com entrega/retirada, zona, endereço, pagamento, troco, validação por campo, foco no primeiro erro, cotação no servidor, bloqueio de envio e estados de carregamento/erro/sucesso). O CTA “Continuar” do carrinho leva ao checkout. A taxa estimada usa a menor zona ativa enquanto nenhuma zona foi escolhida; o total definitivo vem da cotação da US-032. O limite de taxa previsto no contrato ainda não está ativo no esqueleto.
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -200,22 +205,24 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Tarefas técnicas:**
 
-- [ ] Definir schema versionado do carrinho.
-- [ ] Implementar `useCartStore` com setup e testes.
-- [ ] Validar IDs contra o catálogo carregado.
-- [ ] Criar `CartLine`, `CartSummary`, `QuantityStepper`.
-- [ ] Implementar cotação no backend com as mesmas regras do pedido.
-- [ ] Criar `CheckoutForm` com validação Zod e erros por campo.
-- [ ] Normalizar telefone no cliente e no servidor.
-- [ ] Implementar troca de delivery/retirada e troca de zona.
-- [ ] Testar loja fechada, zona inativa, item esgotado e troco inválido.
-- [ ] Preservar carrinho em falha.
+- [x] Definir schema versionado do carrinho.
+- [x] Implementar `useCartStore` com setup e testes.
+- [x] Validar IDs contra o catálogo carregado.
+- [x] Criar `CartLine`, `CartSummary`, `QuantityStepper`.
+- [x] Implementar cotação no backend com as mesmas regras do pedido.
+- [x] Criar `CheckoutForm` com validação e erros por campo (helpers puros em `features/checkout`).
+- [x] Normalizar telefone no cliente e no servidor.
+- [x] Implementar troca de delivery/retirada e troca de zona.
+- [x] Testar loja fechada, zona inativa, item esgotado e troco inválido.
+- [x] Preservar carrinho em falha.
 
 ---
 
 ## 8. Épico 4 — Pedido e WhatsApp
 
 **Objetivo:** criar o pedido persistido, idempotente e com handoff recuperável.
+
+**Status em 22/11/2026:** US-040 concluída (`POST /orders` recalcula o total com `domain.BuildQuote`, persiste snapshot com número via contador atômico, `publicId` opaco, índices únicos e `201` com `Location`), US-041 concluída (chave de 16 a 128 caracteres, `requestHash` canônico, replay `200` com `Idempotent-Replayed` e conflito `409`), US-042 concluída (link `wa.me` gerado após a persistência, com reenvio na mesma sessão), US-043 concluída (`/pedido/:publicId` mostra número/status/totais e limpa o carrinho somente após sucesso). US-044 ainda depende de teste E2E de rede.
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -227,14 +234,14 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Tarefas técnicas:**
 
-- [ ] Implementar `POST /orders` com validação completa.
-- [ ] Gerar `number` via contador atômico.
-- [ ] Gerar `publicId` com 128 bits.
-- [ ] Calcular e congelar snapshot.
-- [ ] Criar índice único de `idempotencyKey` e `requestHash`.
-- [ ] Retornar `200` no replay idempotente.
-- [ ] Montar `whatsappUrl` sem logar.
-- [ ] Criar tela de confirmação e botão de reenvio.
+- [x] Implementar `POST /orders` com validação completa.
+- [x] Gerar `number` via contador atômico.
+- [x] Gerar `publicId` com 128 bits.
+- [x] Calcular e congelar snapshot.
+- [x] Criar índice único de `idempotencyKey` e gravar `requestHash` canônico.
+- [x] Retornar `200` no replay idempotente.
+- [x] Montar `whatsappUrl` sem logar.
+- [x] Criar tela de confirmação e botão de reenvio.
 - [ ] Testar falha de Mongo, falha de link e duplo clique.
 - [ ] Testar concorrência com a mesma chave.
 
@@ -267,26 +274,33 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-060 | Autenticação admin | P0 | G | E1 | Login/logout/me, Argon2id, cookie, rate limit, CSRF; testes |
-| US-061 | Shell e guard do admin | P0 | M | US-060 | Rotas lazy, guard, 401/403, menu por papel; testes |
-| US-022 | API admin de catálogo | P0 | G | US-020, US-060 | CRUD de categorias/produtos/adicionais/zonas; auditoria; testes |
-| US-062 | Gestão de produtos | P0 | G | US-022, US-061 | Lista/form/editar/ativar/disponível/destaque; testes |
-| US-063 | Categorias e adicionais | P0 | G | US-022, US-061 | CRUD, slug, ordem, ativo; testes |
-| US-064 | Zonas e taxas | P0 | M | US-022, US-061 | CRUD, taxa em centavos, ativo; testes |
-| US-065 | Configuração da loja | P0 | M | US-061 | Kill switch, horários, contato, prazo; auditoria; testes |
-| US-066 | Usuários e papéis | P1 | M | US-060 | Owner cria/edita/desativa; último owner protegido; testes |
+| US-060 | Autenticação admin | P0 | G | E1 | **Concluída** — login/logout/me, Argon2id, cookie, rate limit, CSRF; testes |
+| US-061 | Shell e guard do admin | P0 | M | US-060 | **Concluída** — rotas lazy, guard, 401/403, menu por papel; testes |
+| US-022 | API admin de catálogo | P0 | G | US-020, US-060 | **Concluída** — CRUD paginado de categorias/produtos/adicionais/zonas; validação, autorização, CSRF, auditoria e testes |
+| US-062 | Gestão de produtos | P0 | G | US-022, US-061 | **Concluída** — lista com busca/filtro/paginação, formulário com preço em reais, opções, adicionais, disponibilidade/destaque/ativo e testes |
+| US-063 | Categorias e adicionais | P0 | G | US-022, US-061 | **Concluída** — CRUD no painel com slug, ordem, ativo e testes; preço do adicional convertido para centavos |
+| US-064 | Zonas e taxas | P0 | M | US-022, US-061 | **Concluída** — CRUD no painel, taxa digitada em reais e enviada em centavos, ativo e testes |
+| US-065 | Configuração da loja (API) | P0 | M | US-061 | **Concluída** — `GET/PATCH /admin/store`, validação de horários em `America/Fortaleza`, E.164, auditoria, tela com kill switch e intervalos por dia, e testes |
+| US-066 | Usuários e papéis | P1 | M | US-060 | **Concluída** — owner cria/edita/desativa; último owner protegido; auditoria sem PII; testes |
 
 **Tarefas técnicas:**
 
-- [ ] Implementar Argon2id e política de senha.
-- [ ] Implementar sessão com TTL e rotação.
-- [ ] Implementar CSRF por Origin/Referer.
-- [ ] Criar middleware de auth e autorização.
-- [ ] Implementar CRUD admin de categorias, produtos, adicionais e zonas.
-- [ ] Criar `AdminShell`, `DataTable`, `AdminPageHeader`.
-- [ ] Criar formulários com validação e conversão de centavos.
-- [ ] Implementar auditoria em toda mutação.
-- [ ] Testar acesso anônimo, papel errado e sessão expirada.
+- [x] Implementar Argon2id e política de senha (US-060).
+- [x] Implementar sessão com TTL e rotação (US-060).
+- [x] Implementar CSRF por Origin/Referer (US-060).
+- [x] Criar middleware de auth e autorização (US-060).
+- [x] Rate limit de login por IP+e-mail (US-060).
+- [x] Implementar CRUD admin de categorias, produtos, adicionais e zonas (US-022).
+- [x] Criar `AdminShell` e a tela de login (US-061).
+- [x] Implementar `GET/PATCH /admin/store` com validação e auditoria (US-065).
+- [x] Criar componentes de filtro, listagem e paginação do catálogo (US-062 a US-064).
+- [x] Criar formulários com validação por campo e conversão de centavos (US-062 a US-065).
+- [ ] Criar `DataTable` e `AdminPageHeader` se novas telas justificarem a abstração.
+- [x] Implementar auditoria nas mutações de catálogo e configuração da loja (US-022/US-065).
+- [x] Implementar `GET/POST/PATCH /admin/users` com autorização owner, auditoria e proteção do último owner (US-066).
+- [x] Criar telas admin de usuários e conta (US-066).
+- [x] Testar acesso anônimo e papel errado no guard e no E2E (US-061).
+- [ ] Testar sessão expirada no fluxo completo.
 
 ---
 
@@ -296,21 +310,21 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-070 | Fila de pedidos | P0 | G | US-040, US-060 | Lista/filtros/paginação; status e totais; testes |
-| US-071 | Detalhe do pedido | P0 | M | US-070 | Snapshot, cliente, endereço, pagamento e histórico; testes |
-| US-072 | Transições de status | P0 | G | US-071 | Matriz válida; `409` inválido; motivo de cancelamento; auditoria |
-| US-073 | Auditoria | P1 | M | US-072 | Owner consulta mutações sem PII; filtros; testes |
+| US-070 | Fila de pedidos | P0 | G | US-040, US-060 | **Concluída** — API com lista/filtros/paginação e painel com busca, filtros, paginação e PII mascarado |
+| US-071 | Detalhe do pedido | P0 | M | US-070 | **Concluída** — API e tela com snapshot, cliente, endereço, pagamento e histórico |
+| US-072 | Transições de status | P0 | G | US-071 | **Concluída** — Matriz válida, `409` inválido, motivo de cancelamento, auditoria e ações contextuais no painel |
+| US-073 | Auditoria | P1 | M | US-072 | **Concluída** — Owner consulta mutações sem PII; filtros por ator/entidade/ação/data; tela somente leitura e testes |
 | US-074 | Atualização em tempo real | P2 | M | US-070 | Fila atualiza sem recarregar ou polling curto; opcional |
 
 **Tarefas técnicas:**
 
-- [ ] Implementar listagem com filtros allowlist.
-- [ ] Mascarar PII na lista; detalhe autorizado.
-- [ ] Implementar máquina de estados no domínio.
-- [ ] Gravar `statusHistory`, timestamps e auditoria.
-- [ ] Criar ações contextuais por status.
-- [ ] Testar todas as transições e concorrência.
-- [ ] Criar tela de auditoria somente leitura.
+- [x] Implementar listagem com filtros allowlist.
+- [x] Mascarar PII na lista; detalhe autorizado.
+- [x] Implementar máquina de estados no domínio.
+- [x] Gravar `statusHistory`, timestamps e auditoria.
+- [x] Criar ações contextuais por status e as telas admin de fila/detalhe.
+- [x] Testar todas as transições e concorrência.
+- [x] Implementar `GET /admin/audit-logs` e a tela somente leitura (US-073).
 
 ---
 
@@ -348,7 +362,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 |---|---|---|---|---|---|
 | US-090 | Testes de backend | P0 | G | E2–E7 | Service, handler e repository com Mongo real; `-race` |
 | US-091 | Testes de frontend | P0 | G | E2–E7 | Stores, componentes e services; Vitest |
-| US-092 | E2E crítico | P0 | G | US-040, US-072 | Cardápio → pedido → admin → status em mobile/desktop |
+| US-092 | E2E crítico | P0 | G | US-040, US-072 | Parcial: pedido → fila → detalhe → status no painel; falta o fluxo completo cardápio → checkout em mobile/desktop |
 | US-093 | Segurança e privacidade | P0 | M | US-060, US-040 | Rate limit, CSRF, auth, enumeração e PII em logs |
 | US-094 | Performance e carga | P1 | M | E2–E7 | Orçamentos de `03-prd.md` medidos; gargalos corrigidos |
 

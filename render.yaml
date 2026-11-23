@@ -1,0 +1,31 @@
+# Blueprint de deploy no Render.
+# Aplique em Render > New > Blueprint e informe os segredos solicitados.
+#
+# Container único: nginx serve a SPA e faz proxy /api para a API Go local.
+# O Render injeta PORT; a API interna usa API_PORT=3000.
+services:
+  - type: web
+    name: brocados-lanches
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: API_PORT
+        value: "3000"
+      - key: MONGO_DB
+        value: brocados
+      # A API aceita MONGO_URI ou MONGODB_URI; usamos o nome do Atlas/Render.
+      - key: MONGODB_URI
+        sync: false
+      - key: ADMIN_BOOTSTRAP_NAME
+        sync: false
+      - key: ADMIN_BOOTSTRAP_EMAIL
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false

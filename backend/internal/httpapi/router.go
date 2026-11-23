@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/brocados-lanches/api/internal/domain"
+	"github.com/brocados-lanches/api/internal/platform/ratelimit"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -18,8 +20,18 @@ type Pinger interface {
 
 // Dependencies reúne o que o roteador precisa para funcionar.
 type Dependencies struct {
-	Pinger Pinger
-	Logger *slog.Logger
+	Pinger       Pinger
+	Catalog      CatalogService
+	Store        StoreService
+	Orders       OrderService
+	AdminAuth    AdminAuthService
+	AdminCookie  AdminCookieConfig
+	AdminCatalog AdminCatalogService
+	AdminStore   AdminStoreService
+	AdminOrders  AdminOrderService
+	AdminUsers   AdminUsersService
+	LoginLimiter *ratelimit.Limiter
+	Logger       *slog.Logger
 }
 
 type healthResponse struct {
@@ -40,7 +52,9 @@ func NewRouter(deps Dependencies) http.Handler {
 
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
+	// ClientIPFromRemoteAddr não confia em X-Forwarded-For/X-Real-IP, que podem
+	// ser forjados pelo cliente e burlar o rate limit de login.
+	router.Use(middleware.ClientIPFromRemoteAddr)
 	router.Use(middleware.Recoverer)
 	router.Use(requestLogger(logger))
 
@@ -49,7 +63,72 @@ func NewRouter(deps Dependencies) http.Handler {
 
 	router.Route("/api/v1", func(router chi.Router) {
 		router.Get("/", handleAPIRoot)
+		router.Get("/store", handleStore(deps.Store, logger))
+		router.Get("/menu", handleMenu(deps.Catalog, logger))
+		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
+		router.Post("/orders/quote", handleQuote(deps.Orders, logger))
+		router.Post("/orders", handleCreateOrder(deps.Orders, logger))
+		router.Get("/orders/{publicId}", handleTrackOrder(deps.Orders, logger))
 	})
+
+	if deps.AdminAuth != nil {
+		cookieConfig := deps.AdminCookie
+		if cookieConfig.Name == "" {
+			cookieConfig.Name = "brocados_admin"
+		}
+		limiter := deps.LoginLimiter
+		if limiter == nil {
+			// Parâmetros constantes e válidos; erro seria apenas de programação.
+			limiter, _ = ratelimit.New(5, time.Minute)
+		}
+
+		router.Route("/api/v1/admin", func(admin chi.Router) {
+			admin.Use(csrfProtection)
+			admin.Post("/auth/login", handleAdminLogin(deps.AdminAuth, cookieConfig, limiter, logger))
+			admin.Post("/auth/logout", handleAdminLogout(deps.AdminAuth, cookieConfig, logger))
+
+			admin.Group(func(protected chi.Router) {
+				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger))
+				protected.Get("/auth/me", handleAdminMe(logger))
+			})
+
+			admin.Group(func(protected chi.Router) {
+				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner, domain.AdminRoleOperator))
+
+				protected.Get("/categories", handleAdminListCategories(deps.AdminCatalog, logger))
+				protected.Post("/categories", handleAdminCreateCategory(deps.AdminCatalog, logger))
+				protected.Patch("/categories/{id}", handleAdminUpdateCategory(deps.AdminCatalog, logger))
+
+				protected.Get("/products", handleAdminListProducts(deps.AdminCatalog, logger))
+				protected.Post("/products", handleAdminCreateProduct(deps.AdminCatalog, logger))
+				protected.Patch("/products/{id}", handleAdminUpdateProduct(deps.AdminCatalog, logger))
+
+				protected.Get("/addons", handleAdminListAddons(deps.AdminCatalog, logger))
+				protected.Post("/addons", handleAdminCreateAddon(deps.AdminCatalog, logger))
+				protected.Patch("/addons/{id}", handleAdminUpdateAddon(deps.AdminCatalog, logger))
+
+				protected.Get("/delivery-zones", handleAdminListZones(deps.AdminCatalog, logger))
+				protected.Post("/delivery-zones", handleAdminCreateZone(deps.AdminCatalog, logger))
+				protected.Patch("/delivery-zones/{id}", handleAdminUpdateZone(deps.AdminCatalog, logger))
+
+				protected.Get("/store", handleAdminGetStore(deps.AdminStore, logger))
+				protected.Patch("/store", handleAdminUpdateStore(deps.AdminStore, logger))
+
+				protected.Get("/orders", handleAdminListOrders(deps.AdminOrders, logger))
+				protected.Get("/orders/{id}", handleAdminGetOrder(deps.AdminOrders, logger))
+				protected.Patch("/orders/{id}/status", handleAdminUpdateOrderStatus(deps.AdminOrders, logger))
+			})
+
+			admin.Group(func(protected chi.Router) {
+				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner))
+
+				protected.Get("/users", handleAdminListUsers(deps.AdminUsers, logger))
+				protected.Post("/users", handleAdminCreateUser(deps.AdminUsers, logger))
+				protected.Patch("/users/{id}", handleAdminUpdateUser(deps.AdminUsers, logger))
+				protected.Get("/audit-logs", handleAdminListAuditLogs(deps.AdminUsers, logger))
+			})
+		})
+	}
 
 	return router
 }

@@ -1,0 +1,509 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+
+import BaseButton from '../BaseButton.vue'
+import {
+  allergensFromText,
+  allergensToText,
+  moneyToCents,
+  newLocalId,
+  slugify,
+  validateProductInput,
+} from '../../features/admin-catalog/catalogForm'
+import type { FieldErrors } from '../../features/admin-catalog/catalogForm'
+import type {
+  AdminAddon,
+  AdminCategory,
+  AdminOptionGroup,
+  AdminProduct,
+  AdminProductInput,
+} from '../../types/adminCatalog'
+
+const props = defineProps<{
+  item: AdminProduct | null
+  categories: AdminCategory[]
+  addons: AdminAddon[]
+  saving: boolean
+  error: string
+  success: string
+}>()
+
+const emit = defineEmits<{ submit: [value: AdminProductInput]; cancel: [] }>()
+
+const categoryId = ref('')
+const name = ref('')
+const slug = ref('')
+const description = ref('')
+const price = ref('')
+const imageUrl = ref('')
+const imageAlt = ref('')
+const allergensText = ref('')
+const available = ref(true)
+const featured = ref(false)
+const active = ref(true)
+const sortOrder = ref(0)
+const addonIds = ref<string[]>([])
+const optionGroups = ref<AdminOptionGroup[]>([])
+const optionAmounts = ref<string[][]>([])
+const errors = ref<FieldErrors>({})
+
+function centsToInput(cents: number): string {
+  return (cents / 100).toFixed(2).replace('.', ',')
+}
+
+watch(
+  () => props.item,
+  (item) => {
+    errors.value = {}
+    categoryId.value = item?.categoryId ?? ''
+    name.value = item?.name ?? ''
+    slug.value = item?.slug ?? ''
+    description.value = item?.description ?? ''
+    price.value = centsToInput(item?.priceCents ?? 0)
+    imageUrl.value = item?.imageUrl ?? ''
+    imageAlt.value = item?.imageAlt ?? ''
+    allergensText.value = allergensToText(item?.allergens ?? [])
+    available.value = item?.available ?? true
+    featured.value = item?.featured ?? false
+    active.value = item?.active ?? true
+    sortOrder.value = item?.sortOrder ?? 0
+    addonIds.value = [...(item?.addonIds ?? [])]
+    optionGroups.value = (item?.optionGroups ?? []).map((group) => ({
+      ...group,
+      options: group.options.map((option) => ({ ...option })),
+    }))
+    optionAmounts.value = optionGroups.value.map((group) =>
+      group.options.map((option) => centsToInput(option.priceCents)),
+    )
+  },
+  { immediate: true },
+)
+
+function addGroup(): void {
+  optionGroups.value.push({
+    id: newLocalId('grupo'),
+    name: '',
+    required: false,
+    minSelections: 0,
+    maxSelections: 0,
+    options: [],
+  })
+  optionAmounts.value.push([])
+}
+
+function removeGroup(index: number): void {
+  optionGroups.value.splice(index, 1)
+  optionAmounts.value.splice(index, 1)
+}
+
+function addOption(groupIndex: number): void {
+  const group = optionGroups.value[groupIndex]
+  if (!group) {
+    return
+  }
+  group.options.push({
+    id: newLocalId('opcao'),
+    name: '',
+    priceCents: 0,
+    available: true,
+    sortOrder: group.options.length,
+  })
+  const amounts = optionAmounts.value[groupIndex]
+  if (amounts) {
+    amounts.push('0,00')
+  }
+}
+
+function removeOption(groupIndex: number, optionIndex: number): void {
+  optionGroups.value[groupIndex]?.options.splice(optionIndex, 1)
+  optionAmounts.value[groupIndex]?.splice(optionIndex, 1)
+}
+
+function toggleAddon(id: string): void {
+  addonIds.value = addonIds.value.includes(id)
+    ? addonIds.value.filter((item) => item !== id)
+    : [...addonIds.value, id]
+}
+
+function submit(): void {
+  const priceCents = moneyToCents(price.value)
+  const optionCents = optionGroups.value.map((group, groupIndex) =>
+    group.options.map((_, optionIndex) =>
+      moneyToCents(optionAmounts.value[groupIndex]?.[optionIndex] ?? ''),
+    ),
+  )
+  const groups = optionGroups.value.map((group, groupIndex) => ({
+    ...group,
+    options: group.options.map((option, optionIndex) => ({
+      ...option,
+      priceCents: optionCents[groupIndex]?.[optionIndex] ?? 0,
+    })),
+  }))
+
+  const input: AdminProductInput = {
+    categoryId: categoryId.value,
+    name: name.value.trim(),
+    slug: slug.value.trim(),
+    description: description.value.trim(),
+    priceCents: priceCents ?? 0,
+    imageUrl: imageUrl.value.trim(),
+    imageAlt: imageAlt.value.trim(),
+    allergens: allergensFromText(allergensText.value),
+    available: available.value,
+    featured: featured.value,
+    active: active.value,
+    sortOrder: Number(sortOrder.value),
+    optionGroups: groups,
+    addonIds: addonIds.value,
+  }
+
+  errors.value = validateProductInput(input)
+  if (priceCents === null) {
+    errors.value.priceCents = 'Informe um preço válido em reais.'
+  }
+  optionCents.forEach((amounts, groupIndex) => {
+    amounts.forEach((cents, optionIndex) => {
+      if (cents === null) {
+        errors.value[`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`] =
+          'Informe um preço válido em reais.'
+      }
+    })
+  })
+  if (Object.keys(errors.value).length > 0) {
+    return
+  }
+  emit('submit', input)
+}
+</script>
+
+<template>
+  <form class="product-form" aria-label="Formulário de produto" @submit.prevent="submit">
+    <h2>{{ props.item ? 'Editar produto' : 'Novo produto' }}</h2>
+
+    <div class="product-form__grid">
+      <div class="product-form__field">
+        <label for="product-category">Categoria</label>
+        <select id="product-category" v-model="categoryId">
+          <option value="">Selecione</option>
+          <option v-for="category in props.categories" :key="category.id" :value="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+        <p v-if="errors.categoryId" class="product-form__error" role="alert">
+          {{ errors.categoryId }}
+        </p>
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-name">Nome</label>
+        <input id="product-name" v-model="name" type="text" maxlength="120" />
+        <p v-if="errors.name" class="product-form__error" role="alert">{{ errors.name }}</p>
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-slug">Slug</label>
+        <div class="product-form__inline">
+          <input id="product-slug" v-model="slug" type="text" maxlength="80" />
+          <button type="button" class="product-form__small" @click="slug = slugify(name)">
+            Gerar
+          </button>
+        </div>
+        <p v-if="errors.slug" class="product-form__error" role="alert">{{ errors.slug }}</p>
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-price">Preço (R$)</label>
+        <input
+          id="product-price"
+          v-model="price"
+          type="text"
+          inputmode="decimal"
+          placeholder="0,00"
+        />
+        <p v-if="errors.priceCents" class="product-form__error" role="alert">
+          {{ errors.priceCents }}
+        </p>
+      </div>
+
+      <div class="product-form__field product-form__field--wide">
+        <label for="product-description">Descrição</label>
+        <textarea id="product-description" v-model="description" rows="3" maxlength="2000" />
+        <p v-if="errors.description" class="product-form__error" role="alert">
+          {{ errors.description }}
+        </p>
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-image">URL da imagem</label>
+        <input id="product-image" v-model="imageUrl" type="url" maxlength="500" />
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-image-alt">Texto alternativo</label>
+        <input id="product-image-alt" v-model="imageAlt" type="text" maxlength="200" />
+        <p v-if="errors.imageAlt" class="product-form__error" role="alert">{{ errors.imageAlt }}</p>
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-allergens">Alergênicos (separados por vírgula)</label>
+        <input id="product-allergens" v-model="allergensText" type="text" />
+        <p v-if="errors.allergens" class="product-form__error" role="alert">
+          {{ errors.allergens }}
+        </p>
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-sort">Ordem</label>
+        <input id="product-sort" v-model.number="sortOrder" type="number" min="0" />
+      </div>
+    </div>
+
+    <div class="product-form__checks">
+      <label><input v-model="available" type="checkbox" /> Disponível</label>
+      <label><input v-model="featured" type="checkbox" /> Destaque</label>
+      <label><input v-model="active" type="checkbox" /> Ativo</label>
+    </div>
+
+    <fieldset class="product-form__section">
+      <legend>Adicionais permitidos</legend>
+      <label v-for="addon in props.addons" :key="addon.id" class="product-form__check">
+        <input
+          type="checkbox"
+          :checked="addonIds.includes(addon.id)"
+          @change="toggleAddon(addon.id)"
+        />
+        {{ addon.name }}
+      </label>
+      <p v-if="props.addons.length === 0" class="product-form__hint">
+        Cadastre adicionais antes de vincular.
+      </p>
+      <p v-if="errors.addonIds" class="product-form__error" role="alert">{{ errors.addonIds }}</p>
+    </fieldset>
+
+    <fieldset class="product-form__section">
+      <legend>Grupos de opções</legend>
+      <div v-for="(group, groupIndex) in optionGroups" :key="group.id" class="product-form__group">
+        <div class="product-form__group-head">
+          <input v-model="group.name" type="text" placeholder="Nome do grupo" maxlength="120" />
+          <button type="button" class="product-form__small" @click="removeGroup(groupIndex)">
+            Remover grupo
+          </button>
+        </div>
+        <p
+          v-if="errors[`optionGroups.${groupIndex}.name`]"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errors[`optionGroups.${groupIndex}.name`] }}
+        </p>
+
+        <div class="product-form__inline">
+          <label>
+            <input v-model="group.required" type="checkbox" />
+            Obrigatório
+          </label>
+          <label>
+            Mínimo
+            <input v-model.number="group.minSelections" type="number" min="0" />
+          </label>
+          <label>
+            Máximo
+            <input v-model.number="group.maxSelections" type="number" min="0" />
+          </label>
+        </div>
+        <p
+          v-if="errors[`optionGroups.${groupIndex}.maxSelections`]"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errors[`optionGroups.${groupIndex}.maxSelections`] }}
+        </p>
+
+        <div
+          v-for="(option, optionIndex) in group.options"
+          :key="option.id"
+          class="product-form__option"
+        >
+          <input v-model="option.name" type="text" placeholder="Nome da opção" maxlength="120" />
+          <input
+            v-model="optionAmounts[groupIndex][optionIndex]"
+            type="text"
+            inputmode="decimal"
+            placeholder="0,00"
+            :aria-label="`Preço de ${option.name || 'opção'}`"
+          />
+          <label><input v-model="option.available" type="checkbox" /> Disponível</label>
+          <button
+            type="button"
+            class="product-form__small"
+            @click="removeOption(groupIndex, optionIndex)"
+          >
+            Remover
+          </button>
+          <p
+            v-if="errors[`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`]"
+            class="product-form__error"
+            role="alert"
+          >
+            {{ errors[`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`] }}
+          </p>
+        </div>
+
+        <button type="button" class="product-form__small" @click="addOption(groupIndex)">
+          Adicionar opção
+        </button>
+      </div>
+
+      <button type="button" class="product-form__small" @click="addGroup">Adicionar grupo</button>
+    </fieldset>
+
+    <p v-if="props.error" class="product-form__message" role="alert">{{ props.error }}</p>
+    <p v-if="props.success" class="product-form__message" role="status">{{ props.success }}</p>
+
+    <div class="product-form__actions">
+      <BaseButton type="submit" :loading="props.saving" :disabled="props.saving">Salvar</BaseButton>
+      <BaseButton type="button" variant="ghost" @click="emit('cancel')">Cancelar</BaseButton>
+    </div>
+  </form>
+</template>
+
+<style scoped>
+.product-form {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--bg-border);
+  border-radius: 18px;
+  background: var(--bg-surface);
+}
+
+.product-form h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--font-size-h2);
+}
+
+.product-form__grid {
+  display: grid;
+  gap: 14px;
+}
+
+.product-form__field {
+  display: grid;
+  gap: 8px;
+}
+
+.product-form__field label,
+.product-form__check {
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.product-form input,
+.product-form select,
+.product-form textarea,
+.product-form__small {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+}
+
+.product-form__small {
+  width: fit-content;
+  font-weight: 700;
+}
+
+.product-form__inline,
+.product-form__checks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-form__checks label,
+.product-form__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.product-form__section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--bg-border);
+  border-radius: 18px;
+}
+
+.product-form__section legend {
+  padding: 0 8px;
+  font-weight: 800;
+}
+
+.product-form__group {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--bg-border);
+  border-radius: 14px;
+}
+
+.product-form__group-head,
+.product-form__option {
+  display: grid;
+  gap: 8px;
+}
+
+.product-form__error {
+  margin: 0;
+  color: var(--status-error);
+  font-size: var(--font-size-caption);
+}
+
+.product-form__hint,
+.product-form__message {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
+}
+
+.product-form__message {
+  padding: 10px 12px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  color: var(--text-main);
+}
+
+.product-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .product-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .product-form__field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .product-form__group-head,
+  .product-form__option {
+    grid-template-columns: 2fr 1fr auto auto;
+    align-items: center;
+  }
+
+  .product-form__option .product-form__error {
+    grid-column: 1 / -1;
+  }
+}
+</style>

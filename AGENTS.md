@@ -1,7 +1,7 @@
 # AGENTS.md — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
+**Versão:** 1.1  
+**Atualizado em:** 22/11/2026  
 **Stack:** Go + Chi · Vue 3 + Vite + TypeScript · MongoDB  
 **Aplica-se a:** todo o repositório
 
@@ -17,7 +17,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Objetivo da V1:** o cliente monta o pedido e ele é **registrado no servidor antes de qualquer envio**; a operação gerencia catálogo, zonas e pedidos pelo painel; preços, taxas e disponibilidade são sempre validados no backend.
 
-**Estado em 20/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; catálogo, checkout e painel administrativo ainda não foram implementados.
+**Estado em 23/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; o catálogo já tem domínio, validação, repositórios, índices idempotentes, API pública de leitura (`GET /menu` e `GET /delivery-zones`), home, cardápio com busca/filtros e detalhe com personalização. O carrinho já persiste IDs/escolhas com schema versionado, valida itens contra o catálogo e tem tela com quantidade, remoção, limpeza, estado vazio e totais estimados; o botão de adicionar do detalhe alimenta o carrinho. A cotação `POST /api/v1/orders/quote` valida itens, opções, adicionais, zona e status efetivo da loja, calcula subtotal/taxa/total no servidor com `domain.BuildQuote` e não persiste nada. O checkout (`/checkout`) coleta entrega/retirada, zona, endereço, pagamento e troco, exibe totais cotados e envia apenas IDs/escolhas. `POST /api/v1/orders` recalcula os valores, persiste o snapshot com número sequencial, `publicId` opaco e chave idempotente, e devolve o link `wa.me` após a gravação; `GET /api/v1/orders/{publicId}` oferece acompanhamento público sem PII. A confirmação limpa o carrinho somente após `201` e permite reenviar o link de handoff na mesma sessão. A autenticação administrativa já está implementada: `POST /api/v1/admin/auth/login`, `POST /api/v1/admin/auth/logout` e `GET /api/v1/admin/auth/me` usam Argon2id, sessão opaca com hash SHA-256 em cookie `HttpOnly`, rotação no login, expiração ociosa/absoluta, CSRF por `Origin`/`Referer` e rate limit de 5/min por IP+e-mail. O bootstrap do primeiro `owner` é feito pelas variáveis `ADMIN_BOOTSTRAP_*` na inicialização e só cria usuário quando a coleção está vazia. O shell/guard do painel (US-061) já entrega `/admin/login`, rotas lazy, menu por papel e a tela de acesso negado; o cliente HTTP usa `credentials: 'include'` e o proxy de desenvolvimento alinha `Origin`/`Host` para não falsificar o CSRF. A API administrativa de catálogo (US-022) já cobre `GET/POST/PATCH` de categorias, produtos, adicionais e zonas com paginação, allowlist de ordenação, validação e auditoria; `GET/PATCH /api/v1/admin/store` (US-065) controla kill switch, horários e contato com validação em `America/Fortaleza` e auditoria sem PII. As APIs administrativas de pedidos (`GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/{id}` e `PATCH /api/v1/admin/orders/{id}/status`) já entregam fila com PII mascarada, detalhe completo e matriz de transições com `409`, `statusHistory`, timestamps e auditoria sem PII via compare-and-set. As telas de fila, detalhe e ações contextuais de status já estão implementadas no painel, assim como o CRUD de produtos, categorias, adicionais e zonas e a configuração da loja com kill switch e horários; `GET /api/v1/store` devolve o status efetivo calculado no servidor (kill switch + horário em `America/Fortaleza`) e a próxima abertura; o painel exibe esse preview na configuração da loja. As APIs `GET/POST/PATCH /admin/users` e `GET /admin/audit-logs` e as telas `/admin/usuarios`, `/admin/auditoria` e `/admin/conta` fecham a gestão do painel, com proteção do último owner e auditoria sem PII.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
 
@@ -96,8 +96,8 @@ brocados-lanches/
 │   ├── internal/
 │   │   ├── config/           # env, timeouts, validação de configuração
 │   │   ├── httpapi/          # router, handlers, middleware, respostas
-│   │   ├── domain/           # entidades, enums, erros de negócio (fase seguinte)
-│   │   ├── service/          # regras de negócio (fase seguinte)
+│   │   ├── domain/           # entidades, enums, erros de negócio
+│   │   ├── service/          # regras de negócio e casos de uso
 │   │   ├── repository/       # MongoDB
 │   │   └── platform/         # clock, IDs, log, senha, WhatsApp (fase seguinte)
 │   ├── scripts/seed/         # seed de desenvolvimento e teste
@@ -112,13 +112,14 @@ brocados-lanches/
 │   │   ├── router/
 │   │   ├── stores/
 │   │   ├── services/        # cliente HTTP e endpoints tipados
-│   │   ├── components/      # componentes reutilizáveis (fase seguinte)
+│   │   ├── components/      # componentes reutilizáveis
 │   │   ├── views/           # páginas do cliente e do admin
-│   │   ├── features/        # regras de UI por domínio (fase seguinte)
+│   │   ├── features/        # regras de UI por domínio
 │   │   ├── composables/      # (fase seguinte)
-│   │   ├── types/            # (fase seguinte)
+│   │   ├── types/            # tipos compartilhados
+│   │   ├── utils/            # normalização e utilitários puros
 │   │   └── styles/
-│   ├── e2e/                  # Playwright (smoke da base; cardápio na fase seguinte)
+│   ├── e2e/                  # Playwright (smoke da home e navegação para o cardápio)
 │   ├── Dockerfile
 │   ├── Dockerfile.runtime
 │   ├── nginx.conf
@@ -437,7 +438,7 @@ Regras:
 
 - Backend: testes de tabela (table-driven) para service, `httptest` para handlers e testcontainers para repositório. Rode `go test -race ./...`.
 - Scripts Python: `unittest` para os validadores de documentação e design system, executado por `make test-docs`, `make test-design` e pelo hook de commit.
-- Teste de integração do repositório: pula por padrão; use `cd backend && MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -run TestConnectIntegration -v` com um Mongo real e descartável.
+- Testes de integração do repositório: pulam por padrão; use `cd backend && MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v` com um Mongo real e descartável. O job Backend do CI sobe MongoDB 8 e define a variável.
 - Frontend: Vitest + Vue Test Utils para componentes e stores; Playwright para o fluxo crítico.
 - Fluxo E2E mínimo: cardápio → personalizar → carrinho → checkout → pedido persistido → pedido aparece no admin → mudança de status.
 - Não use snapshot como única prova de UI crítica.

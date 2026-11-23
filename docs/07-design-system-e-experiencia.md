@@ -167,18 +167,19 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 
 | Componente | Uso |
 |---|---|
-| `AdminShell` | Sidebar desktop, bottom nav mobile, header |
+| `AdminShell` | Sidebar desktop, bottom nav mobile, header — **implementado em US-061** |
 | `AdminPageHeader` | Título, ação primária, breadcrumb |
-| `DataTable` | Produtos, pedidos, usuários, auditoria; paginação |
+| `DataTable` | Produtos, pedidos, usuários, auditoria; paginação (ainda não abstraído) |
 | `TableEmpty` | Estado vazio com CTA |
-| `ProductForm` | Nome, slug, categoria, preço, descrição, imagem, opções, adicionais |
-| `CategoryForm` | Nome, slug, ordem, ativo |
-| `AddonForm` | Nome, slug, preço, ativo |
-| `ZoneForm` | Nome, slug, taxa, ativo |
-| `StoreSettingsForm` | Kill switch, horários, contato, prazo |
-| `OrderFilters` | Status, data, fulfillment, busca |
-| `OrderDetailPanel` | Snapshot, cliente, endereço, pagamento, histórico |
-| `StatusTransitionActions` | Ações válidas para o status atual; confirmação |
+| `AdminCatalogFilters` | Busca e situação do catálogo — **implementado em US-062 a US-064** |
+| `AdminCatalogList` | Cartões do catálogo com ações, estado vazio/erro e paginação — **implementado em US-062 a US-064** |
+| `AdminCatalogForm` | Nome, slug, ordem, ativo, preço/taxa — **implementado em US-063/US-064** (substitui `CategoryForm`, `AddonForm` e `ZoneForm`) |
+| `AdminProductForm` | Nome, slug, categoria, preço, descrição, imagem, alergênicos, opções, adicionais — **implementado em US-062** |
+| `StoreSettingsForm` | Kill switch, horários, contato, prazo — **implementado inline em `AdminStoreView` (US-065)** |
+| `AdminOrderFilters` | Status, data, fulfillment, busca — **implementado em US-070** |
+| `OrderStatusBadge` | Status na fila e no detalhe — **implementado em US-070** |
+| `AdminOrderDetailView` | Snapshot, cliente, endereço, pagamento, histórico — **implementado em US-071** |
+| `OrderStatusActions` | Ações válidas para o status atual; confirmação de cancelamento — **implementado em US-072** |
 | `AuditLogTable` | Ator, ação, entidade, data; sem PII |
 | `UserForm` | Nome, e-mail, papel, ativo |
 
@@ -244,7 +245,8 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 - Itens com opções, observação, quantidade e remover.
 - Subtotal, taxa estimada e total.
 - Aviso de que o total final é confirmado no checkout.
-- CTA “Continuar”.
+- Antes da escolha da zona, a taxa estimada usa a menor taxa ativa; se a API falhar, o resumo mostra “A calcular no checkout” e total parcial.
+- CTA “Continuar” habilitado quando há itens disponíveis; leva a `/checkout`.
 - Estado vazio com CTA para o cardápio.
 
 ### 5.5 Checkout — `/checkout`
@@ -266,29 +268,28 @@ Regras:
 - Telefone com máscara e normalização.
 - Erros por campo, com foco no primeiro erro.
 - Total vem de `/orders/quote`; se a cotação falhar, não enviar.
-- Botão de envio desabilitado durante a requisição.
+- Botão de envio desabilitado durante a requisição e enquanto a cotação não chega.
 - Se a loja fechar, mensagem clara e ação de voltar ao cardápio.
-- Se o pedido for criado, limpar carrinho e ir para confirmação.
-- Se falhar, preservar carrinho e dados.
+- Se o pedido for criado (`201`), limpar carrinho e ir para confirmação; no replay idempotente (`200`), o mesmo destino é usado.
+- Se falhar, preservar carrinho e dados; a chave idempotente é mantida em retries do mesmo pedido e renovada somente quando o conteúdo da requisição muda.
 
 ### 5.6 Confirmação — `/pedido/:publicId`
 
 **Objetivo:** confirmar e orientar o próximo passo.
 
-- Número do pedido, status, total e prazo.
+- Número do pedido, status, itens, total e prazo.
 - Botão “Abrir WhatsApp” e link copiável.
 - Aviso de que o pedido já está registrado.
-- Link para acompanhar.
-- Se o WhatsApp falhar, manter pedido e oferecer reenvio.
+- Link para voltar ao cardápio; o próprio caminho `/pedido/:publicId` serve de acompanhamento.
+- Se o WhatsApp falhar, manter pedido e oferecer reenvio pelo link guardado no `sessionStorage` na mesma sessão.
 
 ### 5.7 Acompanhamento — `/pedido/:publicId`
 
 **Objetivo:** consultar status sem expor PII.
 
-- Timeline: pending → confirmed → preparing → ready → out_for_delivery/picked_up → delivered/picked_up.
-- Itens e total.
-- Contato da loja.
-- Atualizar manualmente.
+- Timeline: pending → confirmed → preparing → ready → out_for_delivery/picked_up → delivered/picked_up (histórico completo depende da fila administrativa).
+- Itens e total nesta entrega.
+- Contato da loja e atualização manual previstos para a US-051.
 - Estado inválido/não encontrado sem revelar dados.
 
 ### 5.8 Contato e privacidade
@@ -308,7 +309,8 @@ Regras:
 - Erro genérico.
 - Loading e bloqueio de envio.
 - Sem “lembrar-me” na V1.
-- Após login, redirecionar para `/admin`.
+- Após login, redirecionar para `/admin` ou para o destino em `?redirect=`, desde que comece com `/admin`.
+- Implementado em `frontend/src/views/admin/AdminLoginView.vue` (US-061).
 
 ### 6.2 Dashboard — `/admin`
 
@@ -329,15 +331,21 @@ Regras:
 - Imagem com alt.
 - Auditoria ao salvar.
 
+Implementado em `frontend/src/views/admin/AdminProductsView.vue` e `frontend/src/components/admin/AdminProductForm.vue` (US-062). A lista carrega categorias e adicionais com `pageSize=100` para alimentar o formulário; preços e opções são enviados em centavos.
+
 ### 6.4 Categorias — `/admin/categorias`
 
 - Nome, slug, ordem, ativa.
 - Não excluir; desativar.
 
+Implementado em `frontend/src/views/admin/AdminCategoriesView.vue` (US-063), com `AdminCatalogFilters`, `AdminCatalogForm` e `AdminCatalogList`.
+
 ### 6.5 Adicionais — `/admin/adicionais`
 
 - Nome, slug, preço, ativo, ordem.
 - Vínculo com produtos editado no produto.
+
+Implementado em `frontend/src/views/admin/AdminAddonsView.vue` (US-063). O preço é digitado em reais e convertido para centavos antes do `POST`/`PATCH`.
 
 ### 6.6 Locais e taxas — `/admin/locais`
 
@@ -345,13 +353,17 @@ Regras:
 - Taxa em reais na UI, centavos na API.
 - Aviso de que a taxa vale para novos pedidos.
 
+Implementado em `frontend/src/views/admin/AdminZonesView.vue` (US-064), com aviso de que pedidos antigos mantêm a taxa congelada no snapshot.
+
 ### 6.7 Loja — `/admin/loja`
 
 - Kill switch.
 - Horários por dia, múltiplos intervalos.
 - Prazo, WhatsApp, Instagram, endereço.
-- Preview do status efetivo.
+- Preview do status efetivo a partir de `GET /api/v1/store`.
 - Auditoria.
+
+Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065/US-025). O formulário valida E.164, horários `HH:MM` e sobreposição de intervalos antes do PATCH; o envio com `PATCH` vazio é bloqueado no cliente e o badge mostra o status calculado no servidor.
 
 ### 6.8 Pedidos — `/admin/pedidos`
 
@@ -362,23 +374,26 @@ Regras:
 - Ações de transição válidas.
 - Cancelamento com motivo.
 
+Implementado em `frontend/src/views/admin/AdminOrdersView.vue` e `frontend/src/views/admin/AdminOrderDetailView.vue` (US-070 a US-072). As datas dos filtros usam UTC; a exibição usa `America/Fortaleza`.
+
 ### 6.9 Usuários — `/admin/usuarios` (owner)
 
-- Lista, criar, editar papel, ativar/desativar.
-- Não desativar o último owner.
-- Sem senha em resposta.
+- Lista paginada com busca, criar, editar papel e ativar/desativar.
+- Senha temporária forte no cadastro; senha nunca volta na resposta.
+- Não desativar o último owner ativo.
+- Implementado em `AdminUsersView.vue`, `AdminUserList.vue` e `AdminUserForm.vue`.
 
 ### 6.10 Auditoria — `/admin/auditoria` (owner)
 
-- Filtros por ator, entidade e data.
-- Sem PII.
-- Somente leitura.
+- Filtros por entidade e ação; paginação e ordenação por data desc.
+- Sem PII no registro exibido.
+- Somente leitura, implementado em `AdminAuditView.vue`.
 
 ### 6.11 Conta — `/admin/conta`
 
-- Nome, e-mail, papel.
-- Troca de senha (P1; se não houver, owner redefine).
-- Sair.
+- Nome, e-mail e papel da sessão atual.
+- Logout disponível; troca de senha/MFA ficam fora da V1.
+- Implementado em `AdminAccountView.vue`.
 
 ---
 

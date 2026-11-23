@@ -1,7 +1,7 @@
 # Decisões e Pendências — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
+**Versão:** 1.1  
+**Atualizado em:** 22/11/2026  
 **Status:** registro vivo.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `08-backlog.md`, `adr/`.
 
@@ -38,6 +38,13 @@
 | D-014 | 18/11/2026 | Não usar CDN, Google Fonts ou analytics sem consentimento em produção | Decidido | Segurança, privacidade e performance | `../AGENTS.md`, `10-operacao-e-lancamento.md` |
 | D-015 | 18/11/2026 | Hospedagem, domínio, MongoDB gerenciado e retenção final ainda não decididos | Pendente | Bloqueia deploy/go-live | Este documento |
 | D-016 | 20/11/2026 | CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E | Decidido | Pipeline versionado em `.github/workflows/ci.yml`; PR bloqueado por falha | `.github/workflows/ci.yml` |
+| D-017 | 22/11/2026 | Total do item no detalhe é estimado a partir dos preços do catálogo | Decidido | A cotação e o pedido recalculam no servidor; nenhum valor do cliente é confiável | `08-backlog.md`, `09-qualidade-e-testes.md`, `AGENTS.md` §8.2 |
+| D-018 | 22/11/2026 | No carrinho, a taxa estimada é a menor taxa ativa até a escolha da zona no checkout | Decidido | Evita taxa inventada e deixa claro que o total definitivo é server-side | `07-design-system-e-experiencia.md` §5.4, `08-backlog.md` §7 |
+| D-019 | 22/11/2026 | Pedido gravado com snapshot, número sequencial, `publicId` opaco e chave idempotente; replay devolve `200` | Decidido e implementado | Nenhum duplo pedido; histórico não depende do catálogo atual | `06-contrato-api.md` §7, `08-backlog.md` §8 |
+| D-020 | 22/11/2026 | O link `wa.me` sai na criação e fica no `sessionStorage` por pedido para reenvio na mesma sessão; não é devolvido no acompanhamento | Decidido e implementado | Handoff recuperável sem expor PII na rota pública | `06-contrato-api.md` §7 e §8, `07-design-system-e-experiencia.md` §5.6 |
+| D-021 | 22/11/2026 | O guard do painel é apenas UX (`401` → login com `redirect`, `403` → `/admin/sem-acesso`); a autorização real continua no servidor. No desenvolvimento o proxy do Vite alinha `Origin` ao `Host` da API para não falsificar o CSRF | Decidido e implementado | Painel navegável em dev/produção sem enfraquecer a proteção | `04-arquitetura.md` §5.5, `frontend/vite.config.ts`, `08-backlog.md` §10 |
+| D-022 | 22/11/2026 | A fila admin mascara nome/telefone; o detalhe completo exige sessão; transição usa CAS no status e auditoria sem PII | Decidido e implementado | Operação segura com rastro, sem vazar dados na listagem | `06-contrato-api.md` §12, `05-modelo-de-dados.md` §3.6, `08-backlog.md` §11 |
+| D-023 | 23/11/2026 | No painel, preço/taxa são digitados em reais e convertidos para centavos no cliente antes do envio; slug, horários e WhatsApp são validados no cliente, mas o servidor continua autoritativo | Decidido e implementado | Evita `float` e PATCH vazio; mantém a API como fonte da verdade | `../AGENTS.md` §7.5 e §8.2, `08-backlog.md` §10 |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -51,7 +58,7 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 |---|---|---|---|---|---|
 | P-001 | Número do chamado, solicitante, prazo e prioridade | Governança e estimativa | Sim | Cliente/gestão | Pendente |
 | P-002 | O catálogo do site é o oficial? | Evita inventar cardápio | Sim | Cliente | Pendente |
-| P-003 | Quais grupos de opções/adicionais por produto? | Personalização e preço | Sim | Cliente | Pendente |
+| P-003 | Quais grupos de opções/adicionais por produto? | Personalização e preço | Sim | Cliente | Pendente; UI pronta e testada com fixtures, mas o seed ainda não contém grupos/adicionais reais |
 | P-004 | Quais bairros e taxas valem hoje? | Checkout e entrega | Sim | Cliente | Pendente |
 | P-005 | Horários, feriados e prazo reais | Status da loja | Sim | Cliente | Pendente |
 | P-006 | WhatsApp, endereço, Instagram e Pix | Contato e handoff | Sim | Cliente | Pendente |
@@ -80,12 +87,13 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 - **Decisão:** `POST /orders/quote` valida itens, opções, adicionais e zona, e devolve subtotal, taxa e total sem persistir.
 - **Consequência:** o frontend não calcula total; o `POST /orders` recalcula e pode rejeitar se algo mudou.
 - **Risco:** duplicação de lógica entre quote e order. Mitigação: uma única função de cálculo no domínio/service.
+- **Estado em 22/11/2026:** US-032 implementada e reutilizada pelo `POST /orders` (US-040). `domain.BuildQuote` é a função única de cálculo; o service carrega catálogo, zonas e `store_settings`, e os handlers expõem `POST /api/v1/orders/quote` sem gravar e `POST /api/v1/orders` com persistência. O status efetivo da loja usa o kill switch e, quando existem horários cadastrados, a faixa vigente em `America/Fortaleza`.
 
 ### 4.2 Acompanhamento público mínimo
 
 - **Problema:** link público não pode expor PII.
-- **Decisão:** retornar número, status, itens (nome/quantidade), total, prazo e link do WhatsApp; nunca telefone, endereço, observação ou `_id`.
-- **Consequência:** o cliente vê o essencial; a loja continua sendo contatada pelo WhatsApp.
+- **Decisão:** retornar número, status, itens (nome/quantidade), total e prazo; nunca link do WhatsApp, telefone, endereço, observação ou `_id`.
+- **Consequência:** o cliente vê o essencial sem PII; o link completo com PII só aparece na criação do pedido e pode ser reenviado pelo `sessionStorage` na mesma sessão (D-020).
 
 ### 4.3 Usuários e auditoria
 
@@ -134,3 +142,13 @@ Elas entram em P2 ou no roadmap seguinte.
 |---|---|
 | 18/11/2026 | Criação do registro; decisões da V1 e pendências iniciais |
 | 20/11/2026 | D-016 (GitHub Actions); P-015 resolvido; decisão de seed registrada; §2.1 verificada sem divergência |
+| 21/11/2026 | US-020 concluída: domínio, validação, repositórios e índices idempotentes de catálogo; job Backend do CI passa a rodar testes de integração com MongoDB 8 |
+| 21/11/2026 | US-021 concluída: API pública de catálogo com `GET /menu` e `GET /delivery-zones`, filtros de ativos/disponibilidade, envelope de erro e testes de service/handler |
+| 22/11/2026 | US-023 e US-024 concluídas: home, cardápio, busca/filtros, detalhe e personalização com opções, adicionais e total estimado; testes unitários e smoke E2E de navegação |
+| 22/11/2026 | US-032 concluída: cotação server-side sem persistir, com `domain.BuildQuote` como única fonte de cálculo |
+| 22/11/2026 | US-033/US-034 e US-040 a US-043 concluídas: checkout, pedido persistido e idempotente, handoff WhatsApp, confirmação com limpeza do carrinho e acompanhamento público; D-019 e D-020 registrados |
+| 22/11/2026 | US-060, US-061, US-022 e US-065 concluídas: autenticação, shell/guard do painel, API CRUD de catálogo e API da loja |
+| 22/11/2026 | US-070 a US-072 (API) concluídas: fila com PII mascarada, detalhe e transições com CAS/auditoria; D-021 e D-022 registrados |
+| 22/11/2026 | US-070 a US-072 (painel) concluídas: fila com filtros/paginação, detalhe e ações de status; E2E cobre pedido → fila → transição |
+| 23/11/2026 | US-062 a US-065 (painel) concluídas: CRUD de produtos, categorias, adicionais e zonas, e configuração da loja com kill switch e horários; D-023 registrado |
+| 23/11/2026 | US-025, US-066 e US-073 concluídas: `GET /store` com status efetivo/`nextOpeningAt`, gestão de usuários e auditoria somente leitura no painel, com testes e proteção do último owner |

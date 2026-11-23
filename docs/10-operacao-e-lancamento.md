@@ -50,10 +50,14 @@ Regras:
 |---|---|---|
 | `APP_ENV` | sim | `development`, `test`, `production` |
 | `HTTP_ADDR` | sim | Endereço/porta da API |
-| `MONGO_URI` | sim | Conexão MongoDB |
+| `MONGO_URI` / `MONGODB_URI` | sim | Conexão MongoDB; `MONGO_URI` tem prioridade |
 | `MONGO_DATABASE` | sim | Nome do banco |
-| `SESSION_SECRET` | sim | Assinatura/hash auxiliar, se aplicável |
-| `ADMIN_SESSION_COOKIE` | sim | Nome do cookie |
+| `SESSION_SECRET` | não | Reservado; a V1 usa token opaco com hash SHA-256, sem segredo de assinatura |
+| `ADMIN_SESSION_COOKIE` | não | Nome do cookie; padrão `brocados_admin`, com prefixo `__Host-` em produção |
+| `ADMIN_COOKIE_SECURE` | não | Força `Secure` fora de produção; em produção é sempre true |
+| `ADMIN_BOOTSTRAP_NAME` | não | Nome do primeiro `owner`; deve ser usado junto com e-mail e senha |
+| `ADMIN_BOOTSTRAP_EMAIL` | não | E-mail do primeiro `owner`; só cria usuário se `admin_users` estiver vazio |
+| `ADMIN_BOOTSTRAP_PASSWORD` | não | Senha do primeiro `owner` (mínimo 12 caracteres); remover após o bootstrap |
 | `PUBLIC_BASE_URL` | sim | URL pública same-origin |
 | `WHATSAPP_NUMBER` | sim | Número E.164 da loja |
 | `LOG_LEVEL` | sim | `info`/`debug` |
@@ -136,6 +140,15 @@ commit → fmt/lint/test/docs/design/build → imagem → preview → aprovaçã
 - Não fazer deploy durante pico sem necessidade.
 - Após deploy: smoke test de `/healthz`, `/readyz`, `/`, `/api/v1/store`, `/api/v1/menu`.
 - Se erro crítico: rollback imediato e comunicação.
+
+### 5.5 Render (container único)
+
+- Blueprint: `render.yaml` com serviço web `brocados-lanches`, `dockerfilePath: ./Dockerfile`, `healthCheckPath: /healthz`.
+- Runtime: nginx serve SPA e faz proxy `/api` para Go local (`API_PORT=3000`); Render injeta `PORT`.
+- Segredos: `MONGODB_URI`, `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`.
+- Banco: MongoDB Atlas acessível pelo Render; definir `MONGO_DB=brocados`.
+- Após bootstrap do primeiro `owner`, remover `ADMIN_BOOTSTRAP_*`.
+- Plano free tem cold start; considerar plano pago se houver necessidade operacional.
 
 ---
 

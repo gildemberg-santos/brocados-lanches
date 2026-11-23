@@ -1,8 +1,8 @@
 # Roadmap — Brocados Lanches V1
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
-**Status:** planejamento; Fase 1 com CI, seed e E2E entregues em 20/11/2026; preview por PR pendente.  
+**Versão:** 1.1  
+**Atualizado em:** 23/11/2026  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020 a US-025 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060 a US-066 e US-070 a US-073 concluídas (API e painel), incluindo catálogo, loja, status efetivo, usuários, auditoria e conta. Faltam rate limit de pedido, concorrência idempotente, E2E ampliado, SEO/acessibilidade e infra de lançamento.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -87,6 +87,8 @@
 - estados de carregando/vazio/erro/sucesso;
 - imagens e informações da loja.
 
+**Status em 23/11/2026:** US-020 a US-025 concluídas: catálogo público, home/cardápio, detalhe e `GET /store` com status efetivo/`nextOpeningAt` e preview no painel. Falta validar o catálogo real com o cliente. O total do item é estimado a partir do catálogo; cotação e pedido continuam server-side.
+
 **Saída:** M2. Demonstração em staging sem criação de pedido.
 
 **Esforço relativo:** GG.
@@ -101,7 +103,7 @@
 
 **Entregáveis:**
 
-- carrinho persistente;
+- carrinho persistente — entregue (US-030/US-031);
 - cotação;
 - formulário de checkout;
 - criação de pedido com snapshot;
@@ -124,20 +126,25 @@
 
 **Entregáveis:**
 
-- auth admin;
-- shell e guard;
-- CRUD de catálogo;
-- zonas e loja;
-- fila de pedidos;
-- detalhe e transições;
-- auditoria;
-- usuários.
+- ~~auth admin~~ (US-060 concluída);
+- ~~shell e guard~~ (US-061 concluída);
+- ~~API CRUD de catálogo~~ (US-022 concluída);
+- ~~API de configuração da loja~~ (US-065 concluída);
+- ~~API da fila de pedidos~~ (US-070 concluída);
+- ~~API de detalhe do pedido~~ (US-071 concluída);
+- ~~API de transições de status~~ (US-072 concluída);
+- ~~telas de produtos, categorias, adicionais, zonas e loja (US-062 a US-065 no front)~~ concluídas;
+- ~~telas de fila, detalhe e ações contextuais no painel~~ (US-070 a US-072 no front concluídas);
+- ~~consulta de auditoria~~ (US-073 concluída);
+- ~~usuários~~ (US-066 concluída).
 
 **Saída:** M4. Operador treinado em staging.
 
 **Esforço relativo:** GG.
 
 **Pode paralelizar com:** Fase 3 depois de auth e modelo.
+
+**Status em 23/11/2026:** M4 fechado no código: catálogo, loja, status efetivo, fila, detalhe, status, usuários, auditoria e conta entregues com testes. Ainda falta validação operacional em staging e itens de hardening/lançamento dos épicos 8 a 10.
 
 ---
 

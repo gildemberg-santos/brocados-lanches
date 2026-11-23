@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,7 +15,9 @@ import (
 
 	"github.com/brocados-lanches/api/internal/config"
 	"github.com/brocados-lanches/api/internal/httpapi"
+	"github.com/brocados-lanches/api/internal/platform/ratelimit"
 	"github.com/brocados-lanches/api/internal/repository"
+	"github.com/brocados-lanches/api/internal/service"
 )
 
 func main() {
@@ -49,9 +52,116 @@ func run() error {
 		}
 	}()
 
+	database := mongoClient.Database(cfg.MongoDB)
+	if database == nil {
+		return fmt.Errorf("mongo database %q is unavailable", cfg.MongoDB)
+	}
+	if err := repository.EnsureCatalogIndexes(startupContext, database); err != nil {
+		return err
+	}
+	if err := repository.EnsureOrderIndexes(startupContext, database); err != nil {
+		return err
+	}
+	if err := repository.EnsureAdminIndexes(startupContext, database); err != nil {
+		return err
+	}
+	if err := repository.EnsureAuditIndexes(startupContext, database); err != nil {
+		return err
+	}
+	logger.Info("database indexes ensured", "database", cfg.MongoDB)
+
+	catalogRepository, err := repository.NewCatalogRepository(database)
+	if err != nil {
+		return err
+	}
+	catalogService, err := service.NewCatalogService(catalogRepository)
+	if err != nil {
+		return err
+	}
+	adminCatalogService, err := service.NewAdminCatalogService(catalogRepository)
+	if err != nil {
+		return err
+	}
+	adminStoreService, err := service.NewAdminStoreService(catalogRepository)
+	if err != nil {
+		return err
+	}
+	operationLocation, err := time.LoadLocation("America/Fortaleza")
+	if err != nil {
+		return err
+	}
+	storeService, err := service.NewStoreService(catalogRepository, operationLocation)
+	if err != nil {
+		return err
+	}
+
+	orderRepository, err := repository.NewOrderRepository(database)
+	if err != nil {
+		return err
+	}
+	orderService, err := service.NewOrderService(orderRepository, operationLocation)
+	if err != nil {
+		return err
+	}
+	adminOrderService, err := service.NewAdminOrderService(orderRepository)
+	if err != nil {
+		return err
+	}
+
+	adminRepository, err := repository.NewAdminRepository(database)
+	if err != nil {
+		return err
+	}
+	adminAuthService, err := service.NewAdminAuthService(
+		adminRepository,
+		service.AdminSessionIdleDuration,
+		service.AdminSessionAbsoluteDuration,
+	)
+	if err != nil {
+		return err
+	}
+	adminUsersService, err := service.NewAdminUsersService(adminRepository)
+	if err != nil {
+		return err
+	}
+	if cfg.HasAdminBootstrap() {
+		created, err := adminAuthService.BootstrapOwner(
+			startupContext,
+			cfg.AdminBootstrapName,
+			cfg.AdminBootstrapEmail,
+			cfg.AdminBootstrapPassword,
+		)
+		if err != nil {
+			return err
+		}
+		if created {
+			logger.Info("bootstrap admin owner created")
+		}
+	}
+	loginLimiter, err := ratelimit.New(5, time.Minute)
+	if err != nil {
+		return err
+	}
+
 	server := &http.Server{
-		Addr:              cfg.Addr(),
-		Handler:           httpapi.NewRouter(httpapi.Dependencies{Pinger: mongoClient, Logger: logger}),
+		Addr: cfg.Addr(),
+		Handler: httpapi.NewRouter(httpapi.Dependencies{
+			Pinger:       mongoClient,
+			Catalog:      catalogService,
+			Store:        storeService,
+			Orders:       orderService,
+			AdminAuth:    adminAuthService,
+			AdminCatalog: adminCatalogService,
+			AdminStore:   adminStoreService,
+			AdminOrders:  adminOrderService,
+			AdminUsers:   adminUsersService,
+			AdminCookie: httpapi.AdminCookieConfig{
+				Name:   cfg.AdminCookieNameEffective(),
+				Secure: cfg.AdminCookieSecure,
+			},
+			LoginLimiter: loginLimiter,
+			Logger:       logger,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,

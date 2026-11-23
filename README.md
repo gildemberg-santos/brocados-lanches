@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; catálogo, checkout e painel ainda não implementados.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; painel administrativo com catálogo, loja, status efetivo, pedidos, usuários, auditoria e conta entregue. Faltam hardening, E2E ampliado e infra de lançamento.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -44,14 +44,31 @@ O esqueleto da Fase 1 já inclui:
 
 - API Go + Chi com `/healthz`, `/readyz` e raiz versionada em `/api/v1`;
 - conexão com MongoDB e verificação real no readiness;
+- domínio e repositórios de catálogo com validação, índices idempotentes e testes de integração com MongoDB real;
+- API pública de catálogo com `GET /api/v1/menu` e `GET /api/v1/delivery-zones`, filtros de ativos/disponibilidade e testes de service e handler;
+- cotação server-side em `POST /api/v1/orders/quote`, sem persistência, com validação de itens/opções/adicionais/zona/status da loja e cálculo centralizado em `domain.BuildQuote`;
+- criação de pedido em `POST /api/v1/orders`, com idempotência, snapshot congelado, número sequencial, `publicId` opaco e link `wa.me` gerado após a persistência;
+- acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`;
+- autenticação administrativa em `/api/v1/admin/auth`: login/logout/me com Argon2id, sessão opaca hasheada em cookie `HttpOnly`, rotação, expiração ociosa/absoluta, CSRF por origem e rate limit de login; bootstrap do primeiro `owner` por `ADMIN_BOOTSTRAP_*`;
+- shell e guard do painel em `/admin`: login, rotas lazy, `me` no servidor, menu por papel (`owner`/`operator`), redirecionamento `401` para login e tela `403`; o proxy de desenvolvimento alinha `Origin`/`Host` à API;
+- API administrativa de catálogo em `/api/v1/admin`: `GET/POST/PATCH` de categorias, produtos, adicionais e zonas com paginação, filtros, allowlist de ordenação, validação, autorização por papel, CSRF e auditoria;
+- configuração da loja em `GET/PATCH /api/v1/admin/store`: kill switch, horários e contato validados no servidor, com auditoria sem dados pessoais;
+- API administrativa de pedidos em `/api/v1/admin/orders`: fila com PII mascarada, detalhe completo e transições com `409`, `statusHistory` e auditoria;
+- fila e detalhe no painel em `/admin/pedidos`: busca, filtros, paginação, histórico e ações contextuais de status com confirmação de cancelamento;
+- telas administrativas de catálogo em `/admin/produtos`, `/admin/categorias`, `/admin/adicionais` e `/admin/locais`: listagem com busca, filtro por situação e paginação, formulários com slug, preço em reais convertido para centavos, ordem, disponibilidade, grupos de opções e adicionais vinculados;
+- configuração da loja em `/admin/loja`: kill switch, contato, prazo e horários por dia da semana com intervalos e validação no cliente antes do PATCH;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
-- tela inicial que consulta o readiness da API;
+- home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
+- carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e totais estimados pela menor taxa ativa;
+- checkout com entrega/retirada, zona, endereço, pagamento, troco e validação por campo; confirmação que limpa o carrinho somente após `201` e permite reenviar/copiar o link do WhatsApp;
+- estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo, carrinho, checkout e pedido;
+- componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText`, `AdminOrderFilters`, `OrderStatusBadge`, `OrderStatusActions`, `AdminCatalogFilters`, `AdminCatalogForm`, `AdminCatalogList`, `AdminProductForm` e outros) e services/stores tipados;
 - tokens do design system importados diretamente de `design-system/tokens.css`;
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
 - testes de frontend com Vitest + Vue Test Utils;
 - seed de desenvolvimento e teste a partir de `design-system/seed.json`, com valores em centavos e marcação de dado fictício;
-- harness E2E com Playwright, smoke em desktop e mobile e API isolada em `brocados_test`;
+- harness E2E com Playwright: smoke da home, navegação para o cardápio, acesso anônimo/credenciais inválidas ao painel e pedido → fila → detalhe → mudança de status em desktop e mobile, com API isolada em `brocados_test`, seed fictício aplicado pelo `make test-e2e` e um worker por vez (o login admin rotaciona as sessões do usuário);
 - CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E;
 - Dockerfiles de API e web, Nginx same-origin e `compose.yaml` com MongoDB;
 - validação de documentação e design system no gate de commit.
@@ -92,9 +109,9 @@ brocados-lanches/
 │   ├── internal/
 │   │   ├── config/           # ambiente e validação
 │   │   ├── httpapi/          # router, handlers e middleware
-│   │   ├── repository/       # conexão MongoDB
-│   │   ├── domain/           # entidades e erros (próximas fases)
-│   │   ├── service/          # regras de negócio (próximas fases)
+│   │   ├── repository/       # conexão MongoDB e repositórios de catálogo
+│   │   ├── domain/           # entidades, enums e erros de domínio
+│   │   ├── service/          # regras de negócio e casos de uso
 │   │   └── platform/         # clock, IDs, log e integrações
 │   ├── scripts/seed/         # seed de desenvolvimento e teste
 │   ├── vendor/               # dependências Go versionadas para build offline
@@ -161,6 +178,8 @@ O `make up` constrói as imagens, sobe MongoDB, API e web, e espera os health ch
 | Readiness via web | http://localhost:8081/readyz |
 | MongoDB | `localhost:27017` |
 
+Para criar o primeiro usuário `owner` no ambiente integrado, defina as três variáveis `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD` no `.env` antes do primeiro `make up` (ou recrie a API depois de defini-las). O Compose repassa essas variáveis e o bootstrap só cria o usuário quando `admin_users` está vazio. Remova-as do `.env` após o primeiro acesso.
+
 Comandos úteis:
 
 ```bash
@@ -178,6 +197,16 @@ make up-offline
 ```
 
 Ele compila o frontend no host (`make build-web`) e monta a imagem web com `frontend/Dockerfile.runtime` e `compose.offline.yaml`, sem instalar pacotes npm dentro do Docker.
+
+### Deploy no Render
+
+O deploy usa **um único container** (estratégia do `restaurante-canto-verde`): o `Dockerfile` raiz compila a API Go (`backend/vendor`), compila a SPA Vue e monta um runtime com nginx + Go. O nginx escuta `PORT` do Render, serve `frontend/dist`, faz proxy de `/api/`, `/healthz` e `/readyz` para a API local em `API_PORT=3000` e preserva `X-Forwarded-Proto` para o CSRF.
+
+O `render.yaml` define um único web service `brocados-lanches` com `dockerfilePath: ./Dockerfile`, health check `/healthz` e plano `free` (cold start após inatividade).
+
+Para aplicar, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados` e `API_PORT=3000`; ajuste `MONGO_DB` se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais.
+
+O MongoDB Atlas precisa aceitar a conexão do Render (allowlist `0.0.0.0/0` se não houver IP fixo, ou PrivateLink). Após o primeiro deploy e a criação do `owner`, remova `ADMIN_BOOTSTRAP_*` do Render.
 
 ### Desenvolvimento local
 
@@ -209,7 +238,7 @@ make dev-web
 |---|---|---|
 | `APP_ENV` | `development` | `development`, `test` ou `production` |
 | `PORT` | `8080` | Porta interna da API |
-| `MONGO_URI` | `mongodb://localhost:27017` | Conexão usada fora do Compose |
+| `MONGO_URI` | `mongodb://localhost:27017` | Conexão usada fora do Compose; `MONGODB_URI` é aceito como alias |
 | `MONGO_DB` | `brocados_dev` | Banco da API |
 | `API_PORT` | `8080` | Porta publicada da API |
 | `WEB_PORT` | `8081` | Porta publicada da web |
@@ -266,7 +295,7 @@ make test-e2e
 
 - `make test-e2e` sobe Vite e a API nas portas 5173 e 8080.
 - Se a API já estiver rodando em 8080, pare antes: o servidor do E2E não é reaproveitado para não usar o banco de desenvolvimento.
-- Para apontar para outro MongoDB, defina `MONGO_URI` e `MONGO_DB` no ambiente.
+- Para apontar para outro MongoDB, defina `MONGO_URI` (ou `MONGODB_URI`) e `MONGO_DB` no ambiente.
 
 ### CI
 
@@ -275,7 +304,7 @@ O workflow `.github/workflows/ci.yml` roda em pull request, push para `main` e e
 | Job | Verifica |
 |---|---|
 | Documentação e design system | `docs-check`, `design-check` e testes dos validadores |
-| Backend | `gofmt`, `go vet`, `go test -race`, seed e build |
+| Backend | `gofmt`, `go vet`, `go test -race` com MongoDB 8, seed e build |
 | Frontend | Prettier, ESLint, `vue-tsc`, Vitest e build |
 | E2E | Chromium + Playwright com MongoDB 8 como serviço |
 
@@ -305,10 +334,9 @@ O protótipo **não** entrega:
 
 O esqueleto **ainda não** entrega:
 
-- catálogo, cardápio e personalização;
-- carrinho e checkout;
-- criação e acompanhamento de pedidos;
-- login e painel administrativo;
+- rate limit de criação de pedido e hardening de concorrência idempotente;
+- E2E completo do fluxo de compra e do acesso por papel;
+- telas de relatórios e impressão/KDS;
 - deploy de produção.
 
 Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. O site público de referência está analisado em `docs/12-referencia-ola-click.md`.
@@ -318,9 +346,9 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 ## 7. Próximos passos
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
-2. Implementar o catálogo somente leitura (Épico 2) e estender o smoke E2E para o cardápio.
-3. Implementar carrinho, cotação, checkout e pedido persistido (Épicos 3 e 4).
-4. Implementar autenticação, catálogo admin, fila e transições (Épicos 6 e 7).
+2. Cobrir no E2E o fluxo completo cardápio → personalização → carrinho → checkout → confirmação (Épicos 3 e 4).
+3. Cobrir no E2E o acesso por papel às rotas protegidas com `operator` (Épico 6).
+4. Cobrir rate limit de pedido, concorrência idempotente e lacunas de E2E (Épicos 3, 4 e 6).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 
 ---

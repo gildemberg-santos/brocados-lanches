@@ -1,12 +1,23 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('smoke da base', () => {
-  test('home renderiza e mostra a API conectada', async ({ page }) => {
+  test('home renderiza a marca e o CTA do cardápio', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Estrutura inicial' })).toBeVisible()
-    await expect(page.getByText('API: conectada')).toBeVisible()
-    await expect(page.getByText('MongoDB: ok')).toBeVisible()
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Seu lanche, do seu jeito.' }),
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Abrir cardápio' })).toBeVisible()
+  })
+
+  test('navega da home para o cardápio', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('link', { name: 'Abrir cardápio' }).click()
+
+    await expect(page).toHaveURL(/\/cardapio$/)
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Escolha seu próximo lanche' }),
+    ).toBeVisible()
   })
 
   test('health e readiness respondem pelo proxy', async ({ request }) => {
@@ -19,13 +30,13 @@ test.describe('smoke da base', () => {
     expect(await ready.json()).toMatchObject({ status: 'ok', checks: { mongo: 'ok' } })
   })
 
-  test('botão principal tem alvo de toque e não cria rolagem horizontal', async ({ page }) => {
+  test('CTA principal tem alvo de toque e não cria rolagem horizontal', async ({ page }) => {
     await page.goto('/')
 
-    const button = page.getByRole('button', { name: 'Verificar novamente' })
-    await expect(button).toBeVisible()
+    const cta = page.getByRole('link', { name: 'Abrir cardápio' })
+    await expect(cta).toBeVisible()
 
-    const box = await button.boundingBox()
+    const box = await cta.boundingBox()
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
 
     const viewportWidth = page.viewportSize()?.width ?? 0
