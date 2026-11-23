@@ -20,10 +20,14 @@ RUN --mount=type=cache,target=/root/.cache/node/corepack \
 
 FROM nginx:alpine
 
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+# Defaults para Compose; o Render define PORT e API_HOSTPORT em runtime.
+ENV PORT=80
+ENV API_HOSTPORT=api:8080
+
+COPY frontend/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /src/frontend/dist /usr/share/nginx/html
 
 EXPOSE 80
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=5 \
-  CMD wget -qO- http://127.0.0.1/ >/dev/null || exit 1
+  CMD ["sh", "-c", "wget -qO- \"http://127.0.0.1:${PORT:-80}/\" >/dev/null || exit 1"]

@@ -198,6 +198,19 @@ make up-offline
 
 Ele compila o frontend no host (`make build-web`) e monta a imagem web com `frontend/Dockerfile.runtime` e `compose.offline.yaml`, sem instalar pacotes npm dentro do Docker.
 
+### Deploy no Render
+
+Este é um monorepo com dois Dockerfiles, então o Render precisa do blueprint para saber qual usar. O `render.yaml` define:
+
+- `brocados-api`: private service com `backend/Dockerfile`, `APP_ENV=production`, `PORT=10000` e sem exposição pública;
+- `brocados-web`: web service com `frontend/Dockerfile`, health check `/` e proxy para a API pela rede privada via `API_HOSTPORT`.
+
+Para aplicar, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGO_URI` (MongoDB Atlas), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. Se já existir um serviço criado manualmente, remova-o depois de validar o novo stack.
+
+O nginx escuta em `PORT` e repassa o `X-Forwarded-Proto` original, para o login continuar válido atrás do TLS do Render. Após o primeiro deploy, remova as variáveis de bootstrap do Render.
+
+A API precisa de instância paga para receber tráfego privado. A web pode ficar no plano free, mas dorme após inatividade; ajuste os planos conforme a operação. O MongoDB Atlas precisa aceitar a conexão da API (allowlist de rede ou PrivateLink).
+
 ### Desenvolvimento local
 
 Com um MongoDB disponível em `localhost:27017`:

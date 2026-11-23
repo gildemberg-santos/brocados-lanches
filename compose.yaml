@@ -49,6 +49,9 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     restart: unless-stopped
+    environment:
+      PORT: "80"
+      API_HOSTPORT: api:8080
     ports:
       - "${WEB_PORT:-8081}:80"
     depends_on:
