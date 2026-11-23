@@ -1,8 +1,8 @@
 # Roadmap — Brocados Lanches V1
 
 **Versão:** 1.1  
-**Atualizado em:** 22/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060, US-061, US-022, US-065 (API) e US-070 a US-072 (API e painel) concluídas. Informações públicas da loja (US-025) e telas do painel para catálogo e loja pendentes.  
+**Atualizado em:** 23/11/2026  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060, US-061, US-022, US-065 e US-070 a US-072 (API e painel) concluídas, incluindo CRUD de catálogo e configuração da loja no painel. Informações públicas da loja (US-025), auditoria e usuários no painel pendentes.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -133,7 +133,7 @@
 - ~~API da fila de pedidos~~ (US-070 concluída);
 - ~~API de detalhe do pedido~~ (US-071 concluída);
 - ~~API de transições de status~~ (US-072 concluída);
-- telas de produtos, categorias, adicionais, zonas e loja (US-062 a US-065 no front);
+- ~~telas de produtos, categorias, adicionais, zonas e loja (US-062 a US-065 no front)~~ concluídas;
 - ~~telas de fila, detalhe e ações contextuais no painel~~ (US-070 a US-072 no front concluídas);
 - consulta de auditoria;
 - usuários.
@@ -143,6 +143,8 @@
 **Esforço relativo:** GG.
 
 **Pode paralelizar com:** Fase 3 depois de auth e modelo.
+
+**Status em 23/11/2026:** fluxo administrativo de catálogo e loja entregue no painel: listagens com busca/filtro/paginação, formulários com conversão de reais para centavos, slug, ordem, grupos de opções e adicionais, kill switch e horários por dia. Faltam telas de auditoria, usuários e conta para fechar o M4.
 
 ---
 

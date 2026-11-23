@@ -1,9 +1,16 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
+export interface ApiErrorDetail {
+  field?: string
+  code?: string
+  message?: string
+}
+
 interface ApiErrorPayload {
   error?: {
     code?: string
     message?: string
+    details?: ApiErrorDetail[]
   }
 }
 
@@ -15,12 +22,14 @@ interface RequestOptions {
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
+  readonly details: ApiErrorDetail[]
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, details: ApiErrorDetail[] = []) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.details = details
   }
 }
 
@@ -45,6 +54,7 @@ export async function get<T>(path: string): Promise<T> {
       response.status,
       payload.error?.code ?? 'HTTP_ERROR',
       payload.error?.message ?? 'Não foi possível concluir a requisição.',
+      payload.error?.details ?? [],
     )
   }
 
@@ -69,6 +79,7 @@ async function parseError(response: Response): Promise<ApiError> {
     response.status,
     payload.error?.code ?? 'HTTP_ERROR',
     payload.error?.message ?? 'Não foi possível concluir a requisição.',
+    payload.error?.details ?? [],
   )
 }
 

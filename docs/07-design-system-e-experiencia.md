@@ -169,13 +169,13 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 |---|---|
 | `AdminShell` | Sidebar desktop, bottom nav mobile, header — **implementado em US-061** |
 | `AdminPageHeader` | Título, ação primária, breadcrumb |
-| `DataTable` | Produtos, pedidos, usuários, auditoria; paginação |
+| `DataTable` | Produtos, pedidos, usuários, auditoria; paginação (ainda não abstraído) |
 | `TableEmpty` | Estado vazio com CTA |
-| `ProductForm` | Nome, slug, categoria, preço, descrição, imagem, opções, adicionais |
-| `CategoryForm` | Nome, slug, ordem, ativo |
-| `AddonForm` | Nome, slug, preço, ativo |
-| `ZoneForm` | Nome, slug, taxa, ativo |
-| `StoreSettingsForm` | Kill switch, horários, contato, prazo |
+| `AdminCatalogFilters` | Busca e situação do catálogo — **implementado em US-062 a US-064** |
+| `AdminCatalogList` | Cartões do catálogo com ações, estado vazio/erro e paginação — **implementado em US-062 a US-064** |
+| `AdminCatalogForm` | Nome, slug, ordem, ativo, preço/taxa — **implementado em US-063/US-064** (substitui `CategoryForm`, `AddonForm` e `ZoneForm`) |
+| `AdminProductForm` | Nome, slug, categoria, preço, descrição, imagem, alergênicos, opções, adicionais — **implementado em US-062** |
+| `StoreSettingsForm` | Kill switch, horários, contato, prazo — **implementado inline em `AdminStoreView` (US-065)** |
 | `AdminOrderFilters` | Status, data, fulfillment, busca — **implementado em US-070** |
 | `OrderStatusBadge` | Status na fila e no detalhe — **implementado em US-070** |
 | `AdminOrderDetailView` | Snapshot, cliente, endereço, pagamento, histórico — **implementado em US-071** |
@@ -331,15 +331,21 @@ Regras:
 - Imagem com alt.
 - Auditoria ao salvar.
 
+Implementado em `frontend/src/views/admin/AdminProductsView.vue` e `frontend/src/components/admin/AdminProductForm.vue` (US-062). A lista carrega categorias e adicionais com `pageSize=100` para alimentar o formulário; preços e opções são enviados em centavos.
+
 ### 6.4 Categorias — `/admin/categorias`
 
 - Nome, slug, ordem, ativa.
 - Não excluir; desativar.
 
+Implementado em `frontend/src/views/admin/AdminCategoriesView.vue` (US-063), com `AdminCatalogFilters`, `AdminCatalogForm` e `AdminCatalogList`.
+
 ### 6.5 Adicionais — `/admin/adicionais`
 
 - Nome, slug, preço, ativo, ordem.
 - Vínculo com produtos editado no produto.
+
+Implementado em `frontend/src/views/admin/AdminAddonsView.vue` (US-063). O preço é digitado em reais e convertido para centavos antes do `POST`/`PATCH`.
 
 ### 6.6 Locais e taxas — `/admin/locais`
 
@@ -347,13 +353,17 @@ Regras:
 - Taxa em reais na UI, centavos na API.
 - Aviso de que a taxa vale para novos pedidos.
 
+Implementado em `frontend/src/views/admin/AdminZonesView.vue` (US-064), com aviso de que pedidos antigos mantêm a taxa congelada no snapshot.
+
 ### 6.7 Loja — `/admin/loja`
 
 - Kill switch.
 - Horários por dia, múltiplos intervalos.
 - Prazo, WhatsApp, Instagram, endereço.
-- Preview do status efetivo.
+- Preview do status efetivo (pendente; a API pública `/store` continua sendo a fonte autoritativa).
 - Auditoria.
+
+Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065). O formulário valida E.164, horários `HH:MM` e sobreposição de intervalos antes do PATCH; o envio com `PATCH` vazio é bloqueado no cliente.
 
 ### 6.8 Pedidos — `/admin/pedidos`
 

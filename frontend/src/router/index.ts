@@ -67,31 +67,31 @@ const adminRoutes: RouteRecordRaw = {
     {
       path: 'produtos',
       name: 'admin-products',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminProductsView.vue'),
       meta: { title: 'Produtos' },
     },
     {
       path: 'categorias',
       name: 'admin-categories',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminCategoriesView.vue'),
       meta: { title: 'Categorias' },
     },
     {
       path: 'adicionais',
       name: 'admin-addons',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminAddonsView.vue'),
       meta: { title: 'Adicionais' },
     },
     {
       path: 'locais',
       name: 'admin-zones',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminZonesView.vue'),
       meta: { title: 'Locais e taxas' },
     },
     {
       path: 'loja',
       name: 'admin-store',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminStoreView.vue'),
       meta: { title: 'Loja' },
     },
     {

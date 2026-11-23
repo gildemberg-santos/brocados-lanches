@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação, shell/guard do painel, APIs administrativas de catálogo, configuração da loja, fila, detalhe e transição de status, e telas de fila/detalhe com ações de status entregues; demais telas administrativas ainda não implementadas.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação, shell/guard do painel, APIs administrativas de catálogo/configuração da loja/pedidos, telas de fila, detalhe e transição de status, e telas de CRUD de catálogo e configuração da loja entregues; faltam usuários, auditoria e conta no painel.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -55,13 +55,15 @@ O esqueleto da Fase 1 já inclui:
 - configuração da loja em `GET/PATCH /api/v1/admin/store`: kill switch, horários e contato validados no servidor, com auditoria sem dados pessoais;
 - API administrativa de pedidos em `/api/v1/admin/orders`: fila com PII mascarada, detalhe completo e transições com `409`, `statusHistory` e auditoria;
 - fila e detalhe no painel em `/admin/pedidos`: busca, filtros, paginação, histórico e ações contextuais de status com confirmação de cancelamento;
+- telas administrativas de catálogo em `/admin/produtos`, `/admin/categorias`, `/admin/adicionais` e `/admin/locais`: listagem com busca, filtro por situação e paginação, formulários com slug, preço em reais convertido para centavos, ordem, disponibilidade, grupos de opções e adicionais vinculados;
+- configuração da loja em `/admin/loja`: kill switch, contato, prazo e horários por dia da semana com intervalos e validação no cliente antes do PATCH;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
 - carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e totais estimados pela menor taxa ativa;
 - checkout com entrega/retirada, zona, endereço, pagamento, troco e validação por campo; confirmação que limpa o carrinho somente após `201` e permite reenviar/copiar o link do WhatsApp;
 - estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo, carrinho, checkout e pedido;
-- componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText`, `AdminOrderFilters`, `OrderStatusBadge`, `OrderStatusActions` e outros) e services/stores tipados;
+- componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText`, `AdminOrderFilters`, `OrderStatusBadge`, `OrderStatusActions`, `AdminCatalogFilters`, `AdminCatalogForm`, `AdminCatalogList`, `AdminProductForm` e outros) e services/stores tipados;
 - tokens do design system importados diretamente de `design-system/tokens.css`;
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
 - testes de frontend com Vitest + Vue Test Utils;
@@ -320,9 +322,8 @@ O protótipo **não** entrega:
 
 O esqueleto **ainda não** entrega:
 
-- login e painel administrativo;
-- fila, transições de status e auditoria administrativa;
-- limites de taxa (rate limit) previstos no contrato;
+- telas de usuários, auditoria e conta no painel;
+- telas de relatórios e impressão/KDS;
 - deploy de produção.
 
 Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. O site público de referência está analisado em `docs/12-referencia-ola-click.md`.
@@ -334,7 +335,7 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
 2. Cobrir no E2E o fluxo completo cardápio → personalização → carrinho → checkout → confirmação (Épicos 3 e 4).
 3. Cobrir no E2E o acesso por papel às rotas protegidas com `operator` (Épico 6).
-4. Implementar as telas administrativas de catálogo, loja, usuários e auditoria (Épicos 6 e 7).
+4. Implementar as telas administrativas de usuários, auditoria e conta (Épicos 6 e 7).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 
 ---

@@ -1,8 +1,8 @@
 # Backlog — Brocados Lanches V1
 
 **Versão:** 1.1  
-**Atualizado em:** 22/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 e US-061 concluídas; Épico 7 com US-070, US-071 e US-072 concluídas (API e painel).  
+**Atualizado em:** 23/11/2026  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-065 concluídas (API e painel); Épico 7 com US-070, US-071 e US-072 concluídas (API e painel).  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -277,10 +277,10 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-060 | Autenticação admin | P0 | G | E1 | **Concluída** — login/logout/me, Argon2id, cookie, rate limit, CSRF; testes |
 | US-061 | Shell e guard do admin | P0 | M | US-060 | **Concluída** — rotas lazy, guard, 401/403, menu por papel; testes |
 | US-022 | API admin de catálogo | P0 | G | US-020, US-060 | **Concluída** — CRUD paginado de categorias/produtos/adicionais/zonas; validação, autorização, CSRF, auditoria e testes |
-| US-062 | Gestão de produtos | P0 | G | US-022, US-061 | Lista/form/editar/ativar/disponível/destaque; testes |
-| US-063 | Categorias e adicionais | P0 | G | US-022, US-061 | CRUD, slug, ordem, ativo; testes |
-| US-064 | Zonas e taxas | P0 | M | US-022, US-061 | CRUD, taxa em centavos, ativo; testes |
-| US-065 | Configuração da loja (API) | P0 | M | US-061 | **Concluída** — `GET/PATCH /admin/store`, validação de horários em `America/Fortaleza`, E.164, auditoria e testes; tela do painel ainda pendente |
+| US-062 | Gestão de produtos | P0 | G | US-022, US-061 | **Concluída** — lista com busca/filtro/paginação, formulário com preço em reais, opções, adicionais, disponibilidade/destaque/ativo e testes |
+| US-063 | Categorias e adicionais | P0 | G | US-022, US-061 | **Concluída** — CRUD no painel com slug, ordem, ativo e testes; preço do adicional convertido para centavos |
+| US-064 | Zonas e taxas | P0 | M | US-022, US-061 | **Concluída** — CRUD no painel, taxa digitada em reais e enviada em centavos, ativo e testes |
+| US-065 | Configuração da loja (API) | P0 | M | US-061 | **Concluída** — `GET/PATCH /admin/store`, validação de horários em `America/Fortaleza`, E.164, auditoria, tela com kill switch e intervalos por dia, e testes |
 | US-066 | Usuários e papéis | P1 | M | US-060 | Owner cria/edita/desativa; último owner protegido; testes |
 
 **Tarefas técnicas:**
@@ -293,8 +293,9 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Implementar CRUD admin de categorias, produtos, adicionais e zonas (US-022).
 - [x] Criar `AdminShell` e a tela de login (US-061).
 - [x] Implementar `GET/PATCH /admin/store` com validação e auditoria (US-065).
-- [ ] Criar `DataTable` e `AdminPageHeader`.
-- [ ] Criar formulários com validação e conversão de centavos.
+- [x] Criar componentes de filtro, listagem e paginação do catálogo (US-062 a US-064).
+- [x] Criar formulários com validação por campo e conversão de centavos (US-062 a US-065).
+- [ ] Criar `DataTable` e `AdminPageHeader` se novas telas justificarem a abstração.
 - [x] Implementar auditoria nas mutações de catálogo e configuração da loja (US-022/US-065).
 - [x] Testar acesso anônimo e papel errado no guard e no E2E (US-061).
 - [ ] Testar sessão expirada no fluxo completo.

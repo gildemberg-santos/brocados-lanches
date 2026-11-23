@@ -44,6 +44,7 @@
 | D-020 | 22/11/2026 | O link `wa.me` sai na criação e fica no `sessionStorage` por pedido para reenvio na mesma sessão; não é devolvido no acompanhamento | Decidido e implementado | Handoff recuperável sem expor PII na rota pública | `06-contrato-api.md` §7 e §8, `07-design-system-e-experiencia.md` §5.6 |
 | D-021 | 22/11/2026 | O guard do painel é apenas UX (`401` → login com `redirect`, `403` → `/admin/sem-acesso`); a autorização real continua no servidor. No desenvolvimento o proxy do Vite alinha `Origin` ao `Host` da API para não falsificar o CSRF | Decidido e implementado | Painel navegável em dev/produção sem enfraquecer a proteção | `04-arquitetura.md` §5.5, `frontend/vite.config.ts`, `08-backlog.md` §10 |
 | D-022 | 22/11/2026 | A fila admin mascara nome/telefone; o detalhe completo exige sessão; transição usa CAS no status e auditoria sem PII | Decidido e implementado | Operação segura com rastro, sem vazar dados na listagem | `06-contrato-api.md` §12, `05-modelo-de-dados.md` §3.6, `08-backlog.md` §11 |
+| D-023 | 23/11/2026 | No painel, preço/taxa são digitados em reais e convertidos para centavos no cliente antes do envio; slug, horários e WhatsApp são validados no cliente, mas o servidor continua autoritativo | Decidido e implementado | Evita `float` e PATCH vazio; mantém a API como fonte da verdade | `../AGENTS.md` §7.5 e §8.2, `08-backlog.md` §10 |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -149,3 +150,4 @@ Elas entram em P2 ou no roadmap seguinte.
 | 22/11/2026 | US-060, US-061, US-022 e US-065 concluídas: autenticação, shell/guard do painel, API CRUD de catálogo e API da loja |
 | 22/11/2026 | US-070 a US-072 (API) concluídas: fila com PII mascarada, detalhe e transições com CAS/auditoria; D-021 e D-022 registrados |
 | 22/11/2026 | US-070 a US-072 (painel) concluídas: fila com filtros/paginação, detalhe e ações de status; E2E cobre pedido → fila → transição |
+| 23/11/2026 | US-062 a US-065 (painel) concluídas: CRUD de produtos, categorias, adicionais e zonas, e configuração da loja com kill switch e horários; D-023 registrado |

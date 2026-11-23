@@ -74,6 +74,31 @@ describe('http', () => {
     })
   })
 
+  it('preserves field details from the API error payload', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Dados inválidos.',
+              details: [{ field: 'priceCents', code: 'OUT_OF_RANGE', message: 'Preço inválido.' }],
+            },
+          },
+          422,
+        ),
+      ),
+    )
+
+    const error = await get('/api/v1/admin/products').catch((caught: unknown) => caught)
+
+    expect(error).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      details: [{ field: 'priceCents', code: 'OUT_OF_RANGE', message: 'Preço inválido.' }],
+    })
+  })
+
   it('throws a generic ApiError when the error body is not JSON', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(invalidJsonResponse()))
 
