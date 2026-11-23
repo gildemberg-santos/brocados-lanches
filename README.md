@@ -178,6 +178,8 @@ O `make up` constrói as imagens, sobe MongoDB, API e web, e espera os health ch
 | Readiness via web | http://localhost:8081/readyz |
 | MongoDB | `localhost:27017` |
 
+Para criar o primeiro usuário `owner` no ambiente integrado, defina as três variáveis `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD` no `.env` antes do primeiro `make up` (ou recrie a API depois de defini-las). O Compose repassa essas variáveis e o bootstrap só cria o usuário quando `admin_users` está vazio. Remova-as do `.env` após o primeiro acesso.
+
 Comandos úteis:
 
 ```bash
