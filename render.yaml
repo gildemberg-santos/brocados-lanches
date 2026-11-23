@@ -3,7 +3,7 @@
 #
 # A API roda como private service para não ficar exposta na internet.
 # A web fala com a API pela rede privada usando API_HOSTPORT.
-# O Render injeta PORT; o nginx da web escuta esse valor via template.
+# A API lê MONGODB_URI (ou MONGO_URI) e MONGO_DB.
 services:
   - type: pserv
     name: brocados-api
@@ -19,7 +19,8 @@ services:
         value: "10000"
       - key: MONGO_DB
         value: brocados
-      - key: MONGO_URI
+      # A API aceita MONGO_URI ou MONGODB_URI; usamos o nome do Atlas/Render.
+      - key: MONGODB_URI
         sync: false
       - key: ADMIN_BOOTSTRAP_NAME
         sync: false

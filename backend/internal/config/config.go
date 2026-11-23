@@ -26,7 +26,7 @@ func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
 		Env:      value(getenv("APP_ENV"), "development"),
 		Port:     value(getenv("PORT"), "8080"),
-		MongoURI: value(getenv("MONGO_URI"), "mongodb://localhost:27017"),
+		MongoURI: mongoURI(getenv),
 		MongoDB:  value(getenv("MONGO_DB"), "brocados_dev"),
 	}
 
@@ -44,7 +44,7 @@ func Load(getenv func(string) string) (Config, error) {
 		return Config{}, err
 	}
 	if !isMongoURI(cfg.MongoURI) {
-		return Config{}, fmt.Errorf("MONGO_URI must start with mongodb:// or mongodb+srv://")
+		return Config{}, fmt.Errorf("MONGO_URI or MONGODB_URI must start with mongodb:// or mongodb+srv://")
 	}
 	if strings.TrimSpace(cfg.MongoDB) == "" {
 		return Config{}, fmt.Errorf("MONGO_DB is required")
@@ -76,6 +76,15 @@ func (c Config) HasAdminBootstrap() bool {
 // Addr devolve o endereço HTTP no formato :porta.
 func (c Config) Addr() string {
 	return net.JoinHostPort("", c.Port)
+}
+
+// mongoURI aceita MONGO_URI (nome canônico do projeto) e MONGODB_URI
+// (nome usado por plataformas como Render e Atlas). MONGO_URI tem prioridade.
+func mongoURI(getenv func(string) string) string {
+	if uri := value(getenv("MONGO_URI"), ""); uri != "" {
+		return uri
+	}
+	return value(getenv("MONGODB_URI"), "mongodb://localhost:27017")
 }
 
 func value(raw, fallback string) string {

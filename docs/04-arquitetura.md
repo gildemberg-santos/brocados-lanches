@@ -512,7 +512,7 @@ O repositório inclui `render.yaml` com:
 - `brocados-api`: private service (`backend/Dockerfile`), `APP_ENV=production`, `PORT=10000` e sem exposição pública;
 - `brocados-web`: web service (`frontend/Dockerfile`), health check `/`, nginx escutando em `PORT` e proxy para `API_HOSTPORT` da API.
 
-O nginx preserva o `X-Forwarded-Proto` recebido do Render para que a validação de origem do CSRF aceite o login HTTPS. Segredos: `MONGO_URI` (MongoDB Atlas) e `ADMIN_BOOTSTRAP_*` no primeiro deploy. A API precisa de instância paga para receber tráfego privado; a web pode ser free, com cold start. Remova `ADMIN_BOOTSTRAP_*` após criar o primeiro `owner`.
+O nginx preserva o `X-Forwarded-Proto` recebido do Render para que a validação de origem do CSRF aceite o login HTTPS. Segredos: `MONGODB_URI` (MongoDB Atlas; `MONGO_URI` também é aceito) e `ADMIN_BOOTSTRAP_*` no primeiro deploy. A API precisa de instância paga para receber tráfego privado; a web pode ser free, com cold start. Remova `ADMIN_BOOTSTRAP_*` após criar o primeiro `owner`.
 
 ---
 

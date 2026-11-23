@@ -50,7 +50,7 @@ Regras:
 |---|---|---|
 | `APP_ENV` | sim | `development`, `test`, `production` |
 | `HTTP_ADDR` | sim | Endereço/porta da API |
-| `MONGO_URI` | sim | Conexão MongoDB |
+| `MONGO_URI` / `MONGODB_URI` | sim | Conexão MongoDB; `MONGO_URI` tem prioridade |
 | `MONGO_DATABASE` | sim | Nome do banco |
 | `SESSION_SECRET` | não | Reservado; a V1 usa token opaco com hash SHA-256, sem segredo de assinatura |
 | `ADMIN_SESSION_COOKIE` | não | Nome do cookie; padrão `brocados_admin`, com prefixo `__Host-` em produção |

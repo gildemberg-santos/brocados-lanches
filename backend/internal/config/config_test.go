@@ -58,6 +58,36 @@ func TestLoadOverrides(t *testing.T) {
 	}
 }
 
+func TestLoadAcceptsMongoDBURIAlias(t *testing.T) {
+	cfg, err := Load(func(key string) string {
+		if key == "MONGODB_URI" {
+			return "mongodb+srv://user:pass@cluster.example.com"
+		}
+		return ""
+	})
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.MongoURI != "mongodb+srv://user:pass@cluster.example.com" {
+		t.Errorf("MongoURI = %q, want alias value", cfg.MongoURI)
+	}
+}
+
+func TestLoadPrefersMongoURIToAlias(t *testing.T) {
+	env := map[string]string{
+		"MONGO_URI":   "mongodb://canonical:27017",
+		"MONGODB_URI": "mongodb://alias:27017",
+		"MONGO_DB":    "brocados",
+	}
+	cfg, err := Load(func(key string) string { return env[key] })
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.MongoURI != "mongodb://canonical:27017" {
+		t.Errorf("MongoURI = %q, want MONGO_URI to take precedence", cfg.MongoURI)
+	}
+}
+
 func TestLoadRejectsInvalidValues(t *testing.T) {
 	tests := []struct {
 		name string
@@ -68,6 +98,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		{name: "port zero", env: map[string]string{"PORT": "0"}},
 		{name: "port too high", env: map[string]string{"PORT": "65536"}},
 		{name: "invalid mongo uri", env: map[string]string{"MONGO_URI": "http://localhost:27017"}},
+		{name: "invalid mongodb uri alias", env: map[string]string{"MONGODB_URI": "http://localhost:27017"}},
 		{name: "invalid cookie name", env: map[string]string{"ADMIN_SESSION_COOKIE": "cookie com espaco"}},
 		{name: "partial bootstrap", env: map[string]string{"ADMIN_BOOTSTRAP_EMAIL": "dono@example.com"}},
 	}
