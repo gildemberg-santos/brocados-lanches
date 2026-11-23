@@ -86,12 +86,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-
-	orderRepository, err := repository.NewOrderRepository(database)
+	operationLocation, err := time.LoadLocation("America/Fortaleza")
 	if err != nil {
 		return err
 	}
-	operationLocation, err := time.LoadLocation("America/Fortaleza")
+	storeService, err := service.NewStoreService(catalogRepository, operationLocation)
+	if err != nil {
+		return err
+	}
+
+	orderRepository, err := repository.NewOrderRepository(database)
 	if err != nil {
 		return err
 	}
@@ -113,6 +117,10 @@ func run() error {
 		service.AdminSessionIdleDuration,
 		service.AdminSessionAbsoluteDuration,
 	)
+	if err != nil {
+		return err
+	}
+	adminUsersService, err := service.NewAdminUsersService(adminRepository)
 	if err != nil {
 		return err
 	}
@@ -140,11 +148,13 @@ func run() error {
 		Handler: httpapi.NewRouter(httpapi.Dependencies{
 			Pinger:       mongoClient,
 			Catalog:      catalogService,
+			Store:        storeService,
 			Orders:       orderService,
 			AdminAuth:    adminAuthService,
 			AdminCatalog: adminCatalogService,
 			AdminStore:   adminStoreService,
 			AdminOrders:  adminOrderService,
+			AdminUsers:   adminUsersService,
 			AdminCookie: httpapi.AdminCookieConfig{
 				Name:   cfg.AdminCookieNameEffective(),
 				Secure: cfg.AdminCookieSecure,

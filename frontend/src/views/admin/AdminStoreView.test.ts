@@ -4,12 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import AdminStoreView from './AdminStoreView.vue'
 import { fetchAdminStore, updateAdminStore } from '../../services/adminStore'
+import { fetchStoreStatus } from '../../services/store'
 import type { AdminStoreSettings } from '../../types/adminCatalog'
+import type { PublicStoreStatus } from '../../types/store'
 
 vi.mock('../../services/adminStore', () => ({
   fetchAdminStore: vi.fn(),
   updateAdminStore: vi.fn(),
 }))
+vi.mock('../../services/store', () => ({ fetchStoreStatus: vi.fn() }))
 
 const settings: AdminStoreSettings = {
   name: 'Brocados Lanches',
@@ -26,10 +29,25 @@ const settings: AdminStoreSettings = {
   updatedAt: '',
 }
 
+const storeStatus: PublicStoreStatus = {
+  name: 'Brocados Lanches',
+  status: 'closed',
+  isOpenManual: true,
+  timezone: 'America/Fortaleza',
+  deliveryTime: '35-50 min',
+  whatsapp: '+5585999999999',
+  instagram: '@brocados',
+  address: 'Rua de Teste, 10',
+  openingHours: [],
+  nextOpeningAt: '2026-11-23T02:00:00Z',
+  updatedAt: '2026-11-22T12:00:00Z',
+}
+
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.clearAllMocks()
   vi.mocked(fetchAdminStore).mockResolvedValue(settings)
+  vi.mocked(fetchStoreStatus).mockResolvedValue(storeStatus)
 })
 
 describe('AdminStoreView', () => {
@@ -46,6 +64,28 @@ describe('AdminStoreView', () => {
     const times = wrapper.findAll('input[type="time"]')
     expect(times).toHaveLength(2)
     expect((times[0]?.element as HTMLInputElement).value).toBe('11:00')
+  })
+
+  it('mostra o status efetivo calculado pelo servidor', async () => {
+    const wrapper = mount(AdminStoreView)
+    await flushPromises()
+
+    const badge = wrapper.get('[data-testid="store-effective-status"]')
+    expect(badge.text()).toContain('Loja fechada')
+    expect(badge.text()).toContain('America/Fortaleza')
+    expect(badge.text()).toContain('Próxima abertura')
+  })
+
+  it('recarrega o status efetivo depois de salvar', async () => {
+    vi.mocked(updateAdminStore).mockResolvedValue(settings)
+    const wrapper = mount(AdminStoreView)
+    await flushPromises()
+    expect(fetchStoreStatus).toHaveBeenCalledOnce()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(fetchStoreStatus).toHaveBeenCalledTimes(2)
   })
 
   it('bloqueia o envio com WhatsApp inválido', async () => {

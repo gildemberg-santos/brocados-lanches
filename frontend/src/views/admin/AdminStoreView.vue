@@ -13,9 +13,11 @@ import {
 } from '../../features/admin-catalog/catalogForm'
 import type { FieldErrors } from '../../features/admin-catalog/catalogForm'
 import { useAdminStoreSettingsStore } from '../../stores/adminStoreSettings'
+import { useStoreStatusStore } from '../../stores/storeStatus'
 import type { AdminStoreInput } from '../../types/adminCatalog'
 
 const store = useAdminStoreSettingsStore()
+const statusStore = useStoreStatusStore()
 const errors = ref<FieldErrors>({})
 
 const form = ref<AdminStoreInput>({
@@ -62,18 +64,33 @@ function removeInterval(dayIndex: number, intervalIndex: number): void {
   form.value.openingHours[dayIndex]?.intervals.splice(intervalIndex, 1)
 }
 
-function submit(): void {
+function formatNextOpening(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return 'a confirmar'
+  }
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Fortaleza',
+  }).format(date)
+}
+
+async function submit(): Promise<void> {
   errors.value = validateStoreInput(form.value)
   if (Object.keys(errors.value).length > 0) {
     return
   }
-  void store.save({ ...form.value })
+  if (await store.save({ ...form.value })) {
+    await statusStore.refresh()
+  }
 }
 
 onMounted(() => {
   if (store.state === 'idle') {
     void store.load()
   }
+  void statusStore.load()
 })
 </script>
 
@@ -85,6 +102,20 @@ onMounted(() => {
       O interruptor manual e os horários precisam permitir o pedido. A operação usa
       <strong>America/Fortaleza</strong>; alterações de taxa não afetam pedidos antigos.
     </p>
+
+    <div
+      v-if="statusStore.state === 'success' && statusStore.status"
+      class="store-status"
+      data-testid="store-effective-status"
+    >
+      <strong :class="statusStore.status.status === 'open' ? 'is-open' : 'is-closed'">
+        {{ statusStore.status.status === 'open' ? 'Loja aberta' : 'Loja fechada' }}
+      </strong>
+      <span>Status calculado pelo servidor em {{ statusStore.status.timezone }}.</span>
+      <span v-if="statusStore.status.nextOpeningAt">
+        Próxima abertura: {{ formatNextOpening(statusStore.status.nextOpeningAt) }}
+      </span>
+    </div>
 
     <LoadingSkeleton v-if="store.state === 'loading'" label="Carregando configurações" :count="2" />
 
@@ -231,6 +262,28 @@ onMounted(() => {
 .admin-page__lead {
   margin: 0;
   color: var(--text-sub);
+}
+
+.store-status {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  font-size: var(--font-size-caption);
+}
+
+.store-status strong {
+  font-size: var(--font-size-body);
+}
+
+.store-status .is-open {
+  color: var(--status-open);
+}
+
+.store-status .is-closed {
+  color: var(--status-error);
 }
 
 .store-form {

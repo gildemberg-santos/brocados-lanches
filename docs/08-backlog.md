@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 23/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023 e US-024 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-065 concluídas (API e painel); Épico 7 com US-070, US-071 e US-072 concluídas (API e painel).  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel).  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -169,9 +169,9 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-021 | API pública de catálogo | P0 | M | US-020 | `GET /menu` e `GET /delivery-zones` filtram ativos; testes de handler |
 | US-023 | Home e cardápio | P0 | G | US-021 | Home, busca, filtros, grid e esgotado; estados completos; testes |
 | US-024 | Detalhe e personalização | P0 | G | US-021 | Opções obrigatórias, min/máx, adicionais e preço; testes |
-| US-025 | Informações da loja | P1 | M | US-021 | Status, horários, endereço, contato e prazo; estados |
+| US-025 | Informações da loja | P1 | M | US-021 | **Concluída** — `GET /store` com status efetivo/`nextOpeningAt`, home com status e painel com preview; testes |
 
-**Status em 22/11/2026:** US-020 concluída (domínio, validação, repositórios, índices idempotentes e testes de integração com MongoDB real). US-021 concluída (`GET /menu` e `GET /delivery-zones`, filtros e testes de service/handler). US-023 concluída (home, cardápio, busca sem acento/caixa, filtro por categoria, grid, esgotado, estados e testes). US-024 concluída (detalhe, grupos obrigatórios com mínimo/máximo, adicionais, observação, total estimado e testes). O CTA de adicionar valida a personalização e alimenta o carrinho desde a US-030. US-025 planejada.
+**Status em 23/11/2026:** US-020 a US-025 concluídas. O catálogo público tem `GET /menu` e `GET /delivery-zones`; a home e o cardápio consomem catálogo e status; o detalhe tem personalização; `GET /store` calcula status efetivo e `nextOpeningAt` em `America/Fortaleza`, e o painel exibe o preview na configuração da loja.
 
 **Tarefas técnicas:**
 
@@ -281,7 +281,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-063 | Categorias e adicionais | P0 | G | US-022, US-061 | **Concluída** — CRUD no painel com slug, ordem, ativo e testes; preço do adicional convertido para centavos |
 | US-064 | Zonas e taxas | P0 | M | US-022, US-061 | **Concluída** — CRUD no painel, taxa digitada em reais e enviada em centavos, ativo e testes |
 | US-065 | Configuração da loja (API) | P0 | M | US-061 | **Concluída** — `GET/PATCH /admin/store`, validação de horários em `America/Fortaleza`, E.164, auditoria, tela com kill switch e intervalos por dia, e testes |
-| US-066 | Usuários e papéis | P1 | M | US-060 | Owner cria/edita/desativa; último owner protegido; testes |
+| US-066 | Usuários e papéis | P1 | M | US-060 | **Concluída** — owner cria/edita/desativa; último owner protegido; auditoria sem PII; testes |
 
 **Tarefas técnicas:**
 
@@ -297,6 +297,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Criar formulários com validação por campo e conversão de centavos (US-062 a US-065).
 - [ ] Criar `DataTable` e `AdminPageHeader` se novas telas justificarem a abstração.
 - [x] Implementar auditoria nas mutações de catálogo e configuração da loja (US-022/US-065).
+- [x] Implementar `GET/POST/PATCH /admin/users` com autorização owner, auditoria e proteção do último owner (US-066).
+- [x] Criar telas admin de usuários e conta (US-066).
 - [x] Testar acesso anônimo e papel errado no guard e no E2E (US-061).
 - [ ] Testar sessão expirada no fluxo completo.
 
@@ -311,7 +313,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-070 | Fila de pedidos | P0 | G | US-040, US-060 | **Concluída** — API com lista/filtros/paginação e painel com busca, filtros, paginação e PII mascarado |
 | US-071 | Detalhe do pedido | P0 | M | US-070 | **Concluída** — API e tela com snapshot, cliente, endereço, pagamento e histórico |
 | US-072 | Transições de status | P0 | G | US-071 | **Concluída** — Matriz válida, `409` inválido, motivo de cancelamento, auditoria e ações contextuais no painel |
-| US-073 | Auditoria | P1 | M | US-072 | Owner consulta mutações sem PII; filtros; testes |
+| US-073 | Auditoria | P1 | M | US-072 | **Concluída** — Owner consulta mutações sem PII; filtros por ator/entidade/ação/data; tela somente leitura e testes |
 | US-074 | Atualização em tempo real | P2 | M | US-070 | Fila atualiza sem recarregar ou polling curto; opcional |
 
 **Tarefas técnicas:**
@@ -322,7 +324,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Gravar `statusHistory`, timestamps e auditoria.
 - [x] Criar ações contextuais por status e as telas admin de fila/detalhe.
 - [x] Testar todas as transições e concorrência.
-- [ ] Criar tela de auditoria somente leitura.
+- [x] Implementar `GET /admin/audit-logs` e a tela somente leitura (US-073).
 
 ---
 

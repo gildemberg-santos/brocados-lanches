@@ -22,12 +22,14 @@ type Pinger interface {
 type Dependencies struct {
 	Pinger       Pinger
 	Catalog      CatalogService
+	Store        StoreService
 	Orders       OrderService
 	AdminAuth    AdminAuthService
 	AdminCookie  AdminCookieConfig
 	AdminCatalog AdminCatalogService
 	AdminStore   AdminStoreService
 	AdminOrders  AdminOrderService
+	AdminUsers   AdminUsersService
 	LoginLimiter *ratelimit.Limiter
 	Logger       *slog.Logger
 }
@@ -61,6 +63,7 @@ func NewRouter(deps Dependencies) http.Handler {
 
 	router.Route("/api/v1", func(router chi.Router) {
 		router.Get("/", handleAPIRoot)
+		router.Get("/store", handleStore(deps.Store, logger))
 		router.Get("/menu", handleMenu(deps.Catalog, logger))
 		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
 		router.Post("/orders/quote", handleQuote(deps.Orders, logger))
@@ -114,6 +117,15 @@ func NewRouter(deps Dependencies) http.Handler {
 				protected.Get("/orders", handleAdminListOrders(deps.AdminOrders, logger))
 				protected.Get("/orders/{id}", handleAdminGetOrder(deps.AdminOrders, logger))
 				protected.Patch("/orders/{id}/status", handleAdminUpdateOrderStatus(deps.AdminOrders, logger))
+			})
+
+			admin.Group(func(protected chi.Router) {
+				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner))
+
+				protected.Get("/users", handleAdminListUsers(deps.AdminUsers, logger))
+				protected.Post("/users", handleAdminCreateUser(deps.AdminUsers, logger))
+				protected.Patch("/users/{id}", handleAdminUpdateUser(deps.AdminUsers, logger))
+				protected.Get("/audit-logs", handleAdminListAuditLogs(deps.AdminUsers, logger))
 			})
 		})
 	}

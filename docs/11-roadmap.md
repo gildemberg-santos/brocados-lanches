@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 23/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020, US-021, US-023 e US-024 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060, US-061, US-022, US-065 e US-070 a US-072 (API e painel) concluídas, incluindo CRUD de catálogo e configuração da loja no painel. Informações públicas da loja (US-025), auditoria e usuários no painel pendentes.  
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020 a US-025 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060 a US-066 e US-070 a US-073 concluídas (API e painel), incluindo catálogo, loja, status efetivo, usuários, auditoria e conta. Faltam rate limit de pedido, concorrência idempotente, E2E ampliado, SEO/acessibilidade e infra de lançamento.  
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
 ---
@@ -87,7 +87,7 @@
 - estados de carregando/vazio/erro/sucesso;
 - imagens e informações da loja.
 
-**Status em 22/11/2026:** US-020 concluída com domínio, validação, repositórios e índices idempotentes; US-021 concluída com `GET /menu` e `GET /delivery-zones`; US-023 e US-024 concluídas com home, cardápio, busca/filtros, detalhe e personalização. Falta US-025 e a validação do catálogo real com o cliente. O total do item é estimado a partir do catálogo; cotação e pedido continuam server-side.
+**Status em 23/11/2026:** US-020 a US-025 concluídas: catálogo público, home/cardápio, detalhe e `GET /store` com status efetivo/`nextOpeningAt` e preview no painel. Falta validar o catálogo real com o cliente. O total do item é estimado a partir do catálogo; cotação e pedido continuam server-side.
 
 **Saída:** M2. Demonstração em staging sem criação de pedido.
 
@@ -135,8 +135,8 @@
 - ~~API de transições de status~~ (US-072 concluída);
 - ~~telas de produtos, categorias, adicionais, zonas e loja (US-062 a US-065 no front)~~ concluídas;
 - ~~telas de fila, detalhe e ações contextuais no painel~~ (US-070 a US-072 no front concluídas);
-- consulta de auditoria;
-- usuários.
+- ~~consulta de auditoria~~ (US-073 concluída);
+- ~~usuários~~ (US-066 concluída).
 
 **Saída:** M4. Operador treinado em staging.
 
@@ -144,7 +144,7 @@
 
 **Pode paralelizar com:** Fase 3 depois de auth e modelo.
 
-**Status em 23/11/2026:** fluxo administrativo de catálogo e loja entregue no painel: listagens com busca/filtro/paginação, formulários com conversão de reais para centavos, slug, ordem, grupos de opções e adicionais, kill switch e horários por dia. Faltam telas de auditoria, usuários e conta para fechar o M4.
+**Status em 23/11/2026:** M4 fechado no código: catálogo, loja, status efetivo, fila, detalhe, status, usuários, auditoria e conta entregues com testes. Ainda falta validação operacional em staging e itens de hardening/lançamento dos épicos 8 a 10.
 
 ---
 

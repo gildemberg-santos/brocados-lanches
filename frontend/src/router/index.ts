@@ -38,8 +38,6 @@ const publicRoutes: RouteRecordRaw[] = [
   },
 ]
 
-const adminPlaceholder = () => import('../views/admin/AdminPlaceholderView.vue')
-
 const adminRoutes: RouteRecordRaw = {
   path: '/admin',
   component: () => import('../components/admin/AdminShell.vue'),
@@ -97,19 +95,19 @@ const adminRoutes: RouteRecordRaw = {
     {
       path: 'conta',
       name: 'admin-account',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminAccountView.vue'),
       meta: { title: 'Conta' },
     },
     {
       path: 'usuarios',
       name: 'admin-users',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminUsersView.vue'),
       meta: { title: 'Usuários', roles: ['owner'] },
     },
     {
       path: 'auditoria',
       name: 'admin-audit',
-      component: adminPlaceholder,
+      component: () => import('../views/admin/AdminAuditView.vue'),
       meta: { title: 'Auditoria', roles: ['owner'] },
     },
     {

@@ -175,6 +175,48 @@ func (s StoreSettings) IsOpenAt(now time.Time, location *time.Location) bool {
 	return false
 }
 
+// NextOpeningAt devolve o próximo instante em UTC em que a loja abrirá,
+// considerando o kill switch e os horários no fuso informado. Sem horários
+// cadastrados ou com o kill switch desligado não há previsão: o operador é quem
+// controla a abertura.
+func (s StoreSettings) NextOpeningAt(now time.Time, location *time.Location) *time.Time {
+	if !s.IsOpen || len(s.OpeningHours) == 0 {
+		return nil
+	}
+	if location == nil {
+		location = time.UTC
+	}
+
+	local := now.In(location)
+	currentDay := strings.ToLower(local.Weekday().String())
+	currentMinutes := local.Hour()*60 + local.Minute()
+
+	for offset := 0; offset <= 7; offset++ {
+		dayDate := local.AddDate(0, 0, offset)
+		dayName := strings.ToLower(dayDate.Weekday().String())
+		for _, day := range s.OpeningHours {
+			if day.Closed || !strings.EqualFold(strings.TrimSpace(day.Day), dayName) {
+				continue
+			}
+			for _, interval := range day.Intervals {
+				open, err := parseClock(interval.Open)
+				if err != nil {
+					continue
+				}
+				if offset == 0 && dayName == currentDay && open <= currentMinutes {
+					continue
+				}
+				candidate := time.Date(
+					dayDate.Year(), dayDate.Month(), dayDate.Day(),
+					open/60, open%60, 0, 0, location,
+				).UTC()
+				return &candidate
+			}
+		}
+	}
+	return nil
+}
+
 func intervalContains(interval OpeningInterval, minutes int) bool {
 	open, err := parseClock(interval.Open)
 	if err != nil {

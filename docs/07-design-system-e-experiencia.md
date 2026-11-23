@@ -360,10 +360,10 @@ Implementado em `frontend/src/views/admin/AdminZonesView.vue` (US-064), com avis
 - Kill switch.
 - Horários por dia, múltiplos intervalos.
 - Prazo, WhatsApp, Instagram, endereço.
-- Preview do status efetivo (pendente; a API pública `/store` continua sendo a fonte autoritativa).
+- Preview do status efetivo a partir de `GET /api/v1/store`.
 - Auditoria.
 
-Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065). O formulário valida E.164, horários `HH:MM` e sobreposição de intervalos antes do PATCH; o envio com `PATCH` vazio é bloqueado no cliente.
+Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065/US-025). O formulário valida E.164, horários `HH:MM` e sobreposição de intervalos antes do PATCH; o envio com `PATCH` vazio é bloqueado no cliente e o badge mostra o status calculado no servidor.
 
 ### 6.8 Pedidos — `/admin/pedidos`
 
@@ -378,21 +378,22 @@ Implementado em `frontend/src/views/admin/AdminOrdersView.vue` e `frontend/src/v
 
 ### 6.9 Usuários — `/admin/usuarios` (owner)
 
-- Lista, criar, editar papel, ativar/desativar.
-- Não desativar o último owner.
-- Sem senha em resposta.
+- Lista paginada com busca, criar, editar papel e ativar/desativar.
+- Senha temporária forte no cadastro; senha nunca volta na resposta.
+- Não desativar o último owner ativo.
+- Implementado em `AdminUsersView.vue`, `AdminUserList.vue` e `AdminUserForm.vue`.
 
 ### 6.10 Auditoria — `/admin/auditoria` (owner)
 
-- Filtros por ator, entidade e data.
-- Sem PII.
-- Somente leitura.
+- Filtros por entidade e ação; paginação e ordenação por data desc.
+- Sem PII no registro exibido.
+- Somente leitura, implementado em `AdminAuditView.vue`.
 
 ### 6.11 Conta — `/admin/conta`
 
-- Nome, e-mail, papel.
-- Troca de senha (P1; se não houver, owner redefine).
-- Sair.
+- Nome, e-mail e papel da sessão atual.
+- Logout disponível; troca de senha/MFA ficam fora da V1.
+- Implementado em `AdminAccountView.vue`.
 
 ---
 

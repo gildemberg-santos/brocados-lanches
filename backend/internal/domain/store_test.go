@@ -112,3 +112,68 @@ func TestStoreSettingsIsOpenAt(t *testing.T) {
 		})
 	}
 }
+
+func TestStoreSettingsNextOpeningAt(t *testing.T) {
+	location := time.FixedZone("UTC-3", -3*60*60)
+	// 19:30 de domingo no fuso local.
+	now := time.Date(2026, 11, 22, 22, 30, 0, 0, time.UTC)
+	hours := []OpeningHours{
+		{Day: "sunday", Intervals: []OpeningInterval{{Open: "18:00", Close: "23:30"}}},
+		{Day: "monday", Intervals: []OpeningInterval{{Open: "18:00", Close: "23:30"}}},
+		{Day: "tuesday", Closed: true},
+	}
+
+	tests := []struct {
+		name  string
+		store StoreSettings
+		now   time.Time
+		want  string
+	}{
+		{
+			name:  "kill switch desligado não tem previsão",
+			store: StoreSettings{IsOpen: false, OpeningHours: hours},
+			now:   now,
+		},
+		{
+			name:  "sem horários não tem previsão",
+			store: StoreSettings{IsOpen: true},
+			now:   now,
+		},
+		{
+			name:  "próxima abertura é amanhã quando o horário de hoje passou",
+			store: StoreSettings{IsOpen: true, OpeningHours: hours[:2]},
+			now:   now,
+			want:  "2026-11-23T21:00:00Z",
+		},
+		{
+			name:  "próxima abertura é hoje quando o horário ainda não chegou",
+			store: StoreSettings{IsOpen: true, OpeningHours: hours[:2]},
+			now:   time.Date(2026, 11, 22, 18, 0, 0, 0, time.UTC), // 15:00 local
+			want:  "2026-11-22T21:00:00Z",
+		},
+		{
+			name:  "pula dias fechados",
+			store: StoreSettings{IsOpen: true, OpeningHours: hours[1:]},
+			now:   now,
+			want:  "2026-11-23T21:00:00Z",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := test.store.NextOpeningAt(test.now, location)
+			if test.want == "" {
+				if got != nil {
+					t.Fatalf("NextOpeningAt() = %v, want nil", *got)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatalf("NextOpeningAt() = nil, want %s", test.want)
+			}
+			if formatted := got.Format(time.RFC3339); formatted != test.want {
+				t.Errorf("NextOpeningAt() = %s, want %s", formatted, test.want)
+			}
+		})
+	}
+}

@@ -44,8 +44,9 @@ type sessionDocument struct {
 // AdminRepository grava usuários e sessões do painel. Senha em claro e token
 // opaco nunca chegam a esta camada.
 type AdminRepository struct {
-	users    *mongo.Collection
-	sessions *mongo.Collection
+	users     *mongo.Collection
+	sessions  *mongo.Collection
+	auditLogs *mongo.Collection
 }
 
 func NewAdminRepository(database *mongo.Database) (*AdminRepository, error) {
@@ -53,8 +54,9 @@ func NewAdminRepository(database *mongo.Database) (*AdminRepository, error) {
 		return nil, errors.New("mongo database is required")
 	}
 	return &AdminRepository{
-		users:    database.Collection(CollectionAdminUsers),
-		sessions: database.Collection(CollectionSessions),
+		users:     database.Collection(CollectionAdminUsers),
+		sessions:  database.Collection(CollectionSessions),
+		auditLogs: database.Collection(CollectionAuditLogs),
 	}, nil
 }
 
@@ -95,7 +97,16 @@ func (r *AdminRepository) CountUsers(ctx context.Context) (int64, error) {
 
 // CreateUser grava um usuário admin. E-mail duplicado vira conflito de domínio.
 func (r *AdminRepository) CreateUser(ctx context.Context, user domain.AdminUser) error {
+	objectID := bson.NewObjectID()
+	if user.ID != "" {
+		parsed, err := bson.ObjectIDFromHex(user.ID)
+		if err != nil {
+			return &domain.ValidationError{Field: "id", Code: domain.CodeInvalid, Message: "invalid user id"}
+		}
+		objectID = parsed
+	}
 	document := adminUserDocument{
+		ID:           objectID,
 		Name:         user.Name,
 		Email:        user.Email,
 		PasswordHash: user.PasswordHash,

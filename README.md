@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; autenticação, shell/guard do painel, APIs administrativas de catálogo/configuração da loja/pedidos, telas de fila, detalhe e transição de status, e telas de CRUD de catálogo e configuração da loja entregues; faltam usuários, auditoria e conta no painel.  
+**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; painel administrativo com catálogo, loja, status efetivo, pedidos, usuários, auditoria e conta entregue. Faltam hardening, E2E ampliado e infra de lançamento.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -205,7 +205,7 @@ Este é um monorepo com dois Dockerfiles, então o Render precisa do blueprint p
 - `brocados-api`: private service com `backend/Dockerfile`, `APP_ENV=production`, `PORT=10000` e sem exposição pública;
 - `brocados-web`: web service com `frontend/Dockerfile`, health check `/` e proxy para a API pela rede privada via `API_HOSTPORT`.
 
-Para aplicar, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGO_URI` (MongoDB Atlas), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. Se já existir um serviço criado manualmente, remova-o depois de validar o novo stack.
+Para aplicar, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados`; ajuste se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais. Se já existir um serviço criado manualmente, remova-o depois de validar o novo stack.
 
 O nginx escuta em `PORT` e repassa o `X-Forwarded-Proto` original, para o login continuar válido atrás do TLS do Render. Após o primeiro deploy, remova as variáveis de bootstrap do Render.
 
@@ -241,7 +241,7 @@ make dev-web
 |---|---|---|
 | `APP_ENV` | `development` | `development`, `test` ou `production` |
 | `PORT` | `8080` | Porta interna da API |
-| `MONGO_URI` | `mongodb://localhost:27017` | Conexão usada fora do Compose |
+| `MONGO_URI` | `mongodb://localhost:27017` | Conexão usada fora do Compose; `MONGODB_URI` é aceito como alias |
 | `MONGO_DB` | `brocados_dev` | Banco da API |
 | `API_PORT` | `8080` | Porta publicada da API |
 | `WEB_PORT` | `8081` | Porta publicada da web |
@@ -298,7 +298,7 @@ make test-e2e
 
 - `make test-e2e` sobe Vite e a API nas portas 5173 e 8080.
 - Se a API já estiver rodando em 8080, pare antes: o servidor do E2E não é reaproveitado para não usar o banco de desenvolvimento.
-- Para apontar para outro MongoDB, defina `MONGO_URI` e `MONGO_DB` no ambiente.
+- Para apontar para outro MongoDB, defina `MONGO_URI` (ou `MONGODB_URI`) e `MONGO_DB` no ambiente.
 
 ### CI
 
@@ -337,7 +337,8 @@ O protótipo **não** entrega:
 
 O esqueleto **ainda não** entrega:
 
-- telas de usuários, auditoria e conta no painel;
+- rate limit de criação de pedido e hardening de concorrência idempotente;
+- E2E completo do fluxo de compra e do acesso por papel;
 - telas de relatórios e impressão/KDS;
 - deploy de produção.
 
@@ -350,7 +351,7 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
 2. Cobrir no E2E o fluxo completo cardápio → personalização → carrinho → checkout → confirmação (Épicos 3 e 4).
 3. Cobrir no E2E o acesso por papel às rotas protegidas com `operator` (Épico 6).
-4. Implementar as telas administrativas de usuários, auditoria e conta (Épicos 6 e 7).
+4. Cobrir rate limit de pedido, concorrência idempotente e lacunas de E2E (Épicos 3, 4 e 6).
 5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
 
 ---

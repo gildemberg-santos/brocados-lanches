@@ -18,6 +18,7 @@ type AdminListQuery struct {
 // AuditLog registra uma mutação administrativa. Os snapshots guardam apenas
 // campos de configuração/catálogo: nunca dados pessoais de clientes.
 type AuditLog struct {
+	ID        string
 	ActorID   string
 	Action    string
 	Entity    string
@@ -41,7 +42,31 @@ const (
 	AuditEntityDeliveryZone = "delivery_zones"
 	AuditEntityStore        = "store_settings"
 	AuditEntityOrder        = "orders"
+	AuditEntityAdminUser    = "admin_users"
 )
+
+// AdminUserPatch contém apenas os campos permissíveis na edição de um usuário.
+// Senha nunca é alterada por aqui: a V1 usa senha temporária na criação.
+type AdminUserPatch struct {
+	Name   *string
+	Role   *string
+	Active *bool
+}
+
+// Empty informa se o PATCH não contém nenhum campo.
+func (p AdminUserPatch) Empty() bool {
+	return p.Name == nil && p.Role == nil && p.Active == nil
+}
+
+// AuditListQuery descreve os filtros da consulta de auditoria.
+type AuditListQuery struct {
+	AdminListQuery
+	ActorID string
+	Action  string
+	Entity  string
+	From    *time.Time
+	To      *time.Time
+}
 
 // CategoryPatch descreve uma atualização parcial de categoria.
 type CategoryPatch struct {
