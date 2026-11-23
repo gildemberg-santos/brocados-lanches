@@ -31,6 +31,7 @@ type Dependencies struct {
 	AdminOrders  AdminOrderService
 	AdminUsers   AdminUsersService
 	LoginLimiter *ratelimit.Limiter
+	Limiters     Limiters
 	Logger       *slog.Logger
 }
 
@@ -50,8 +51,20 @@ func NewRouter(deps Dependencies) http.Handler {
 		logger = slog.Default()
 	}
 
+	limiters := deps.Limiters
+	limiters.fillDefaults()
+
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
+	// Devolve o ID na resposta para correlacionar reclamações com os logs.
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if requestID := middleware.GetReqID(r.Context()); requestID != "" {
+				w.Header().Set("X-Request-Id", requestID)
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
 	// ClientIPFromRemoteAddr não confia em X-Forwarded-For/X-Real-IP, que podem
 	// ser forjados pelo cliente e burlar o rate limit de login.
 	router.Use(middleware.ClientIPFromRemoteAddr)
@@ -64,11 +77,11 @@ func NewRouter(deps Dependencies) http.Handler {
 	router.Route("/api/v1", func(router chi.Router) {
 		router.Get("/", handleAPIRoot)
 		router.Get("/store", handleStore(deps.Store, logger))
-		router.Get("/menu", handleMenu(deps.Catalog, logger))
+		router.Get("/menu", limitByIP(limiters.Menu, handleMenu(deps.Catalog, logger)))
 		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
-		router.Post("/orders/quote", handleQuote(deps.Orders, logger))
-		router.Post("/orders", handleCreateOrder(deps.Orders, logger))
-		router.Get("/orders/{publicId}", handleTrackOrder(deps.Orders, logger))
+		router.Post("/orders/quote", limitByIP(limiters.Quotes, handleQuote(deps.Orders, logger)))
+		router.Post("/orders", limitByIP(limiters.Orders, handleCreateOrder(deps.Orders, limiters.OrderPhones, logger)))
+		router.Get("/orders/{publicId}", limitByIP(limiters.Tracking, handleTrackOrder(deps.Orders, logger)))
 	})
 
 	if deps.AdminAuth != nil {
@@ -88,12 +101,12 @@ func NewRouter(deps Dependencies) http.Handler {
 			admin.Post("/auth/logout", handleAdminLogout(deps.AdminAuth, cookieConfig, logger))
 
 			admin.Group(func(protected chi.Router) {
-				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger))
+				protected.Use(limitAdminSession(limiters.Admin, cookieConfig, requireAdmin(deps.AdminAuth, cookieConfig, logger)))
 				protected.Get("/auth/me", handleAdminMe(logger))
 			})
 
 			admin.Group(func(protected chi.Router) {
-				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner, domain.AdminRoleOperator))
+				protected.Use(limitAdminSession(limiters.Admin, cookieConfig, requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner, domain.AdminRoleOperator)))
 
 				protected.Get("/categories", handleAdminListCategories(deps.AdminCatalog, logger))
 				protected.Post("/categories", handleAdminCreateCategory(deps.AdminCatalog, logger))
@@ -120,7 +133,7 @@ func NewRouter(deps Dependencies) http.Handler {
 			})
 
 			admin.Group(func(protected chi.Router) {
-				protected.Use(requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner))
+				protected.Use(limitAdminSession(limiters.Admin, cookieConfig, requireAdmin(deps.AdminAuth, cookieConfig, logger, domain.AdminRoleOwner)))
 
 				protected.Get("/users", handleAdminListUsers(deps.AdminUsers, logger))
 				protected.Post("/users", handleAdminCreateUser(deps.AdminUsers, logger))

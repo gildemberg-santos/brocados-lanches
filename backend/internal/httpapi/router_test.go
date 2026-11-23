@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -136,5 +138,46 @@ func TestUnknownRoute(t *testing.T) {
 
 	if response.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", response.Code)
+	}
+}
+
+func TestRequestLoggerCorrelatesAndHidesPII(t *testing.T) {
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	handler := NewRouter(Dependencies{
+		Orders: &fakeOrderService{err: errors.New("mongo down para +5585999999999, dono@teste.local, CEP 61700-000, Cookie: segredo")},
+		Logger: logger,
+	})
+
+	body := strings.Replace(validQuoteBody, "sem cebola", "Maria Silva da Rua das Flores", 1)
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/orders/quote?nome=Maria%20Silva", strings.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer segredo-do-token")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	requestID := response.Header().Get("X-Request-Id")
+	if requestID == "" {
+		t.Fatal("missing X-Request-Id response header")
+	}
+	if !strings.Contains(logs.String(), "request_id="+requestID) {
+		t.Errorf("logs do not correlate with response: %s", logs.String())
+	}
+
+	for _, forbidden := range []string{
+		"Maria Silva",
+		"Rua das Flores",
+		"segredo-do-token",
+		"+5585999999999",
+		"dono@teste.local",
+		"61700-000",
+		"segredo",
+	} {
+		if strings.Contains(logs.String(), forbidden) {
+			t.Errorf("log leaked %q: %s", forbidden, logs.String())
+		}
+	}
+	if !strings.Contains(logs.String(), "mongo down") {
+		t.Errorf("sanitization removed useful internal context: %s", logs.String())
 	}
 }

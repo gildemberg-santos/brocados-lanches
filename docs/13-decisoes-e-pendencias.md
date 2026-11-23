@@ -45,6 +45,8 @@
 | D-021 | 22/11/2026 | O guard do painel é apenas UX (`401` → login com `redirect`, `403` → `/admin/sem-acesso`); a autorização real continua no servidor. No desenvolvimento o proxy do Vite alinha `Origin` ao `Host` da API para não falsificar o CSRF | Decidido e implementado | Painel navegável em dev/produção sem enfraquecer a proteção | `04-arquitetura.md` §5.5, `frontend/vite.config.ts`, `08-backlog.md` §10 |
 | D-022 | 22/11/2026 | A fila admin mascara nome/telefone; o detalhe completo exige sessão; transição usa CAS no status e auditoria sem PII | Decidido e implementado | Operação segura com rastro, sem vazar dados na listagem | `06-contrato-api.md` §12, `05-modelo-de-dados.md` §3.6, `08-backlog.md` §11 |
 | D-023 | 23/11/2026 | No painel, preço/taxa são digitados em reais e convertidos para centavos no cliente antes do envio; slug, horários e WhatsApp são validados no cliente, mas o servidor continua autoritativo | Decidido e implementado | Evita `float` e PATCH vazio; mantém a API como fonte da verdade | `../AGENTS.md` §7.5 e §8.2, `08-backlog.md` §10 |
+| D-024 | 23/11/2026 | Rate limits em janela fixa de 1 minuto, em memória por instância; telefone e sessão entram como hash; `X-Request-Id` correlaciona logs com `Retry-After: 60` em `429` | Decidido e implementado | Atende ao contrato sem depender de nova infraestrutura; contadores precisam ser compartilhados se houver múltiplas réplicas | `06-contrato-api.md` §15, `backend/internal/httpapi/ratelimit.go` |
+| D-025 | 23/11/2026 | Metadados por rota implementados diretamente no router, sem adicionar `@unhead/vue`; JSON-LD, sitemap e canonical ficam para depois de domínio e conteúdo aprovado | Decidido e implementado | Evita dependência estrutural e dado de negócio inventado | `08-backlog.md` §12, `frontend/src/router/meta.ts` |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -152,3 +154,4 @@ Elas entram em P2 ou no roadmap seguinte.
 | 22/11/2026 | US-070 a US-072 (painel) concluídas: fila com filtros/paginação, detalhe e ações de status; E2E cobre pedido → fila → transição |
 | 23/11/2026 | US-062 a US-065 (painel) concluídas: CRUD de produtos, categorias, adicionais e zonas, e configuração da loja com kill switch e horários; D-023 registrado |
 | 23/11/2026 | US-025, US-066 e US-073 concluídas: `GET /store` com status efetivo/`nextOpeningAt`, gestão de usuários e auditoria somente leitura no painel, com testes e proteção do último owner |
+| 23/11/2026 | D-024 e D-025 registrados: rate limits do contrato, scrub de PII em logs, testes de concorrência/WhatsApp, metadados por rota e E2E completo do fluxo de compra; execução do E2E e itens de conteúdo/infra continuam pendentes |

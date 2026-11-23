@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"regexp"
 
 	"github.com/brocados-lanches/api/internal/domain"
 	"github.com/go-chi/chi/v5/middleware"
@@ -149,10 +150,29 @@ func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err
 			"request_id", middleware.GetReqID(r.Context()),
 			"method", r.Method,
 			"path", r.URL.Path,
-			"error", err,
+			"error", scrubForLog(err.Error()),
 		)
 	}
 
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, status, errorEnvelope{Error: body})
+}
+
+var (
+	emailPattern  = regexp.MustCompile(`[\w.+-]+@[\w-]+\.[\w.-]+`)
+	phonePattern  = regexp.MustCompile(`(?:\+?55)?\(?\d{2}\)?[\s.-]?\d{4,5}-?\d{4}`)
+	cpfPattern    = regexp.MustCompile(`\d{3}\.?\d{3}\.?\d{3}-?\d{2}`)
+	zipPattern    = regexp.MustCompile(`\d{5}-?\d{3}`)
+	secretPattern = regexp.MustCompile(`(?i)(cookie|authorization|token)([:=]\s*)[^\s,;]+`)
+)
+
+// scrubForLog remove identificadores comuns antes de registrar erros internos.
+// Nomes, endereços e observações não entram nas mensagens de erro do domínio;
+// este filtro é uma defesa adicional para mensagens vindas de infraestrutura.
+func scrubForLog(message string) string {
+	result := emailPattern.ReplaceAllString(message, "[email]")
+	result = phonePattern.ReplaceAllString(result, "[telefone]")
+	result = cpfPattern.ReplaceAllString(result, "[cpf]")
+	result = zipPattern.ReplaceAllString(result, "[cep]")
+	return secretPattern.ReplaceAllString(result, "$1$2[redacted]")
 }

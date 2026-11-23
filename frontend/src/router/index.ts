@@ -3,45 +3,52 @@ import type { RouteRecordRaw } from 'vue-router'
 
 import HomeView from '../views/HomeView.vue'
 import { redirectAuthenticatedFromLogin, requireAdminAuth } from './adminGuard'
+import { applyRouteMeta } from './meta'
 
 const publicRoutes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
     component: HomeView,
+    meta: { title: 'Início', description: 'Monte seu lanche do seu jeito e acompanhe seu pedido.' },
   },
   {
     path: '/cardapio',
     name: 'menu',
     component: () => import('../views/MenuView.vue'),
+    meta: { title: 'Cardápio', description: 'Veja as opções do cardápio e escolha seu lanche.' },
   },
   {
     path: '/produto/:slug',
     name: 'product',
     component: () => import('../views/ProductView.vue'),
+    meta: { title: 'Detalhes do produto', noindex: true },
   },
   {
     path: '/carrinho',
     name: 'cart',
     component: () => import('../views/CartView.vue'),
+    meta: { title: 'Carrinho', noindex: true },
   },
   {
     path: '/checkout',
     name: 'checkout',
     component: () => import('../views/CheckoutView.vue'),
+    meta: { title: 'Finalizar pedido', noindex: true },
   },
   {
     path: '/pedido/:publicId',
     name: 'order',
     component: () => import('../views/OrderView.vue'),
     props: true,
+    meta: { title: 'Acompanhar pedido', noindex: true },
   },
 ]
 
 const adminRoutes: RouteRecordRaw = {
   path: '/admin',
   component: () => import('../components/admin/AdminShell.vue'),
-  meta: { admin: true },
+  meta: { admin: true, noindex: true },
   beforeEnter: requireAdminAuth,
   children: [
     {
@@ -129,9 +136,14 @@ const router = createRouter({
       name: 'admin-login',
       component: () => import('../views/admin/AdminLoginView.vue'),
       beforeEnter: redirectAuthenticatedFromLogin,
+      meta: { title: 'Acessar painel', noindex: true },
     },
     adminRoutes,
   ],
+})
+
+router.afterEach((to) => {
+  applyRouteMeta(to)
 })
 
 export default router

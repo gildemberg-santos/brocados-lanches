@@ -253,7 +253,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-050 | API pública de acompanhamento | P1 | M | US-040 | Retorna status/itens/total sem PII sensível; rate limit; testes |
+| US-050 | API pública de acompanhamento | P1 | M | US-040 | Concluída: status/itens/total sem PII sensível; limite de 60/min por IP; testes |
 | US-051 | Tela de acompanhamento | P1 | M | US-050 | Timeline, atualização, não encontrado e erro; testes |
 | US-052 | Reenvio de WhatsApp | P1 | P | US-042 | Link completo disponível na confirmação imediata; após recarregar, contato da loja com número do pedido |
 
@@ -335,7 +335,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
 | US-080 | Páginas institucionais e legais | P1 | M | E0 | Contato, privacidade e termos publicados com links |
-| US-081 | SEO e dados estruturados | P1 | M | US-023 | Metadados, JSON-LD, sitemap e robots; testes |
+| US-081 | SEO e dados estruturados | P1 | M | US-023 | Parcial: título/descrição/robots por rota e testes entregues; faltam JSON-LD, sitemap e domínio para canonical |
 | US-082 | Acessibilidade | P1 | G | US-023, US-033, US-061 | Teclado, foco, rótulos, contraste, 44 px e reduced motion |
 | US-083 | Imagens e performance | P1 | M | US-023 | WebP/AVIF, dimensões, lazy, fontes self-hosted |
 | US-084 | Consentimento e analytics | P2 | M | US-080 | Sem PII; opt-in; eventos documentados |
@@ -343,9 +343,9 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 **Tarefas técnicas:**
 
 - [ ] Criar páginas e conteúdo aprovado.
-- [ ] Implementar `@unhead/vue` ou equivalente.
-- [ ] Gerar JSON-LD `Restaurant`, `Menu` e `Product`.
-- [ ] Gerar sitemap/robots.
+- [x] Implementar metadados por rota sem dependência adicional (`src/router/meta.ts`).
+- [ ] Gerar JSON-LD `Restaurant`, `Menu` e `Product` com dados aprovados.
+- [ ] Gerar sitemap/robots com domínio definido.
 - [ ] Rodar axe nas telas críticas.
 - [ ] Corrigir foco, rótulos e alvos de toque.
 - [ ] Self-host de fontes.
@@ -362,8 +362,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 |---|---|---|---|---|---|
 | US-090 | Testes de backend | P0 | G | E2–E7 | Service, handler e repository com Mongo real; `-race` |
 | US-091 | Testes de frontend | P0 | G | E2–E7 | Stores, componentes e services; Vitest |
-| US-092 | E2E crítico | P0 | G | US-040, US-072 | Parcial: pedido → fila → detalhe → status no painel; falta o fluxo completo cardápio → checkout em mobile/desktop |
-| US-093 | Segurança e privacidade | P0 | M | US-060, US-040 | Rate limit, CSRF, auth, enumeração e PII em logs |
+| US-092 | E2E crítico | P0 | G | US-040, US-072 | Fluxo completo implementado em `e2e/checkout.spec.ts` para desktop e mobile; execução depende de MongoDB local |
+| US-093 | Segurança e privacidade | P0 | M | US-060, US-040 | Concluída: rate limits do contrato, CSRF, auth, enumeração e scrub de PII em logs; testes cobrem correlação e mascaramento |
 | US-094 | Performance e carga | P1 | M | E2–E7 | Orçamentos de `03-prd.md` medidos; gargalos corrigidos |
 
 **Tarefas técnicas:**
@@ -371,8 +371,9 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [ ] Criar matriz de testes de `09-qualidade-e-testes.md`.
 - [ ] Configurar testcontainers.
 - [ ] Configurar Playwright.
-- [ ] Testar todos os cenários críticos de `09-qualidade-e-testes.md`.
-- [ ] Revisar logs e mascaramento.
+- [x] Cobrir concorrência de idempotência, falha de persistência, handoff indisponível, sessão expirada e PII em logs.
+- [x] Revisar logs e mascaramento.
+- [ ] Testar todos os cenários críticos de `09-qualidade-e-testes.md` (E2E completo aguarda MongoDB).
 - [ ] Rodar teste de carga básico.
 - [ ] Registrar evidências no PR.
 

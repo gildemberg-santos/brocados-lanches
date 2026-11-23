@@ -649,7 +649,9 @@ Regras:
 | `GET /menu` | 120/min | IP |
 | Admin autenticado | 120/min | sessão |
 
-Respostas `429` incluem `Retry-After` quando possível.
+Respostas `429` incluem `Retry-After: 60` e o código `RATE_LIMITED`. Os limites são por instância, em janela fixa de 1 minuto; chaves de telefone e sessão entram como hash SHA-256, nunca em texto claro. Em deployment com múltiplas réplicas, o contador precisa passar para um store compartilhado.
+
+A resposta de sucesso inclui o cabeçalho `X-Request-Id`, que correlaciona a requisição aos logs estruturados sem dados pessoais.
 
 ---
 

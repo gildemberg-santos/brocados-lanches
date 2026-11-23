@@ -160,6 +160,7 @@ func run() error {
 				Secure: cfg.AdminCookieSecure,
 			},
 			LoginLimiter: loginLimiter,
+			Limiters:     httpapi.DefaultLimiters(),
 			Logger:       logger,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,

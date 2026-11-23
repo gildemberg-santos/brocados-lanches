@@ -46,23 +46,27 @@ Regras:
 
 ### 3.1 Variáveis previstas
 
+Nomes e padrões abaixo são os lidos por `backend/internal/config/config.go` e por
+`deploy/docker-entrypoint.sh`. Variáveis que não aparecem aqui não são lidas pela API.
+
 | Variável | Obrigatória | Uso |
 |---|---|---|
-| `APP_ENV` | sim | `development`, `test`, `production` |
-| `HTTP_ADDR` | sim | Endereço/porta da API |
-| `MONGO_URI` / `MONGODB_URI` | sim | Conexão MongoDB; `MONGO_URI` tem prioridade |
-| `MONGO_DATABASE` | sim | Nome do banco |
-| `SESSION_SECRET` | não | Reservado; a V1 usa token opaco com hash SHA-256, sem segredo de assinatura |
+| `APP_ENV` | não (padrão `development`) | `development`, `test` ou `production`; em produção ativa cookie `Secure` com prefixo `__Host-`. Definir `production` no deploy |
+| `PORT` | não (padrão `8080`) | Porta HTTP exposta; no Render é injetada pela plataforma |
+| `API_PORT` | não (padrão `3000` no entrypoint) | Porta interna da API Go atrás do nginx no container único |
+| `MONGO_URI` / `MONGODB_URI` | sim em produção | Conexão MongoDB; `MONGO_URI` tem prioridade. Padrão local: `mongodb://localhost:27017` |
+| `MONGO_DB` | não (padrão `brocados_dev`) | Nome do banco. **Em produção definir `brocados`**; nunca usar `brocados_dev` fora de desenvolvimento |
 | `ADMIN_SESSION_COOKIE` | não | Nome do cookie; padrão `brocados_admin`, com prefixo `__Host-` em produção |
 | `ADMIN_COOKIE_SECURE` | não | Força `Secure` fora de produção; em produção é sempre true |
 | `ADMIN_BOOTSTRAP_NAME` | não | Nome do primeiro `owner`; deve ser usado junto com e-mail e senha |
 | `ADMIN_BOOTSTRAP_EMAIL` | não | E-mail do primeiro `owner`; só cria usuário se `admin_users` estiver vazio |
-| `ADMIN_BOOTSTRAP_PASSWORD` | não | Senha do primeiro `owner` (mínimo 12 caracteres); remover após o bootstrap |
-| `PUBLIC_BASE_URL` | sim | URL pública same-origin |
-| `WHATSAPP_NUMBER` | sim | Número E.164 da loja |
-| `LOG_LEVEL` | sim | `info`/`debug` |
-| `RATE_LIMIT_*` | não | Ajustes por rota |
+| `ADMIN_BOOTSTRAP_PASSWORD` | não | Senha do primeiro `owner` (12 a 128 caracteres); remover as três variáveis de bootstrap após criar o `owner` |
+
 | `OTEL_*`/métricas | não | Observabilidade, se adotada |
+
+`MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidas pela API: as credenciais
+devem ir na própria URI de conexão. WhatsApp e demais dados de contato são
+configurados em `store_settings` pelo painel, não por variável de ambiente.
 
 O `.env.example` é a referência local. Nenhum segredo real entra no repositório.
 

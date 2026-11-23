@@ -30,20 +30,27 @@ type fakeOrderService struct {
 	trackedErr error
 	store      domain.StoreSettings
 	storeErr   error
+
+	quoteCalls  int
+	createCalls int
+	trackCalls  int
 }
 
 func (f *fakeOrderService) Quote(_ context.Context, request domain.QuoteRequest) (domain.Quote, error) {
+	f.quoteCalls++
 	f.received = request
 	return f.quote, f.err
 }
 
 func (f *fakeOrderService) Create(_ context.Context, request domain.OrderRequest, key string) (domain.Order, bool, error) {
+	f.createCalls++
 	f.receivedOrder = request
 	f.receivedKey = key
 	return f.created, f.replayed, f.createdErr
 }
 
 func (f *fakeOrderService) GetByPublicID(context.Context, string) (domain.Order, error) {
+	f.trackCalls++
 	return f.tracked, f.trackedErr
 }
 
