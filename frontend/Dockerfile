@@ -15,7 +15,8 @@ RUN --mount=type=cache,target=/root/.cache/node/corepack \
 COPY design-system/tokens.css ./design-system/tokens.css
 COPY frontend/ ./frontend/
 
-RUN cd frontend && pnpm build
+RUN --mount=type=cache,target=/root/.cache/node/corepack \
+    cd frontend && pnpm build
 
 FROM nginx:alpine
 
