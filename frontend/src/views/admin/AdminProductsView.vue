@@ -37,6 +37,10 @@ function applyFilters(filters: Partial<AdminCatalogListQuery>): void {
   void products.applyFilters(filters)
 }
 
+function count(items: readonly unknown[] | null | undefined): number {
+  return Array.isArray(items) ? items.length : 0
+}
+
 function selectCategory(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
   void products.applyFilters({ ...products.filters, categoryId: value || undefined })
@@ -160,7 +164,7 @@ onMounted(() => {
             <div>
               <dt>Opções</dt>
               <dd>
-                {{ item.optionGroups.length }} grupo(s) · {{ item.addonIds.length }} adicional(is)
+                {{ count(item.optionGroups) }} grupo(s) · {{ count(item.addonIds) }} adicional(is)
               </dd>
             </div>
           </dl>

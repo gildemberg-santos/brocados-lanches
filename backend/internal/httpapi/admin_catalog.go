@@ -671,6 +671,14 @@ func sliceValue[T any](value *[]T) []T {
 	return append([]T(nil), (*value)...)
 }
 
+// sliceOrEmpty preserves the response contract: nullable slices become [] instead of null.
+// Mutations must keep using sliceValue so an omitted PATCH field remains distinguishable.
+func sliceOrEmpty[T any](value []T) []T {
+	result := make([]T, len(value))
+	copy(result, value)
+	return result
+}
+
 func formatAdminTime(value time.Time) string {
 	if value.IsZero() {
 		return ""
@@ -723,9 +731,9 @@ func newAdminProductResponse(product domain.Product) adminProductResponse {
 		ID: product.ID, CategoryID: product.CategoryID, Name: product.Name, Slug: product.Slug,
 		Description: product.Description, PriceCents: product.PriceCents,
 		ImageURL: product.ImageURL, ImageAlt: product.ImageAlt,
-		Allergens: sliceValue(&product.Allergens), Available: product.Available,
+		Allergens: sliceOrEmpty(product.Allergens), Available: product.Available,
 		Featured: product.Featured, Active: product.Active, SortOrder: product.SortOrder,
-		OptionGroups: groups, AddonIDs: sliceValue(&product.AddonIDs),
+		OptionGroups: groups, AddonIDs: sliceOrEmpty(product.AddonIDs),
 		CreatedAt: formatAdminTime(product.CreatedAt), UpdatedAt: formatAdminTime(product.UpdatedAt),
 	}
 }

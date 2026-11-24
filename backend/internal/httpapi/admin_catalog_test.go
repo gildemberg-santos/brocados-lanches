@@ -307,6 +307,64 @@ func TestAdminProductRequestMapsNestedFields(t *testing.T) {
 	}
 }
 
+func TestAdminProductResponseUsesEmptyArrays(t *testing.T) {
+	tests := []struct {
+		name      string
+		allergens []string
+		addonIDs  []string
+	}{
+		{name: "listas nulas"},
+		{name: "listas vazias não nulas", allergens: []string{}, addonIDs: []string{}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			catalog := &fakeAdminCatalogHandlerService{product: domain.Product{
+				ID:           "665f1c2a9b1e4a0012a3b4f1",
+				Name:         "Hambúrguer",
+				Slug:         "hamburguer",
+				PriceCents:   2300,
+				Available:    true,
+				Active:       true,
+				Allergens:    test.allergens,
+				AddonIDs:     test.addonIDs,
+				OptionGroups: []domain.OptionGroup{{ID: "ponto", Name: "Ponto"}},
+			}}
+			router := newAdminCatalogTestRouter(newAdminOperatorAuth(), catalog, nil)
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, newAdminRequest(http.MethodGet, "/api/v1/admin/products", ""))
+			if response.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200; body = %s", response.Code, response.Body.String())
+			}
+
+			var payload struct {
+				Data []map[string]json.RawMessage `json:"data"`
+			}
+			if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+				t.Fatalf("decode response: %v", err)
+			}
+			if len(payload.Data) != 1 {
+				t.Fatalf("data length = %d, want 1", len(payload.Data))
+			}
+			for _, field := range []string{"allergens", "addonIds"} {
+				if got := string(payload.Data[0][field]); got != "[]" {
+					t.Errorf("%s = %s, want []", field, got)
+				}
+			}
+			if got := string(payload.Data[0]["optionGroups"]); got == "null" || !strings.HasPrefix(got, "[") {
+				t.Errorf("optionGroups = %s, want an array", got)
+			}
+
+			var groups []map[string]json.RawMessage
+			if err := json.Unmarshal(payload.Data[0]["optionGroups"], &groups); err != nil {
+				t.Fatalf("decode option groups: %v", err)
+			}
+			if len(groups) != 1 || string(groups[0]["options"]) != "[]" {
+				t.Errorf("option groups = %s, want one group with options []", payload.Data[0]["optionGroups"])
+			}
+		})
+	}
+}
+
 func TestAdminCreateAddonAndZone(t *testing.T) {
 	catalog := &fakeAdminCatalogHandlerService{}
 	router := newAdminCatalogTestRouter(newAdminOperatorAuth(), catalog, nil)

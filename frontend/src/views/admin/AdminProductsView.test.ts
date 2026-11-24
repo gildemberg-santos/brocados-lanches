@@ -96,6 +96,24 @@ describe('AdminProductsView', () => {
     expect(wrapper.find('#product-category-filter').findAll('option').length).toBe(2)
   })
 
+  it('renderiza contagem zero quando o backend devolve listas nulas', async () => {
+    vi.mocked(fetchAdminProducts).mockResolvedValue({
+      data: [
+        {
+          ...product,
+          allergens: null as unknown as typeof product.allergens,
+          optionGroups: null as unknown as typeof product.optionGroups,
+          addonIds: null as unknown as typeof product.addonIds,
+        },
+      ],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    const wrapper = mount(AdminProductsView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('0 grupo(s) · 0 adicional(is)')
+  })
+
   it('abre o formulário com categoria, adicional e preço em reais', async () => {
     const wrapper = mount(AdminProductsView)
     await flushPromises()
