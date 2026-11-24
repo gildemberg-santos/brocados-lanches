@@ -2,7 +2,13 @@
   "_meta": {
     "fonte": "brocados-lanches-design-system-v2.5.html",
     "extraido_em": "2026-11-18",
-    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders e precisam de confirmação."
+    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders e precisam de confirmação.",
+    "catalogo_original": {
+      "url": "https://cardpiobrocadoslanchess.ola.click/products",
+      "extraido_em": "2026-11-23",
+      "observacao": "Nomes, descrições, preços, disponibilidade, categorias e imagens extraídos do catálogo público; imagens originais de 800px servidas localmente em frontend/public/products. Dados de loja, zonas e pedidos permanecem fictícios do protótipo.",
+      "destaques": "Seleção apenas para desenvolvimento (prod_1, prod_5 e prod_24), usada para popular a home. Não representa ranking real de pedidos."
+    }
   },
   "store": {
     "name": "Brocados Lanches",
@@ -15,22 +21,27 @@
   "categories": [
     {
       "id": "cat_1",
-      "name": "Hambúrgueres",
+      "name": "PROMOÇÃO 🔥",
       "active": true
     },
     {
       "id": "cat_2",
-      "name": "Combos",
+      "name": "Hambúrguer artesanal 🍔",
       "active": true
     },
     {
       "id": "cat_3",
-      "name": "Petiscos",
+      "name": "Porções",
       "active": true
     },
     {
       "id": "cat_4",
-      "name": "Bebidas",
+      "name": "BEBIDAS 🥤",
+      "active": true
+    },
+    {
+      "id": "cat_5",
+      "name": "Pastel",
       "active": true
     }
   ],
@@ -38,50 +49,407 @@
     {
       "id": "prod_1",
       "catId": "cat_1",
-      "name": "Brocado's Burguer Cheddar",
-      "price": 23,
-      "desc": "Blend artesanal 160g, muito cheddar derretido e pão brioche selado.",
-      "icon": "burger",
+      "name": "Combo 3 hambúrguer",
+      "price": "49.99",
+      "desc": "3 hambúrguer frescurinha artesanal ( carne artesanal, molho chedda, queijo cheddar e maionese temperada)",
+      "image": "/products/combo-3-hamburguer.png",
+      "imageAlt": "Combo 3 hambúrguer",
       "available": true,
       "featured": true
     },
     {
       "id": "prod_2",
       "catId": "cat_1",
-      "name": "Brocadão Duplo Cheddar",
-      "price": 30,
-      "desc": "Dois blends artesanais 160g, cheddar duplo cremoso e bacon crocante.",
-      "icon": "burger",
+      "name": "Combo 2 hambúrguer",
+      "price": "54.99",
+      "desc": "2 hambúrguer frescurinha + 1porção de batata P 120g+ 1refrigerante de 1L",
+      "image": "/products/combo-2-hamburguer.png",
+      "imageAlt": "Combo 2 hambúrguer",
       "available": true,
-      "featured": true
+      "featured": false
     },
     {
       "id": "prod_3",
-      "catId": "cat_2",
-      "name": "Combo Casal Brocado",
-      "price": 54.9,
-      "desc": "2 Brocados Cheddar + Batata Rústica Grande + 2 Refris Lata.",
-      "icon": "combo",
+      "catId": "cat_1",
+      "name": "COMBO 5 hambúrguer",
+      "price": "89.99",
+      "desc": "5 hambúrguer artesanal + 1 guaraná de 1L",
+      "image": "/products/combo-5-hamburguer.png",
+      "imageAlt": "COMBO 5 hambúrguer",
       "available": true,
-      "featured": true
+      "featured": false
     },
     {
       "id": "prod_4",
-      "catId": "cat_3",
-      "name": "Batata Cheddar & Bacon",
-      "price": 22,
-      "desc": "Porção generosa de batatas crocantes cobertas com cheddar e bacon.",
-      "icon": "fries",
+      "catId": "cat_1",
+      "name": "Combo 10 hambúrguers",
+      "price": "199.99",
+      "desc": "10 hambúrguer artesanal BACON CHEDDA 🥓",
+      "image": "/products/combo-10-hamburguers.png",
+      "imageAlt": "Combo 10 hambúrguers",
       "available": true,
       "featured": false
     },
     {
       "id": "prod_5",
+      "catId": "cat_2",
+      "name": "BURGER FRESCURINHA",
+      "price": "18.00",
+      "desc": "Pão brioche + carne artesanal 120g + cheddar cremoso + maionese temperada. 🤤",
+      "image": "/products/burger-frescurinha.jpeg",
+      "imageAlt": "BURGER FRESCURINHA",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "prod_6",
+      "catId": "cat_2",
+      "name": "BURGER SALAD",
+      "price": "19.00",
+      "desc": "Pão brioche + carne artesanal 120g + Queijo coalho + Alface + tomate +maionese temperada. 🤤",
+      "image": "/products/burger-salad.png",
+      "imageAlt": "BURGER SALAD",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_7",
+      "catId": "cat_2",
+      "name": "BACON CHEDDAR",
+      "price": "22.00",
+      "desc": "Pão brioche + carne artesanal 120g + cheddar cremoso + Bacon +maionese temperada. 🤤",
+      "image": "/products/bacon-cheddar.jpeg",
+      "imageAlt": "BACON CHEDDAR",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_8",
+      "catId": "cat_2",
+      "name": "CALABRESO",
+      "price": "22.00",
+      "desc": "Pão brioche + carne artesanal 120g + Queijo coalho + Alface + tomate + calabresa + maionese temperada. 🤤",
+      "image": "/products/calabreso.jpeg",
+      "imageAlt": "CALABRESO",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_9",
+      "catId": "cat_2",
+      "name": "NORDESTINO",
+      "price": "24.90",
+      "desc": "Pão brioche, blend de hambúrguer artesanal 110g , carne do sol , 1 fatia de queijo coalho e cream cheese",
+      "image": "/products/nordestino.png",
+      "imageAlt": "NORDESTINO",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_10",
+      "catId": "cat_2",
+      "name": "X-TUDO (O FIM DA DIETA)",
+      "price": "28.00",
+      "desc": "1 blenda de 120g+ 1ovo+ calabresa + Bacon + Queijo + Presunto + Alface + Tomate + molho chedda + Milho e batata palha",
+      "image": "/products/x-tudo-o-fim-da-dieta.jpeg",
+      "imageAlt": "X-TUDO (O FIM DA DIETA)",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_11",
+      "catId": "cat_2",
+      "name": "DUPLO CHEDDAR",
+      "price": "26.00",
+      "desc": "Pão brioche, dois blend de hambúrguer artesanal 120g , 2 fatia de queijo cheddar e molho cheddar.",
+      "image": "/products/duplo-cheddar.jpeg",
+      "imageAlt": "DUPLO CHEDDAR",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_12",
+      "catId": "cat_2",
+      "name": "Crocante",
+      "price": "20.00",
+      "desc": "carne artesanal, queijo cheddar, molho cheddar, maionese temperada e Doritos.",
+      "image": "/products/crocante.jpeg",
+      "imageAlt": "Crocante",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_13",
+      "catId": "cat_2",
+      "name": "ONION BACON",
+      "price": "26.90",
+      "desc": "Carne artesanal, bacon, cheddar, queijo e maionese temperada + anel de cebola",
+      "image": "/products/onion-bacon.png",
+      "imageAlt": "ONION BACON",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_14",
+      "catId": "cat_2",
+      "name": "Big salad",
+      "price": "26.00",
+      "desc": "2 carnes artesanal + salada + queijo cheddar + maionese temperada",
+      "image": "/products/big-salad.jpeg",
+      "imageAlt": "Big salad",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_15",
+      "catId": "cat_2",
+      "name": "Tropical bacon 🥓 🍍🐝",
+      "price": "28.90",
+      "desc": "Carne artesanal, bacon, queijo coalho, abacaxi , mel , maionese temperada e salada",
+      "image": "/products/tropical-bacon.jpeg",
+      "imageAlt": "Tropical bacon 🥓 🍍🐝",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_16",
+      "catId": "cat_2",
+      "name": "Burger MEXICANO",
+      "price": "25.00",
+      "desc": "Carne artesanal, queijo coalho, bacon e geleia de pimenta 🌶️",
+      "image": "/products/burger-mexicano.jpeg",
+      "imageAlt": "Burger MEXICANO",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_17",
+      "catId": "cat_2",
+      "name": "Duplo chedda bacon",
+      "price": "28.00",
+      "desc": "2 carnes artesanal, queijo chedda e bacon crocante",
+      "image": "/products/duplo-chedda-bacon.png",
+      "imageAlt": "Duplo chedda bacon",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_18",
+      "catId": "cat_2",
+      "name": "Triplo bacon 🥓",
+      "price": "34.99",
+      "desc": "3 carnes de 120g + queijo chedda + Bacon 🥓",
+      "image": "/products/triplo-bacon.png",
+      "imageAlt": "Triplo bacon 🥓",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_19",
+      "catId": "cat_2",
+      "name": "Broca doce🍫",
+      "price": "15.99",
+      "desc": "Pão artesanal + creme de avelan + bolinha preta e branca",
+      "image": "/products/broca-doce.jpeg",
+      "imageAlt": "Broca doce🍫",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_20",
+      "catId": "cat_2",
+      "name": "Big calabreso",
+      "price": "32.00",
+      "desc": "2 carnes artesanal de 120g cada + 2 ovos + calabresa + queijo chedda +maionese temperada + alface e tomate",
+      "image": "/products/big-calabreso.png",
+      "imageAlt": "Big calabreso",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_21",
+      "catId": "cat_2",
+      "name": "Crispy burger 🧅",
+      "price": "24.99",
+      "desc": "1 carne artesanal de 120g \nQueijo cheddar \nQueijo coalho \nMel \nCebola crispy",
+      "image": "/products/crispy-burger.jpeg",
+      "imageAlt": "Crispy burger 🧅",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_22",
+      "catId": "cat_2",
+      "name": "Hambúrguer de frango",
+      "price": "23.00",
+      "desc": "Hambúrguer de frango , duas fatias de queijo cheddar, salada e maionese temperada",
+      "image": "/products/hamburguer-de-frango.png",
+      "imageAlt": "Hambúrguer de frango",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_23",
+      "catId": "cat_3",
+      "name": "Batata P",
+      "price": "10.00",
+      "desc": "Porção de batata 150gramas",
+      "image": "/products/batata-p.jpeg",
+      "imageAlt": "Batata P",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_24",
+      "catId": "cat_3",
+      "name": "Batata G",
+      "price": "15.00",
+      "desc": "Batata frita 300 gramas",
+      "image": "/products/batata-g.jpeg",
+      "imageAlt": "Batata G",
+      "available": true,
+      "featured": true
+    },
+    {
+      "id": "prod_25",
+      "catId": "cat_3",
+      "name": "Batata com cheddar",
+      "price": "18.00",
+      "desc": "300g de batata + cheddar",
+      "image": "/products/batata-com-cheddar.jpeg",
+      "imageAlt": "Batata com cheddar",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_26",
+      "catId": "cat_3",
+      "name": "Batata com cheddar E calabresa",
+      "price": "20.00",
+      "desc": "300g de batata + cheddar + calabresa",
+      "image": "/products/batata-com-cheddar-e-calabresa.jpeg",
+      "imageAlt": "Batata com cheddar E calabresa",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_27",
+      "catId": "cat_3",
+      "name": "Batata com cheddar e Bacon",
+      "price": "20.00",
+      "desc": "300g de batata + cheddar + bacon",
+      "image": "/products/batata-com-cheddar-e-bacon.jpeg",
+      "imageAlt": "Batata com cheddar e Bacon",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_28",
+      "catId": "cat_3",
+      "name": "Batata tudão",
+      "price": "29.99",
+      "desc": "350g de batata + cheddar + bacon + calabresa",
+      "image": "/products/batata-tudao.jpeg",
+      "imageAlt": "Batata tudão",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_29",
+      "catId": "cat_3",
+      "name": "Anel de cebola com geleia de pimenta",
+      "price": "18.00",
+      "desc": "10 und de cebola com geleia de pimenta por cima 🌶️",
+      "image": "/products/anel-de-cebola-com-geleia-de-pimenta.jpeg",
+      "imageAlt": "Anel de cebola com geleia de pimenta",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_30",
+      "catId": "cat_3",
+      "name": "Anel de cebola",
+      "price": "16.00",
+      "desc": "10 und de anel de cebola",
+      "image": "/products/anel-de-cebola.jpeg",
+      "imageAlt": "Anel de cebola",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_31",
       "catId": "cat_4",
-      "name": "Coca-Cola Lata 350ml",
-      "price": 6,
-      "desc": "Lata trincando de gelada 350ml.",
-      "icon": "drink",
+      "name": "Coca  lata",
+      "price": "6.00",
+      "desc": "Coca lata 350ml",
+      "image": "/products/coca-lata.jpg",
+      "imageAlt": "Coca  lata",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_32",
+      "catId": "cat_4",
+      "name": "Coca cola 1L",
+      "price": "11.00",
+      "desc": "Coca de 1L",
+      "image": "/products/coca-cola-1l.jpeg",
+      "imageAlt": "Coca cola 1L",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_33",
+      "catId": "cat_4",
+      "name": "Guaraná 1L",
+      "price": "9.00",
+      "desc": "Guaraná de 1L",
+      "image": "/products/guarana-1l.jpeg",
+      "imageAlt": "Guaraná 1L",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_34",
+      "catId": "cat_4",
+      "name": "Fanta lata",
+      "price": "6.00",
+      "desc": "Fanta laranja 350ml",
+      "image": "/products/fanta-lata.jpeg",
+      "imageAlt": "Fanta lata",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_35",
+      "catId": "cat_4",
+      "name": "Coca zero 1,5L",
+      "price": "13.00",
+      "desc": "Coca cola zero 1,5L",
+      "image": "/products/coca-zero-1-5l.jpeg",
+      "imageAlt": "Coca zero 1,5L",
+      "available": false,
+      "featured": false
+    },
+    {
+      "id": "prod_36",
+      "catId": "cat_5",
+      "name": "Pastel de chocolate",
+      "price": "8.00",
+      "desc": "Pastel tamanho padrão com cobertura de chocolate",
+      "image": "/products/pastel-de-chocolate.png",
+      "imageAlt": "Pastel de chocolate",
+      "available": true,
+      "featured": false
+    },
+    {
+      "id": "prod_37",
+      "catId": "cat_5",
+      "name": "Pastel de doce de leite",
+      "price": "8.00",
+      "desc": "Pastel tamanho padrão com recheio de doce de leite",
+      "image": "/products/pastel-de-doce-de-leite.png",
+      "imageAlt": "Pastel de doce de leite",
       "available": true,
       "featured": false
     }

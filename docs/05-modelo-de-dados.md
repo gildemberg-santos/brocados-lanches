@@ -496,9 +496,10 @@ Nunca colocar PII em:
 - Preços e taxas vêm em reais no JSON e são convertidos para centavos em Go, sem ponto flutuante.
 - `make seed-reset` apaga apenas as quatro coleções semeadas; usuários, sessões, pedidos e auditoria não são tocados.
 - O comando recusa `APP_ENV=production`, o banco `brocados` e qualquer nome sem sufixo `_dev` ou `_test`.
-- Cada documento semeado recebe `seed: { fictitious: true, source: "design-system/seed.json" }`; `allergens`, `imageUrl` e `openingHours` continuam pendentes de validação.
+- Cada documento semeado recebe `seed: { fictitious: true, source: "design-system/seed.json" }`. O marcador identifica documento gerado pelo seed de desenvolvimento; não afirma que todos os campos sejam inventados. `allergens` e `openingHours` seguem pendentes de validação.
+- Produtos semeados recebem `imageUrl` apontando para `/products/<slug>.<ext>` e `imageAlt` com o nome do produto. Os arquivos originais de 800 px estão em `frontend/public/products/`; em produção devem ser convertidos para WebP/AVIF.
 - Seed de teste usa `brocados_test` e é limpo antes/depois.
-- O snapshot do site de referência **não** é importado automaticamente; conteúdo precisa de validação.
+- Categorias, produtos, preços, disponibilidade, descrições e imagens do seed foram copiados do catálogo público em 23/11/2026 apenas como referência de desenvolvimento. Dados de loja, zonas e pedidos permanecem fictícios; todo conteúdo precisa de validação do cliente antes de produção.
 - Alterações de schema exigem atualização deste documento e do contrato, se afetarem a API.
 
 ---

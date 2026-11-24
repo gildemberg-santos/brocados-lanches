@@ -110,6 +110,14 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 - **Consequência:** o reset apaga apenas `categories`, `products`, `delivery_zones` e `store_settings`; usuários, sessões, pedidos e auditoria não são tocados.
 - **Risco:** o seed sobrescreve campos do catálogo a cada execução. Use apenas em desenvolvimento e teste.
 
+### 4.5 Catálogo de referência no seed de desenvolvimento
+
+- **Problema:** os cinco produtos fictícios do protótipo não permitiam validar apresentação, busca, filtros e personalização com o catálogo real.
+- **Decisão:** em 23/11/2026, importar do catálogo público as 5 categorias, 37 produtos, preços, descrições, disponibilidade e as 37 imagens originais de 800 px. Nomes de arquivo seguem o slug do produto em `frontend/public/products/`; o seed passa a preencher `imageUrl` e `imageAlt`. A origem fica registrada em `_meta.catalogo_original` no JSON.
+- **Consequência:** o marcador `seed.fictitious: true` continua identificando documentos gerados pelo seed, mas agora convive com campos copiados do catálogo público. Dados de loja, zonas e pedidos seguem fictícios.
+- **Risco:** preços, disponibilidade e imagens são um retrato do catálogo na data da extração e exigem validação do cliente antes de produção. Imagens são mantidas no formato original para fidelidade visual; a conversão para WebP/AVIF deve acontecer no preparo para produção.
+- Para popular a home sem inventar produtos, `prod_1` (Combo 3 hambúrguer), `prod_5` (BURGER FRESCURINHA) e `prod_24` (Batata G) recebem `featured: true` apenas no seed. O catálogo de origem não informa popularidade; a seleção não deve ser interpretada como “mais pedidos” real.
+
 ---
 
 ## 5. Pendências que não bloqueiam o início

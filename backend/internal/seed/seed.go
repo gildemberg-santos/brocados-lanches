@@ -45,6 +45,8 @@ type Product struct {
 	Name       string      `json:"name"`
 	Price      json.Number `json:"price"`
 	Desc       string      `json:"desc"`
+	Image      string      `json:"image"`
+	ImageAlt   string      `json:"imageAlt"`
 	Available  bool        `json:"available"`
 	Featured   bool        `json:"featured"`
 }
@@ -90,6 +92,8 @@ type ProductDocument struct {
 	Description  string
 	PriceCents   int64
 	CategorySlug string
+	ImageURL     string
+	ImageAlt     string
 	Available    bool
 	Featured     bool
 	Active       bool
@@ -163,6 +167,7 @@ func (d Data) Validate() error {
 	}
 
 	productSlugs := make(map[string]string, len(d.Products))
+	productImages := make(map[string]string, len(d.Products))
 	for index, product := range d.Products {
 		position := fmt.Sprintf("products[%d]", index)
 		if strings.TrimSpace(product.Name) == "" {
@@ -182,6 +187,19 @@ func (d Data) Validate() error {
 		}
 		if _, err := CentsFromReais(product.Price.String()); err != nil {
 			problems = append(problems, fmt.Errorf("%s: invalid price: %w", position, err))
+		}
+		if product.Image != "" {
+			if !strings.HasPrefix(product.Image, "/products/") || strings.Contains(product.Image, "..") {
+				problems = append(problems, fmt.Errorf("%s: image must be a local path under /products/", position))
+			}
+			if strings.TrimSpace(product.ImageAlt) == "" {
+				problems = append(problems, fmt.Errorf("%s: imageAlt is required when image is set", position))
+			}
+			if previous, ok := productImages[product.Image]; ok {
+				problems = append(problems, fmt.Errorf("%s: image %q duplicates %q", position, product.Image, previous))
+			} else {
+				productImages[product.Image] = product.Name
+			}
 		}
 	}
 
@@ -247,6 +265,8 @@ func Build(data Data) (Plan, error) {
 			Description:  product.Desc,
 			PriceCents:   priceCents,
 			CategorySlug: categorySlugByID[product.CategoryID],
+			ImageURL:     product.Image,
+			ImageAlt:     product.ImageAlt,
 			Available:    product.Available,
 			Featured:     product.Featured,
 			Active:       true,

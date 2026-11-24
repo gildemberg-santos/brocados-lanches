@@ -54,25 +54,30 @@ func TestApplyIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Apply() error = %v", err)
 	}
-	if result.StoreSettings != 1 || result.Categories != 4 || result.Products != 5 || result.DeliveryZones != 3 {
+	if result.StoreSettings != 1 || result.Categories != 5 || result.Products != 37 || result.DeliveryZones != 3 {
 		t.Fatalf("Apply() result = %+v", result)
 	}
 
 	assertDocumentCounts(t, ctx, database)
 
 	var product struct {
-		PriceCents int64 `bson:"priceCents"`
+		PriceCents int64  `bson:"priceCents"`
+		ImageURL   string `bson:"imageUrl"`
+		ImageAlt   string `bson:"imageAlt"`
 		Seed       struct {
 			Fictitious bool `bson:"fictitious"`
 		} `bson:"seed"`
 	}
 	if err := database.Collection(CollectionProducts).
-		FindOne(ctx, bson.D{{Key: "slug", Value: "brocados-burguer-cheddar"}}).
+		FindOne(ctx, bson.D{{Key: "slug", Value: "combo-3-hamburguer"}}).
 		Decode(&product); err != nil {
 		t.Fatalf("FindOne() error = %v", err)
 	}
-	if product.PriceCents != 2300 {
-		t.Fatalf("product priceCents = %d, want 2300", product.PriceCents)
+	if product.PriceCents != 4999 {
+		t.Fatalf("product priceCents = %d, want 4999", product.PriceCents)
+	}
+	if product.ImageURL != "/products/combo-3-hamburguer.png" || product.ImageAlt != "Combo 3 hambúrguer" {
+		t.Fatalf("product image = %q / %q", product.ImageURL, product.ImageAlt)
 	}
 	if !product.Seed.Fictitious {
 		t.Fatal("product is not marked as fictitious")
@@ -83,7 +88,7 @@ func TestApplyIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("second Apply() error = %v", err)
 	}
-	if second.StoreSettings != 1 || second.Categories != 4 || second.Products != 5 || second.DeliveryZones != 3 {
+	if second.StoreSettings != 1 || second.Categories != 5 || second.Products != 37 || second.DeliveryZones != 3 {
 		t.Fatalf("second Apply() result = %+v", second)
 	}
 	assertDocumentCounts(t, ctx, database)
@@ -98,8 +103,8 @@ func assertDocumentCounts(t *testing.T, ctx context.Context, database *mongo.Dat
 
 	expected := map[string]int64{
 		CollectionStoreSettings: 1,
-		CollectionCategories:    4,
-		CollectionProducts:      5,
+		CollectionCategories:    5,
+		CollectionProducts:      37,
 		CollectionDeliveryZones: 3,
 	}
 	for collection, want := range expected {

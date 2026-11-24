@@ -246,7 +246,7 @@ make dev-web
 
 ### Dados de desenvolvimento
 
-Os dados de `design-system/seed.json` são **fictícios** e servem apenas para desenvolvimento e teste.
+Os dados de `design-system/seed.json` servem apenas para desenvolvimento e teste. As 5 categorias, os 37 produtos, preços, disponibilidade, descrições e imagens foram copiados do catálogo público em `https://cardpiobrocadoslanchess.ola.click/products` em 23/11/2026. Dados de loja, zonas de entrega e pedidos continuam fictícios. Nada do seed foi validado pelo cliente para produção.
 
 ```bash
 make seed         # aplica em brocados_dev
@@ -254,8 +254,10 @@ make seed-reset   # esvazia categorias, produtos, zonas e loja, e reaplica
 make seed-check   # valida o JSON sem conectar no MongoDB
 ```
 
-- Reais são convertidos para centavos em Go, sem ponto flutuante (`23` → `2300`).
-- Cada documento recebe `seed.fictitious: true` e `seed.source: "design-system/seed.json"`.
+- Reais são convertidos para centavos em Go, sem ponto flutuante (`49.99` → `4999`).
+- As imagens originais (800 px, PNG/JPEG) ficam em `frontend/public/products/`, com nomes derivados do slug do produto; devem ser convertidas para WebP/AVIF antes de uso em produção.
+- Cada documento recebe `seed.fictitious: true` e `seed.source: "design-system/seed.json"`. O marcador identifica documento criado pelo seed de desenvolvimento; não afirma que todos os campos sejam inventados.
+- Para popular a home, três produtos disponíveis do catálogo são marcados como `featured`: Combo 3 hambúrguer, BURGER FRESCURINHA e Batata G. A escolha é apenas uma amostra de desenvolvimento, não um ranking real de pedidos.
 - O comando recusa `APP_ENV=production`, o banco `brocados` e nomes sem sufixo `_dev` ou `_test`.
 - O reset não toca em usuários, sessões, pedidos nem auditoria.
 - Nenhum usuário admin é criado pelo seed.

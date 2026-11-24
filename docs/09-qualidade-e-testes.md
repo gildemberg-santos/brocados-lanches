@@ -47,7 +47,7 @@
 
 Regras:
 
-- Seed de desenvolvimento é fictício e marcado como tal.
+- Seed de desenvolvimento é marcado como tal; categorias, produtos e imagens vêm do catálogo público de referência, enquanto loja, zonas e pedidos são fictícios.
 - Teste de integração usa Mongo real e descartável; o teste atual pula se `MONGO_TEST_URI` não estiver definido.
 - Não usar telefone, endereço ou nome reais em fixture.
 - Relógio é injetável (`platform/clock`) para testar horário da loja.
