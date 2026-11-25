@@ -2,7 +2,8 @@
 
 **Versão:** 1.2  
 **Atualizado em:** 25/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 planejado a partir da auditoria de conformidade visual.  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120 e US-121 concluídas a partir da auditoria de conformidade visual.
+
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`, `14-auditoria-design-system.md`.
 
 ---
@@ -442,8 +443,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 - [x] AUD-01: título dinâmico em `frontend/src/views/OrderView.vue` com microcopy do `07` §9.
 - [x] AUD-02: componente/timeline pública e bloco de contato em `OrderView.vue`, reaproveitando `GET /store`.
-- [ ] AUD-03: ação de kill switch no dashboard via `PATCH /admin/store`, com confirmação e auditoria.
-- [ ] AUD-03: agregações de status, disponíveis/total, prazo e pedidos recentes no dashboard.
+- [x] AUD-03: ação de kill switch no dashboard via `PATCH /admin/store`, com confirmação e auditoria.
+- [x] AUD-03: agregações de status, disponíveis/total, prazo e pedidos recentes no dashboard.
 - [x] AUD-04: substituir `--bg-base` por `--bg-input` no checkout.
 - [x] AUD-14: detectar token `var(--…)` inexistente no validador de design system e testar a falha.
 - [ ] AUD-07: numerar a revisão final como etapa no checkout e mover o envio para dentro dela.
@@ -456,7 +457,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Ordem sugerida:** US-123 → US-120 → US-121 → US-122 → US-124 → US-125 → US-126. Nenhuma história entra em andamento sem teste automatizado previsto na Definition of Done da seção 1.5.
 
-**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`. US-120 concluída — título por estado, aviso de registro, `OrderStatusTimeline` com teste dedicado, contato da loja e mensagem genérica para `NOT_FOUND`; `OrderView.test.ts` cobre sucesso, recarga, finalização, carregamento, erro e 404. As demais histórias do épico estão `Planejado`.
+**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`. US-120 concluída — título por estado, aviso de registro, `OrderStatusTimeline` com teste dedicado, contato da loja e mensagem genérica para `NOT_FOUND`; `OrderView.test.ts` cobre sucesso, recarga, finalização, carregamento, erro e 404. US-121 concluída — kill switch com confirmação, indicadores vindos da API, contagem por status e pedidos recentes sem PII; `AdminDashboardView.test.ts` cobre sucesso, alternância, status fechado, falha de fontes e contadores zerados, com prints em 375/1280 px. As demais histórias do épico estão `Planejado`.
 
 ---
 

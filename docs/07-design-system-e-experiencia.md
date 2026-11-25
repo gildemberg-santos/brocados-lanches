@@ -321,6 +321,8 @@ Regras:
 - Pedidos recentes.
 - Ações rápidas.
 
+Implementado em `frontend/src/views/admin/AdminDashboardView.vue` (US-121). O interruptor manual usa `PATCH /admin/store` com confirmação e auditoria; os indicadores vêm das APIs administrativas e o status efetivo continua calculado no servidor. Contagens indisponíveis aparecem como `—`, e a lista recente mostra apenas número, status e data.
+
 ### 6.3 Produtos — `/admin/produtos`
 
 - Lista com busca, categoria, status.
