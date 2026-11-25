@@ -74,10 +74,10 @@ const publicRoutes: RouteRecordRaw[] = [
     path: '/creditos',
     name: 'credits',
     component: () => import('../views/CreditsView.vue'),
-    // Página institucional simples e ainda pendente de confirmação (P-020).
+    // Página institucional com créditos de desenvolvimento; mídia da loja segue pendente (P-020).
     meta: {
       title: 'Créditos',
-      description: 'Créditos e informações institucionais da Brocados Lanches.',
+      description: 'Créditos de desenvolvimento e informações institucionais da Brocados Lanches.',
       noindex: true,
     },
   },

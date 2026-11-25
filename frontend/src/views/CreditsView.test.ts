@@ -12,6 +12,7 @@ async function mountCredits() {
     history: createMemoryHistory(),
     routes: [
       { path: '/', component: StubView },
+      { path: '/cardapio', component: StubView },
       { path: '/contato', component: StubView },
     ],
   })
@@ -22,22 +23,49 @@ async function mountCredits() {
 }
 
 describe('CreditsView', () => {
-  it('flags the pending confirmation instead of claiming authorship', async () => {
-    const wrapper = await mountCredits()
-
-    expect(wrapper.get('h1').text()).toBe('Créditos')
-    expect(wrapper.get('[role="note"]').text()).toContain('Página institucional em avaliação')
-    expect(wrapper.text()).toContain('Nenhum crédito é afirmado antes dessa confirmação')
-  })
-
-  it('links to the published contact page without inventing details', async () => {
+  it('credits the author using the supplied curriculum', async () => {
     const wrapper = await mountCredits()
     const text = wrapper.text()
 
-    expect(wrapper.find('a[href="/contato"]').exists()).toBe(true)
-    expect(text).toContain('noindex')
+    expect(wrapper.get('h1').text()).toBe('Créditos')
+    expect(wrapper.get('[role="note"]').text()).toContain('Página institucional em avaliação')
+    expect(wrapper.get('[role="note"]').text()).toContain('currículo fornecido pelo autor')
+    expect(text).toContain('Gildemberg Santos')
+    expect(text).toContain('Desenvolvedor de software com mais de uma década de experiência')
+    expect(text).toContain('Leadster')
+    expect(text).toContain('Aquiraz')
+    expect(text).not.toContain('Nenhum crédito é afirmado antes dessa confirmação')
+  })
+
+  it('keeps only public professional links and avoids personal contact data', async () => {
+    const wrapper = await mountCredits()
+    const text = wrapper.text()
+
+    const linkedin = wrapper.get('a[href="https://linkedin.com/in/gildembergsantos"]')
+    const github = wrapper.get('a[href="https://github.com/gildemberg-santos"]')
+
+    for (const link of [linkedin, github]) {
+      expect(link.attributes('target')).toBe('_blank')
+      expect(link.attributes('rel')).toBe('noopener noreferrer')
+    }
+    expect(text).not.toContain('99136-5507')
     expect(text).not.toContain('CNPJ')
     expect(text).not.toContain('+55')
     expect(text).not.toContain('@')
+  })
+
+  it('describes the real implementation and keeps store media pending', async () => {
+    const wrapper = await mountCredits()
+    const text = wrapper.text()
+
+    expect(text).toContain('Go + Chi')
+    expect(text).toContain('Vue 3 + Vite + TypeScript')
+    expect(text).toContain('MongoDB')
+    expect(text).toContain('Bacharelado em Ciência da Computação')
+    expect(text).toContain('imagens usadas no desenvolvimento são ilustrativas')
+    expect(text).toContain('noindex')
+    expect(wrapper.find('a[href="/contato"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/cardapio"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/"]').exists()).toBe(true)
   })
 })

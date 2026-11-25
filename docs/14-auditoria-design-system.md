@@ -57,7 +57,7 @@ Nenhum desses achados bloqueia segurança ou persistência do pedido; por isso v
 | Pedido `/pedido/:publicId` | Fora do planejado | `07` §5.6/§5.7 | Título fixo “Pedido registrado” mesmo em erro; sem timeline, contato da loja e aviso de registro fora do handoff |
 | Contato `/contato` | Conforme | `07` §5.8 | Dados vêm de `GET /store` |
 | Privacidade / Termos | Parcial | `07` §5.8 e §9 | Sem data de publicação; canal do titular da privacidade ainda pendente |
-| Créditos `/creditos` | Conforme | `07` §12 e protótipo Tela 05 | Página institucional mantida com `noindex` |
+| Créditos `/creditos` | Conforme | `07` §12 e protótipo Tela 05 | Página institucional mantida com `noindex`; créditos de desenvolvimento preenchidos em 25/11/2026 a partir do currículo do autor (D-032), com links profissionais públicos e sem contato pessoal |
 
 ### 4.2 Telas administrativas
 
@@ -131,6 +131,8 @@ AUD-06, AUD-08 e AUD-09 foram corrigidos junto com a US-125. O painel passou a u
 **Evidência adicional da política de privacidade:** verificação em navegador headless em 375 px e 1280 px após a publicação do build no container web: 8 seções, link para `/contato` presente, fonte mínima de 14 px, `scrollWidth === clientWidth` nos dois tamanhos e nenhum erro de console. Prints em `/tmp/opencode/privacidade-375.png` e `/tmp/opencode/privacidade-1280.png` (fora do repositório).
 
 **Evidência adicional dos termos de uso:** verificação em navegador headless em 375 px e 1280 px após a publicação do build no container web: 10 seções, links para `/contato` e `/privacidade` presentes, fonte mínima de 14 px, `scrollWidth === clientWidth` nos dois tamanhos e nenhum erro de console. Prints em `/tmp/opencode/termos-375.png` e `/tmp/opencode/termos-1280.png` (fora do repositório).
+
+**Evidência adicional dos créditos:** verificação em navegador headless em 375 px e 1280 px após a publicação do build no container web: autor “Gildemberg Santos”, 5 seções, links externos com `rel="noopener noreferrer"`, altura mínima de 44 px nos links, `scrollWidth === clientWidth` nos dois tamanhos e nenhum erro de console. Prints em `/tmp/opencode/creditos-375.png` e `/tmp/opencode/creditos-1280.png` (fora do repositório).
 
 **Evidência da US-126:** verificação em navegador headless nos viewports de 375 px e 1280 px após login administrativo. Em 375 px o drawer fica visível com 10 links, o botão “Menu” e o drawer visíveis, a sidebar oculta, o foco no botão “Fechar”, altura mínima de 44 px nos alvos e `scrollWidth === clientWidth` (375). Em 1280 px a sidebar permanece visível e o menu/drawer ficam ocultos, sem scroll horizontal (1280). Prints em `/tmp/opencode/admin-drawer-us126-375.png` e `/tmp/opencode/admin-drawer-us126-1280.png` (fora do repositório). O `401` no console é a consulta preventiva do guard de autenticação antes do login.
 

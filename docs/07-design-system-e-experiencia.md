@@ -518,7 +518,7 @@ Regras:
 | Sem estados de erro | Implementar todos |
 | Sem acompanhamento | Criar tela pública |
 | Sem auditoria | Criar no admin |
-| Créditos | Manter como página institucional, se aprovado |
+| Créditos | Mantida como página institucional e preenchida em 25/11/2026 com créditos de desenvolvimento a partir do currículo do autor (D-032); mídia da loja segue pendente |
 
 ---
 
@@ -547,7 +547,7 @@ Regras:
 1. Aprovar tokens de espaçamento, raio, sombra, movimento e z-index. Em 25/11/2026 foi decidido manter os valores atuais; padronizar exige aprovação e atualização conjunta de `tokens.css` e `tokens.json`.
 2. Definir warning/info ou manter apenas aberto/erro. Mantido apenas aberto/erro; “Loja fechada” usa cor neutra desde a US-125.
 3. Uso de emoji na interface decidido em 25/11/2026: não usar como ícone. Os emojis dos nomes de categoria do seed foram removidos na US-126.
-4. Definir se a página de créditos permanece na V1.
+4. Página de créditos mantida na V1 e preenchida em 25/11/2026 com os dados profissionais do autor (D-032); logotipo, fotos e textos da loja seguem pendentes de validação.
 5. Definir fotos, logo e direitos de uso.
 6. Navegação mobile do painel decidida em 25/11/2026: drawer completo, com todos os itens permitidos pelo papel, aberto pelo botão “Menu” no header e fechável por Escape, pelo botão “Fechar” ou pelo fundo. Implementado na US-126.
 7. Definir se o carrinho desktop é sidebar fixa ou drawer. A barra fixa no mobile foi entregue na US-125; a versão desktop segue em aberto.

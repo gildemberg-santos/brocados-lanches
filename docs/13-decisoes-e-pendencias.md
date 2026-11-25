@@ -53,6 +53,7 @@
 | D-029 | 25/11/2026 | A navegação mobile do painel usa drawer completo com todos os itens permitidos pelo papel, aberto pelo botão “Menu”, com foco movido para o botão “Fechar”, fechamento por Escape/fundo e trapped focus; a sidebar desktop permanece | Decidido e implementado | Aprovação de design substitui o bottom nav de quatro atalhos; nenhum item administrativo fica inacessível no mobile | `07-design-system-e-experiencia.md` §4.3 e §14, `frontend/src/components/admin/AdminShell.vue` |
 | D-030 | 25/11/2026 | Emojis não são usados como ícone nem em nomes de categoria do seed de desenvolvimento; os presentes no protótipo foram removidos e um teste impede o retorno | Decidido e implementado | Dados fictícios não reforçam um padrão visual não aprovado; slugs das categorias permanecem inalterados | `design-system/seed.json`, `backend/internal/seed/seed_test.go`, `07-design-system-e-experiencia.md` §14 |
 | D-031 | 25/11/2026 | Tokens de espaçamento, raio, sombra, movimento e z-index permanecem com os valores atuais; textos legais seguem como rascunho datado até `E0` aprovar publicação e canal do titular | Decidido | Evita mudança de padrão visual sem aprovação e não inventa conteúdo jurídico; `tokens.css`/`tokens.json` seguem consistentes | `07-design-system-e-experiencia.md` §5.8 e §14, `frontend/src/views/PrivacyView.vue`, `frontend/src/views/TermsView.vue` |
+| D-032 | 25/11/2026 | A página de créditos permanece na V1 e usa os dados profissionais do currículo fornecido pelo autor; telefone e e-mail pessoais não são publicados, e a página continua com `noindex` enquanto mídia/textos da loja não são validados | Decidido e implementado | Atende ao pedido do autor sem expor contato pessoal nem afirmar direitos sobre imagens ainda pendentes | `07-design-system-e-experiencia.md` §12 e §14, `frontend/src/views/CreditsView.vue`, `frontend/src/router/index.ts` |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -83,7 +84,7 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 | P-017 | WhatsApp link ou API oficial | Handoff | Não para V1; decidir antes do lançamento | Cliente/engenharia | Pendente |
 | P-018 | MFA antes ou depois do lançamento | Segurança | Não; risco a aceitar | Cliente/engenharia | Pendente |
 | P-019 | Analytics e consentimento | Medição | Não | Cliente/engenharia | Pendente |
-| P-020 | Página de créditos permanece? | Conteúdo | Não | Cliente | Pendente |
+| P-020 | Página de créditos permanece? | Conteúdo | Não | Cliente | Resolvida em 25/11/2026 (D-032): mantida com créditos de desenvolvimento a partir do currículo do autor; mídia da loja segue pendente |
 
 ---
 
@@ -128,7 +129,6 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 
 ## 5. Pendências que não bloqueiam o início
 
-- Página de créditos.
 - Sitemap/robots.
 - Atualização em tempo real da fila.
 - MFA.
@@ -188,3 +188,4 @@ Origem: `14-auditoria-design-system.md` e §14 de `07-design-system-e-experienci
 | 25/11/2026 | Épico 12 concluído com D-029/D-030/D-031: drawer completo no painel mobile, emojis removidos do seed, tokens mantidos e textos legais mantidos como rascunho até `E0` |
 | 25/11/2026 | Política de privacidade detalhada com base em `menuaqui.com.br/privacidade`, ajustada ao tratamento real da Brocados; controlador completo, canal do titular e publicação definitiva seguem pendentes de `E0` |
 | 25/11/2026 | Termos de uso detalhados com base em `menuaqui.com.br/termos`, ajustados a pedido gravado no servidor, valores calculados pela loja, pagamento na entrega/retirada e acesso restrito ao painel; versão vigente segue pendente de `E0` |
+| 25/11/2026 | Página de créditos mantida e preenchida com D-032: nome, trajetória e links profissionais do autor a partir do currículo fornecido; contato pessoal omitido e mídia da loja ainda pendente |
