@@ -23,7 +23,10 @@ import { RouterLink } from 'vue-router'
       </p>
       <p class="credit-hero__meta">Aquiraz, CE</p>
       <nav class="credit-links" aria-label="Links profissionais">
-        <a href="https://linkedin.com/in/gildembergsantos" target="_blank" rel="noopener noreferrer"
+        <a
+          href="https://www.linkedin.com/in/gildemberg-santos/"
+          target="_blank"
+          rel="noopener noreferrer"
           >LinkedIn</a
         >
         <a href="https://github.com/gildemberg-santos" target="_blank" rel="noopener noreferrer"

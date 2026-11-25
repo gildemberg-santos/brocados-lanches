@@ -42,7 +42,9 @@ describe('CreditsView', () => {
     const text = wrapper.text()
 
     const professionalLinks = wrapper.get('nav[aria-label="Links profissionais"]')
-    const linkedin = professionalLinks.get('a[href="https://linkedin.com/in/gildembergsantos"]')
+    const linkedin = professionalLinks.get(
+      'a[href="https://www.linkedin.com/in/gildemberg-santos/"]',
+    )
     const github = professionalLinks.get('a[href="https://github.com/gildemberg-santos"]')
 
     expect(professionalLinks.findAll('a')).toHaveLength(2)
