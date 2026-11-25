@@ -100,7 +100,9 @@ Severidade: **Alta** = corrige comportamento fora do planejado ou informação e
 
 AUD-01 e AUD-02 foram corrigidos junto com a US-120. A tela de pedido passou a variar o título por estado (carregando, erro, registrado, acompanhamento, finalizado e cancelado), exibir timeline pública derivada do status sem inventar etapas, bloco de contato a partir de `GET /store` e aviso de registro mesmo sem link do WhatsApp. O erro `NOT_FOUND` ganhou mensagem genérica em `checkoutApiMessage`.
 
-AUD-03 foi corrigido junto com a US-121. O dashboard passou a acionar o interruptor manual com confirmação (`PATCH /admin/store`, já auditado pelo servidor), mostrar o status efetivo calculado pelo backend, contar pedidos por status, exibir produtos disponíveis/total, zonas ativas, prazo de entrega e os cinco pedidos recentes com link para o detalhe. A lista não expõe PII. As demais histórias seguem em aberto.
+AUD-03 foi corrigido junto com a US-121. O dashboard passou a acionar o interruptor manual com confirmação (`PATCH /admin/store`, já auditado pelo servidor), mostrar o status efetivo calculado pelo backend, contar pedidos por status, exibir produtos disponíveis/total, zonas ativas, prazo de entrega e os cinco pedidos recentes com link para o detalhe. A lista não expõe PII.
+
+AUD-07 foi corrigido junto com a US-122. O checkout passou a ter “Revisão e envio” como etapa final, com total cotado e botão de envio dentro dela, mantendo a etapa de endereço oculta na retirada. As demais histórias seguem em aberto.
 
 ### 5.1 Detalhamento dos achados de severidade Alta
 
@@ -112,11 +114,15 @@ AUD-03 foi corrigido junto com a US-121. O dashboard passou a acionar o interrup
 
 **AUD-04 — token inexistente (corrigido).** O valor resolvido de `--bg-base` era vazio no navegador; o input do checkout herdava `background-color: rgba(0, 0, 0, 0)`. O validador conferia cores literais e a consistência entre `tokens.css`/`tokens.json`, mas não conferia a existência de `var(--…)`. A correção trocou o token por `--bg-input` e reforçou o validador (AUD-14).
 
+**AUD-07 — checkout (corrigido).** A implementação tinha quatro etapas (três na retirada) e deixava o botão de envio fora de uma etapa numerada. A correção tornou “Revisão e envio” a etapa final, com o total cotado pelo servidor e o botão dentro da seção; na retirada a etapa de endereço continua oculta e a numeração é ajustada.
+
+**Evidência da US-122:** verificação em navegador headless com produto no carrinho e zona selecionada, nos viewports de 375 px e 1280 px. Título “5. Revisão e envio”, total cotado exibido, botão dentro da seção e `scrollWidth === clientWidth` nas duas larguras. Prints em `/tmp/opencode/checkout-us122-375.png` e `/tmp/opencode/checkout-us122-1280.png` (fora do repositório). O `422` no console é a primeira cotação, feita antes de escolher a zona.
+
 ---
 
 ## 6. Diferenças entre protótipo e documento que **não** são desvios
 
-- **Checkout:** o protótipo tem 3 etapas numeradas e botão “Finalizar no WhatsApp”; o `07` §5.5 define 5 etapas, incluindo dados do cliente e revisão. A implementação tem 4 etapas (3 na retirada) e resumo lateral — atende ao protótipo e fica aquém do documento. Por isso AUD-07 é classificado como Média, e não como regressão do protótipo.
+- **Checkout:** o protótipo tem 3 etapas numeradas e botão “Finalizar no WhatsApp”; o `07` §5.5 define 5 etapas (4 na retirada), incluindo dados do cliente e revisão. A implementação segue o documento e mantém resumo lateral; a diferença em relação ao protótipo é de fidelidade, não desvio do padrão aprovado. AUD-07 era classificado como Média por ser uma lacuna em relação ao documento, não uma regressão do protótipo.
 - **Conta:** o Admin 05 do protótipo reúne dados da loja; na produção isso foi separado em `/admin/loja`, enquanto `/admin/conta` mostra usuário/papel da sessão, conforme `07` §6.11.
 - **Telas adicionais:** confirmação/acompanhamento, contato, privacidade, termos, adicionais, gestão de loja, fila de pedidos, usuários e auditoria são expansões previstas no `07`, ausentes do protótipo por ser ele apenas uma maquete sem backend.
 - **Datas UTC nos filtros do admin:** o `07` §6.8 define UTC para filtros e `America/Fortaleza` para exibição; os rótulos “De (UTC)” são fiéis ao documento. A eventual troca por máscara local é decisão de microcopy, registrada como pendência, não como defeito.

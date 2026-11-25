@@ -151,9 +151,31 @@ describe('CheckoutView', () => {
 
   it('shows a quote error with retry', async () => {
     const { wrapper } = await mountCheckout({ seed: true, quoteError: true })
+    const review = wrapper.get('section[aria-labelledby="review-title"]')
 
     expect(wrapper.text()).toContain('Não foi possível')
     expect(wrapper.text()).toContain('Tentar novamente')
+    expect(review.text()).toContain('Aguardando cotação')
+    expect(review.get('button[type="submit"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('mantém a revisão e o envio como última etapa com o total cotado', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    const review = wrapper.get('section[aria-labelledby="review-title"]')
+
+    expect(wrapper.get('#review-title').text()).toContain('5. Revisão e envio')
+    expect(review.get('[data-testid="review-total"]').text()).toContain('31,00')
+    expect(review.text()).toContain('Enviar pedido')
+    expect(review.find('button[type="submit"]').exists()).toBe(true)
+
+    await wrapper.get('input[name="fulfillment"][value="pickup"]').setValue(true)
+    await flushPromises()
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    expect(wrapper.get('#review-title').text()).toContain('4. Revisão e envio')
+    expect(wrapper.find('section[aria-labelledby="address-title"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="review-total"]').text()).toContain('31,00')
   })
 
   it('validates the form before submitting', async () => {

@@ -400,15 +400,34 @@ onUnmounted(() => {
           </label>
         </section>
 
-        <ErrorState v-if="quoteError" :message="quoteError" @retry="requestQuote" />
-        <ErrorState v-if="submitError" :message="submitError" />
+        <section class="checkout-section" aria-labelledby="review-title">
+          <h2 id="review-title">
+            {{ form.fulfillment === 'delivery' ? '5' : '4' }}. Revisão e envio
+          </h2>
+          <p class="review-note">
+            Confira o resumo ao lado. O total abaixo foi calculado no servidor e será recalculado ao
+            gravar o pedido.
+          </p>
+          <dl class="review-total" data-testid="review-total">
+            <div>
+              <dt>Total cotado</dt>
+              <dd v-if="quote"><PriceText :value-cents="quote.totalCents" /></dd>
+              <dd v-else>Aguardando cotação</dd>
+            </div>
+          </dl>
 
-        <div class="checkout-actions">
-          <BaseButton type="submit" :loading="submitting" :disabled="!canSubmit">
-            {{ submitting ? 'Enviando pedido…' : 'Enviar pedido' }}
-          </BaseButton>
-          <p v-if="!quote && !quoteError" class="checkout-hint">Calculando o total no servidor…</p>
-        </div>
+          <ErrorState v-if="quoteError" :message="quoteError" @retry="requestQuote" />
+          <ErrorState v-if="submitError" :message="submitError" />
+
+          <div class="checkout-actions">
+            <BaseButton type="submit" :loading="submitting" :disabled="!canSubmit">
+              {{ submitting ? 'Enviando pedido…' : 'Enviar pedido' }}
+            </BaseButton>
+            <p v-if="!quote && !quoteError" class="checkout-hint">
+              Calculando o total no servidor…
+            </p>
+          </div>
+        </section>
       </form>
 
       <aside class="checkout-summary" aria-labelledby="checkout-summary-title">
@@ -560,12 +579,41 @@ onUnmounted(() => {
 }
 
 .payment-note,
+.review-note,
 .summary-note,
 .checkout-hint {
   margin: 0;
   color: var(--text-sub);
   font-size: var(--font-size-caption);
   line-height: 1.5;
+}
+
+.review-total {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+}
+
+.review-total div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.review-total dt {
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.review-total dd {
+  margin: 0;
+  font-size: var(--font-size-h2);
+  font-weight: 800;
 }
 
 .checkout-actions {

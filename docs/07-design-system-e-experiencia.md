@@ -273,6 +273,8 @@ Regras:
 - Se o pedido for criado (`201`), limpar carrinho e ir para confirmação; no replay idempotente (`200`), o mesmo destino é usado.
 - Se falhar, preservar carrinho e dados; a chave idempotente é mantida em retries do mesmo pedido e renovada somente quando o conteúdo da requisição muda.
 
+Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seção é “Revisão e envio”, com o total cotado pelo servidor e o botão de envio dentro dela; na retirada a etapa de endereço é oculta e a numeração é ajustada.
+
 ### 5.6 Confirmação — `/pedido/:publicId`
 
 **Objetivo:** confirmar e orientar o próximo passo.
