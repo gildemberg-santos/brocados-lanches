@@ -423,9 +423,10 @@ Meta: WCAG 2.1 AA.
 
 Checklist:
 
-- [ ] Todo input tem rótulo visível ou `aria-label`.
-- [ ] Erro de campo associado com `aria-describedby`.
-- [ ] Foco visível em todos os controles.
+- [x] Todo input tem rótulo visível ou `aria-label`.
+- [x] Erro de campo associado com `aria-describedby` e `aria-invalid="true"` no controle.
+- [x] Foco visível em todos os controles; o link “Pular para o conteúdo” é a primeira parada do Tab e leva ao único destino `#conteudo`, com `tabindex="-1"`.
+- [x] Um único `<main>` por página. No shell administrativo, o destino do skip-link é o contêiner do conteúdo, e as views não repetem o `id="conteudo"`.
 - [ ] Navegação por teclado em modais, drawers e menus.
 - [ ] Foco preso em modal/drawer; ESC fecha.
 - [ ] Alvo de toque ≥ 44 px.

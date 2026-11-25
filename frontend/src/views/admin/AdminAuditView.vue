@@ -29,7 +29,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="admin-page">
+  <main class="admin-page">
     <p class="admin-page__kicker">Painel administrativo</p>
     <h1>Auditoria</h1>
     <p class="admin-page__lead">

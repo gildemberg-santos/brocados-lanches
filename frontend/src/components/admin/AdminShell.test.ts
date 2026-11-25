@@ -76,6 +76,16 @@ describe('AdminShell', () => {
     expect(wrapper.get('nav[aria-label="Navegação do painel"]').text()).toContain('Auditoria')
   })
 
+  it('oferece um destino único e focável para o skip-link', async () => {
+    const { wrapper } = await mountShell('owner')
+    const target = wrapper.get('#conteudo')
+
+    expect(target.element.tagName).toBe('DIV')
+    expect(target.attributes('tabindex')).toBe('-1')
+    expect(wrapper.findAll('#conteudo')).toHaveLength(1)
+    expect(wrapper.findAll('main')).toHaveLength(0)
+  })
+
   it('encerra a sessão e volta para o login', async () => {
     const { wrapper, router, auth } = await mountShell('owner')
     const logout = vi.spyOn(auth, 'logout').mockResolvedValue()

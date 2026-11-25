@@ -5,7 +5,7 @@ import EmptyState from '../components/EmptyState.vue'
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell not-found-page">
+  <main id="conteudo" tabindex="-1" class="page-shell not-found-page">
     <EmptyState
       title="Página não encontrada"
       description="O endereço acessado não existe ou foi movido. Escolha uma das opções abaixo."

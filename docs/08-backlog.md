@@ -435,7 +435,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-121 | Dashboard operacional completo | P1 | M | US-065, US-070 | Kill switch acionável com auditoria; pedidos por status; produtos disponíveis/total; prazo de entrega; pedidos recentes com link para o detalhe; sem PII; testes e evidência em 375/1280 px |
 | US-122 | Checkout conforme o §5.5 | P1 | P | US-033, US-034 | Nenhum `var(--…)` inexistente; etapa “Revisão e envio” explícita com total cotado e botão de envio; retirada continua com etapa de endereço oculta; testes atualizados |
 | US-123 | Gate de tokens inexistente | P1 | P | US-010 | `scripts/check_design_system.py` falha quando o frontend usa `var(--token)` não declarado; teste unitário cobre token válido e inválido; `make design-check` continua passando |
-| US-124 | Acessibilidade dos formulários admin e do shell | P1 | M | US-061, US-062, US-065, US-066 | Erros associados por `aria-describedby`/`aria-invalid`; landmark `<main>` único; skip-link funcional; foco visível e alvos de 44 px preservados; testes de DOM |
+| US-124 | Acessibilidade dos formulários admin e do shell | P1 | M | US-061, US-062, US-065, US-066 | Concluída em 25/11/2026: erros associados por `aria-describedby`/`aria-invalid`, landmark `<main>` único, skip-link funcional, foco visível e alvos de 44 px preservados; testes de DOM |
 | US-125 | Status fechado e carrinho persistente | P2 | M | US-023, US-065 | “Loja fechada” em cor neutra no painel; barra fixa de carrinho no mobile com contagem e subtotal; aviso de que o pedido não pode ser concluído na home; prints em 375/1280 px |
 | US-126 | Conteúdo e decisões pendentes de design | P2 | P | US-080, E0 | Páginas legais com data de publicação; emoji do seed sinalizado como dado fictício; navegação mobile do admin revisada após decisão registrada; testes de conteúdo |
 
@@ -448,8 +448,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] AUD-04: substituir `--bg-base` por `--bg-input` no checkout.
 - [x] AUD-14: detectar token `var(--…)` inexistente no validador de design system e testar a falha.
 - [x] AUD-07: numerar a revisão final como etapa no checkout e mover o envio para dentro dela.
-- [ ] AUD-05: associar erros aos inputs em `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm`.
-- [ ] AUD-11: remover o `<main id="conteudo">` duplicado do shell ou das views, mantendo um único destino do skip-link.
+- [x] AUD-05: associar erros aos inputs em `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm`.
+- [x] AUD-11: remover o `<main id="conteudo">` duplicado do shell ou das views, mantendo um único destino do skip-link.
 - [ ] AUD-06: trocar `--status-error` por cor neutra no badge “Loja fechada”.
 - [ ] AUD-08/AUD-09: barra fixa de carrinho no mobile e aviso de loja fechada na home.
 - [ ] AUD-10: data de publicação em privacidade/termos, sujeita a `E0`.
@@ -457,7 +457,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Ordem sugerida:** US-123 → US-120 → US-121 → US-122 → US-124 → US-125 → US-126. Nenhuma história entra em andamento sem teste automatizado previsto na Definition of Done da seção 1.5.
 
-**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`. US-120 concluída — título por estado, aviso de registro, `OrderStatusTimeline` com teste dedicado, contato da loja e mensagem genérica para `NOT_FOUND`; `OrderView.test.ts` cobre sucesso, recarga, finalização, carregamento, erro e 404. US-121 concluída — kill switch com confirmação, indicadores vindos da API, contagem por status e pedidos recentes sem PII; `AdminDashboardView.test.ts` cobre sucesso, alternância, status fechado, falha de fontes e contadores zerados, com prints em 375/1280 px. US-122 concluída — etapa final “Revisão e envio” com total cotado e botão dentro dela, numeração ajustada na retirada; `CheckoutView.test.ts` cobre sucesso, cotação falha e retirada, com prints em 375/1280 px. As demais histórias do épico estão `Planejado`.
+**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`. US-120 concluída — título por estado, aviso de registro, `OrderStatusTimeline` com teste dedicado, contato da loja e mensagem genérica para `NOT_FOUND`; `OrderView.test.ts` cobre sucesso, recarga, finalização, carregamento, erro e 404. US-121 concluída — kill switch com confirmação, indicadores vindos da API, contagem por status e pedidos recentes sem PII; `AdminDashboardView.test.ts` cobre sucesso, alternância, status fechado, falha de fontes e contadores zerados, com prints em 375/1280 px. US-122 concluída — etapa final “Revisão e envio” com total cotado e botão dentro dela, numeração ajustada na retirada; `CheckoutView.test.ts` cobre sucesso, cotação falha e retirada, com prints em 375/1280 px. US-124 concluída — erros de campo associados nos quatro formulários administrativos, `<main>` duplicado removido do shell administrativo e alvos do skip-link tornados focáveis em todas as rotas; testes de DOM cobrem as associações e a estrutura. As demais histórias do épico estão `Planejado`.
 
 ---
 

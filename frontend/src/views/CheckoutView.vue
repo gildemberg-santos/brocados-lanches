@@ -164,7 +164,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell checkout-page">
+  <main id="conteudo" tabindex="-1" class="page-shell checkout-page">
     <RouterLink class="back-link" :to="{ name: 'cart' }">← Voltar ao carrinho</RouterLink>
     <h1>Finalizar pedido</h1>
 

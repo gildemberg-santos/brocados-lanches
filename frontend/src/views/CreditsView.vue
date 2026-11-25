@@ -3,7 +3,7 @@ import { RouterLink } from 'vue-router'
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell info-page">
+  <main id="conteudo" tabindex="-1" class="page-shell info-page">
     <h1>Créditos</h1>
 
     <aside class="info-page__notice" role="note" aria-label="Situação do texto">

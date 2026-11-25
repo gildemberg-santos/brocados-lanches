@@ -36,6 +36,9 @@ describe('AdminCatalogForm', () => {
 
     expect(wrapper.emitted('submit')).toBeUndefined()
     expect(wrapper.text()).toContain('letras minúsculas')
+    expect(wrapper.get('#catalog-slug').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#catalog-slug').attributes('aria-describedby')).toBe('catalog-slug-error')
+    expect(wrapper.get('#catalog-slug-error').text()).toBeTruthy()
   })
 
   it('bloqueia o envio com valor monetário inválido', async () => {
@@ -50,6 +53,11 @@ describe('AdminCatalogForm', () => {
 
     expect(wrapper.emitted('submit')).toBeUndefined()
     expect(wrapper.text()).toContain('valor válido')
+    expect(wrapper.get('#catalog-amount').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#catalog-amount').attributes('aria-describedby')).toBe(
+      'catalog-feeCents-error',
+    )
+    expect(wrapper.get('#catalog-feeCents-error').text()).toBeTruthy()
   })
 
   it('converte preço em reais para centavos e mantém o item em edição', async () => {

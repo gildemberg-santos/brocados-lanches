@@ -14,7 +14,7 @@ async function logout(): Promise<void> {
 </script>
 
 <template>
-  <main id="conteudo" class="admin-page">
+  <main class="admin-page">
     <p class="admin-page__kicker">Painel administrativo</p>
     <h1>Minha conta</h1>
 

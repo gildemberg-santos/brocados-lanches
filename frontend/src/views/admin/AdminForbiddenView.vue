@@ -3,7 +3,7 @@ import { RouterLink } from 'vue-router'
 </script>
 
 <template>
-  <main id="conteudo" class="admin-forbidden">
+  <main class="admin-forbidden">
     <p class="admin-forbidden__code">403</p>
     <h1>Acesso negado</h1>
     <p>Seu papel não permite abrir esta área do painel.</p>

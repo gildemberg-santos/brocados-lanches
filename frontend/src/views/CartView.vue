@@ -38,7 +38,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell cart-page">
+  <main id="conteudo" tabindex="-1" class="page-shell cart-page">
     <RouterLink class="back-link" :to="{ name: 'menu' }">← Continuar comprando</RouterLink>
     <h1>Seu carrinho</h1>
 

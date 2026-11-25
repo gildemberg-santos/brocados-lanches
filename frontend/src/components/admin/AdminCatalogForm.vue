@@ -36,6 +36,26 @@ const sortOrder = ref(0)
 const active = ref(true)
 const errors = ref<FieldErrors>({})
 
+function errorKey(): string {
+  return props.kind === 'addon' ? 'priceCents' : 'feeCents'
+}
+
+function errorId(key: string): string {
+  return `catalog-${key.replace(/\./g, '-')}-error`
+}
+
+function errorFor(key: string): string {
+  return errors.value[key] ?? ''
+}
+
+function errorAttrs(key: string) {
+  const message = errorFor(key)
+  return {
+    'aria-invalid': message ? ('true' as const) : undefined,
+    'aria-describedby': message ? errorId(key) : undefined,
+  }
+}
+
 const titles: Record<AdminCatalogKind, string> = {
   category: 'categoria',
   addon: 'adicional',
@@ -113,28 +133,54 @@ function submit(): void {
 
     <div class="catalog-form__field">
       <label for="catalog-name">Nome</label>
-      <input id="catalog-name" v-model="name" type="text" maxlength="120" />
-      <p v-if="errors.name" id="catalog-name-error" class="catalog-form__error" role="alert">
-        {{ errors.name }}
+      <input
+        id="catalog-name"
+        v-model="name"
+        type="text"
+        maxlength="120"
+        v-bind="errorAttrs('name')"
+      />
+      <p v-if="errorFor('name')" :id="errorId('name')" class="catalog-form__error" role="alert">
+        {{ errorFor('name') }}
       </p>
     </div>
 
     <div class="catalog-form__field">
       <label for="catalog-slug">Slug</label>
       <div class="catalog-form__slug">
-        <input id="catalog-slug" v-model="slug" type="text" maxlength="80" />
+        <input
+          id="catalog-slug"
+          v-model="slug"
+          type="text"
+          maxlength="80"
+          v-bind="errorAttrs('slug')"
+        />
         <button type="button" class="catalog-form__slug-button" @click="slug = slugify(name)">
           Gerar
         </button>
       </div>
-      <p v-if="errors.slug" id="catalog-slug-error" class="catalog-form__error" role="alert">
-        {{ errors.slug }}
+      <p v-if="errorFor('slug')" :id="errorId('slug')" class="catalog-form__error" role="alert">
+        {{ errorFor('slug') }}
       </p>
     </div>
 
     <div v-if="props.kind === 'category'" class="catalog-form__field">
       <label for="catalog-description">Descrição</label>
-      <textarea id="catalog-description" v-model="description" rows="3" maxlength="2000" />
+      <textarea
+        id="catalog-description"
+        v-model="description"
+        rows="3"
+        maxlength="2000"
+        v-bind="errorAttrs('description')"
+      />
+      <p
+        v-if="errorFor('description')"
+        :id="errorId('description')"
+        class="catalog-form__error"
+        role="alert"
+      >
+        {{ errorFor('description') }}
+      </p>
     </div>
 
     <div v-if="props.kind !== 'category'" class="catalog-form__field">
@@ -145,16 +191,35 @@ function submit(): void {
         type="text"
         inputmode="decimal"
         placeholder="0,00"
+        v-bind="errorAttrs(errorKey())"
       />
-      <p v-if="errors.priceCents || errors.feeCents" class="catalog-form__error" role="alert">
-        {{ errors.priceCents ?? errors.feeCents }}
+      <p
+        v-if="errorFor(errorKey())"
+        :id="errorId(errorKey())"
+        class="catalog-form__error"
+        role="alert"
+      >
+        {{ errorFor(errorKey()) }}
       </p>
     </div>
 
     <div class="catalog-form__field">
       <label for="catalog-sort">Ordem</label>
-      <input id="catalog-sort" v-model.number="sortOrder" type="number" min="0" />
-      <p v-if="errors.sortOrder" class="catalog-form__error" role="alert">{{ errors.sortOrder }}</p>
+      <input
+        id="catalog-sort"
+        v-model.number="sortOrder"
+        type="number"
+        min="0"
+        v-bind="errorAttrs('sortOrder')"
+      />
+      <p
+        v-if="errorFor('sortOrder')"
+        :id="errorId('sortOrder')"
+        class="catalog-form__error"
+        role="alert"
+      >
+        {{ errorFor('sortOrder') }}
+      </p>
     </div>
 
     <label class="catalog-form__check">

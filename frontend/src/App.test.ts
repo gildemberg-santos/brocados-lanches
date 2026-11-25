@@ -8,7 +8,7 @@ import App from './App.vue'
 
 const StubView = defineComponent({
   name: 'StubView',
-  render: () => h('div', 'stub'),
+  render: () => h('main', { id: 'conteudo', tabindex: '-1' }, 'stub'),
 })
 
 async function mountApp() {
@@ -48,6 +48,8 @@ describe('App', () => {
     const wrapper = await mountApp()
 
     expect(wrapper.get('.skip-link').attributes('href')).toBe('#conteudo')
+    expect(wrapper.get('#conteudo').attributes('tabindex')).toBe('-1')
+    expect(wrapper.findAll('main')).toHaveLength(1)
   })
 
   it('shows the institutional links on public routes', async () => {

@@ -98,6 +98,27 @@ describe('AdminStoreView', () => {
 
     expect(updateAdminStore).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('formato internacional')
+    expect(wrapper.get('#store-whatsapp').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#store-whatsapp').attributes('aria-describedby')).toBe(
+      'store-whatsapp-error',
+    )
+    expect(wrapper.get('#store-whatsapp-error').text()).toContain('formato internacional')
+  })
+
+  it('associa erros de horário ao intervalo correspondente', async () => {
+    const wrapper = mount(AdminStoreView)
+    await flushPromises()
+
+    await wrapper.find('input[type="time"]').setValue('')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(updateAdminStore).not.toHaveBeenCalled()
+    expect(wrapper.get('input[type="time"]').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('input[type="time"]').attributes('aria-describedby')).toBe(
+      'store-openingHours-1-intervals-0-open-error',
+    )
+    expect(wrapper.get('#store-openingHours-1-intervals-0-open-error').text()).toBeTruthy()
   })
 
   it('salva as configurações alteradas', async () => {

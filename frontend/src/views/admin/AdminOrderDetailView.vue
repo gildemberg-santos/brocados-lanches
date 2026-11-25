@@ -54,7 +54,7 @@ watch(orderId, (next) => {
 </script>
 
 <template>
-  <main id="conteudo" class="admin-page">
+  <main class="admin-page">
     <RouterLink class="admin-page__back" :to="{ name: 'admin-orders' }"> Voltar à fila </RouterLink>
     <p class="admin-page__kicker">Painel administrativo</p>
 

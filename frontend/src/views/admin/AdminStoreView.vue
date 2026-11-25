@@ -20,6 +20,22 @@ const store = useAdminStoreSettingsStore()
 const statusStore = useStoreStatusStore()
 const errors = ref<FieldErrors>({})
 
+function errorId(key: string): string {
+  return `store-${key.replace(/\./g, '-')}-error`
+}
+
+function errorFor(key: string): string {
+  return errors.value[key] ?? ''
+}
+
+function errorAttrs(key: string) {
+  const message = errorFor(key)
+  return {
+    'aria-invalid': message ? ('true' as const) : undefined,
+    'aria-describedby': message ? errorId(key) : undefined,
+  }
+}
+
 const form = ref<AdminStoreInput>({
   name: '',
   isOpen: true,
@@ -95,7 +111,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="admin-page">
+  <main class="admin-page">
     <p class="admin-page__kicker">Painel administrativo</p>
     <h1>Loja</h1>
     <p class="admin-page__lead">
@@ -136,15 +152,34 @@ onMounted(() => {
       <div class="store-form__grid">
         <div class="store-form__field">
           <label for="store-name">Nome da loja</label>
-          <input id="store-name" v-model="form.name" type="text" maxlength="120" />
-          <p v-if="errors.name" class="store-form__error" role="alert">{{ errors.name }}</p>
+          <input
+            id="store-name"
+            v-model="form.name"
+            type="text"
+            maxlength="120"
+            v-bind="errorAttrs('name')"
+          />
+          <p v-if="errorFor('name')" :id="errorId('name')" class="store-form__error" role="alert">
+            {{ errorFor('name') }}
+          </p>
         </div>
 
         <div class="store-form__field">
           <label for="store-delivery">Prazo de entrega</label>
-          <input id="store-delivery" v-model="form.deliveryTime" type="text" maxlength="60" />
-          <p v-if="errors.deliveryTime" class="store-form__error" role="alert">
-            {{ errors.deliveryTime }}
+          <input
+            id="store-delivery"
+            v-model="form.deliveryTime"
+            type="text"
+            maxlength="60"
+            v-bind="errorAttrs('deliveryTime')"
+          />
+          <p
+            v-if="errorFor('deliveryTime')"
+            :id="errorId('deliveryTime')"
+            class="store-form__error"
+            role="alert"
+          >
+            {{ errorFor('deliveryTime') }}
           </p>
         </div>
 
@@ -155,8 +190,16 @@ onMounted(() => {
             v-model="form.whatsapp"
             type="tel"
             placeholder="+5585999999999"
+            v-bind="errorAttrs('whatsapp')"
           />
-          <p v-if="errors.whatsapp" class="store-form__error" role="alert">{{ errors.whatsapp }}</p>
+          <p
+            v-if="errorFor('whatsapp')"
+            :id="errorId('whatsapp')"
+            class="store-form__error"
+            role="alert"
+          >
+            {{ errorFor('whatsapp') }}
+          </p>
         </div>
 
         <div class="store-form__field">
@@ -166,8 +209,21 @@ onMounted(() => {
 
         <div class="store-form__field store-form__field--wide">
           <label for="store-address">Endereço</label>
-          <input id="store-address" v-model="form.address" type="text" maxlength="300" />
-          <p v-if="errors.address" class="store-form__error" role="alert">{{ errors.address }}</p>
+          <input
+            id="store-address"
+            v-model="form.address"
+            type="text"
+            maxlength="300"
+            v-bind="errorAttrs('address')"
+          />
+          <p
+            v-if="errorFor('address')"
+            :id="errorId('address')"
+            class="store-form__error"
+            role="alert"
+          >
+            {{ errorFor('address') }}
+          </p>
         </div>
       </div>
 
@@ -188,11 +244,21 @@ onMounted(() => {
             >
               <label>
                 Abertura
-                <input v-model="interval.open" type="time" />
+                <input
+                  :id="`store-${dayIndex}-${intervalIndex}-open`"
+                  v-model="interval.open"
+                  type="time"
+                  v-bind="errorAttrs(`openingHours.${dayIndex}.intervals.${intervalIndex}.open`)"
+                />
               </label>
               <label>
                 Fechamento
-                <input v-model="interval.close" type="time" />
+                <input
+                  :id="`store-${dayIndex}-${intervalIndex}-close`"
+                  v-model="interval.close"
+                  type="time"
+                  v-bind="errorAttrs(`openingHours.${dayIndex}.intervals.${intervalIndex}.close`)"
+                />
               </label>
               <button
                 type="button"
@@ -202,18 +268,20 @@ onMounted(() => {
                 Remover
               </button>
               <p
-                v-if="errors[`openingHours.${dayIndex}.intervals.${intervalIndex}.open`]"
+                v-if="errorFor(`openingHours.${dayIndex}.intervals.${intervalIndex}.open`)"
+                :id="errorId(`openingHours.${dayIndex}.intervals.${intervalIndex}.open`)"
                 class="store-form__error"
                 role="alert"
               >
-                {{ errors[`openingHours.${dayIndex}.intervals.${intervalIndex}.open`] }}
+                {{ errorFor(`openingHours.${dayIndex}.intervals.${intervalIndex}.open`) }}
               </p>
               <p
-                v-if="errors[`openingHours.${dayIndex}.intervals.${intervalIndex}.close`]"
+                v-if="errorFor(`openingHours.${dayIndex}.intervals.${intervalIndex}.close`)"
+                :id="errorId(`openingHours.${dayIndex}.intervals.${intervalIndex}.close`)"
                 class="store-form__error"
                 role="alert"
               >
-                {{ errors[`openingHours.${dayIndex}.intervals.${intervalIndex}.close`] }}
+                {{ errorFor(`openingHours.${dayIndex}.intervals.${intervalIndex}.close`) }}
               </p>
             </div>
 

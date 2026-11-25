@@ -47,6 +47,22 @@ const optionGroups = ref<AdminOptionGroup[]>([])
 const optionAmounts = ref<string[][]>([])
 const errors = ref<FieldErrors>({})
 
+function errorId(key: string): string {
+  return `product-${key.replace(/\./g, '-')}-error`
+}
+
+function errorFor(key: string): string {
+  return errors.value[key] ?? ''
+}
+
+function errorAttrs(key: string) {
+  const message = errorFor(key)
+  return {
+    'aria-invalid': message ? ('true' as const) : undefined,
+    'aria-describedby': message ? errorId(key) : undefined,
+  }
+}
+
 function centsToInput(cents: number): string {
   return (cents / 100).toFixed(2).replace('.', ',')
 }
@@ -183,32 +199,53 @@ function submit(): void {
     <div class="product-form__grid">
       <div class="product-form__field">
         <label for="product-category">Categoria</label>
-        <select id="product-category" v-model="categoryId">
+        <select id="product-category" v-model="categoryId" v-bind="errorAttrs('categoryId')">
           <option value="">Selecione</option>
           <option v-for="category in props.categories" :key="category.id" :value="category.id">
             {{ category.name }}
           </option>
         </select>
-        <p v-if="errors.categoryId" class="product-form__error" role="alert">
-          {{ errors.categoryId }}
+        <p
+          v-if="errorFor('categoryId')"
+          :id="errorId('categoryId')"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errorFor('categoryId') }}
         </p>
       </div>
 
       <div class="product-form__field">
         <label for="product-name">Nome</label>
-        <input id="product-name" v-model="name" type="text" maxlength="120" />
-        <p v-if="errors.name" class="product-form__error" role="alert">{{ errors.name }}</p>
+        <input
+          id="product-name"
+          v-model="name"
+          type="text"
+          maxlength="120"
+          v-bind="errorAttrs('name')"
+        />
+        <p v-if="errorFor('name')" :id="errorId('name')" class="product-form__error" role="alert">
+          {{ errorFor('name') }}
+        </p>
       </div>
 
       <div class="product-form__field">
         <label for="product-slug">Slug</label>
         <div class="product-form__inline">
-          <input id="product-slug" v-model="slug" type="text" maxlength="80" />
+          <input
+            id="product-slug"
+            v-model="slug"
+            type="text"
+            maxlength="80"
+            v-bind="errorAttrs('slug')"
+          />
           <button type="button" class="product-form__small" @click="slug = slugify(name)">
             Gerar
           </button>
         </div>
-        <p v-if="errors.slug" class="product-form__error" role="alert">{{ errors.slug }}</p>
+        <p v-if="errorFor('slug')" :id="errorId('slug')" class="product-form__error" role="alert">
+          {{ errorFor('slug') }}
+        </p>
       </div>
 
       <div class="product-form__field">
@@ -219,17 +256,34 @@ function submit(): void {
           type="text"
           inputmode="decimal"
           placeholder="0,00"
+          v-bind="errorAttrs('priceCents')"
         />
-        <p v-if="errors.priceCents" class="product-form__error" role="alert">
-          {{ errors.priceCents }}
+        <p
+          v-if="errorFor('priceCents')"
+          :id="errorId('priceCents')"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errorFor('priceCents') }}
         </p>
       </div>
 
       <div class="product-form__field product-form__field--wide">
         <label for="product-description">Descrição</label>
-        <textarea id="product-description" v-model="description" rows="3" maxlength="2000" />
-        <p v-if="errors.description" class="product-form__error" role="alert">
-          {{ errors.description }}
+        <textarea
+          id="product-description"
+          v-model="description"
+          rows="3"
+          maxlength="2000"
+          v-bind="errorAttrs('description')"
+        />
+        <p
+          v-if="errorFor('description')"
+          :id="errorId('description')"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errorFor('description') }}
         </p>
       </div>
 
@@ -240,21 +294,58 @@ function submit(): void {
 
       <div class="product-form__field">
         <label for="product-image-alt">Texto alternativo</label>
-        <input id="product-image-alt" v-model="imageAlt" type="text" maxlength="200" />
-        <p v-if="errors.imageAlt" class="product-form__error" role="alert">{{ errors.imageAlt }}</p>
+        <input
+          id="product-image-alt"
+          v-model="imageAlt"
+          type="text"
+          maxlength="200"
+          v-bind="errorAttrs('imageAlt')"
+        />
+        <p
+          v-if="errorFor('imageAlt')"
+          :id="errorId('imageAlt')"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errorFor('imageAlt') }}
+        </p>
       </div>
 
       <div class="product-form__field">
         <label for="product-allergens">Alergênicos (separados por vírgula)</label>
-        <input id="product-allergens" v-model="allergensText" type="text" />
-        <p v-if="errors.allergens" class="product-form__error" role="alert">
-          {{ errors.allergens }}
+        <input
+          id="product-allergens"
+          v-model="allergensText"
+          type="text"
+          v-bind="errorAttrs('allergens')"
+        />
+        <p
+          v-if="errorFor('allergens')"
+          :id="errorId('allergens')"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errorFor('allergens') }}
         </p>
       </div>
 
       <div class="product-form__field">
         <label for="product-sort">Ordem</label>
-        <input id="product-sort" v-model.number="sortOrder" type="number" min="0" />
+        <input
+          id="product-sort"
+          v-model.number="sortOrder"
+          type="number"
+          min="0"
+          v-bind="errorAttrs('sortOrder')"
+        />
+        <p
+          v-if="errorFor('sortOrder')"
+          :id="errorId('sortOrder')"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ errorFor('sortOrder') }}
+        </p>
       </div>
     </div>
 
@@ -264,7 +355,10 @@ function submit(): void {
       <label><input v-model="active" type="checkbox" /> Ativo</label>
     </div>
 
-    <fieldset class="product-form__section">
+    <fieldset
+      class="product-form__section"
+      :aria-describedby="errorFor('addonIds') ? errorId('addonIds') : undefined"
+    >
       <legend>Adicionais permitidos</legend>
       <label v-for="addon in props.addons" :key="addon.id" class="product-form__check">
         <input
@@ -277,24 +371,39 @@ function submit(): void {
       <p v-if="props.addons.length === 0" class="product-form__hint">
         Cadastre adicionais antes de vincular.
       </p>
-      <p v-if="errors.addonIds" class="product-form__error" role="alert">{{ errors.addonIds }}</p>
+      <p
+        v-if="errorFor('addonIds')"
+        :id="errorId('addonIds')"
+        class="product-form__error"
+        role="alert"
+      >
+        {{ errorFor('addonIds') }}
+      </p>
     </fieldset>
 
     <fieldset class="product-form__section">
       <legend>Grupos de opções</legend>
       <div v-for="(group, groupIndex) in optionGroups" :key="group.id" class="product-form__group">
         <div class="product-form__group-head">
-          <input v-model="group.name" type="text" placeholder="Nome do grupo" maxlength="120" />
+          <input
+            :id="`product-group-${groupIndex}-name`"
+            v-model="group.name"
+            type="text"
+            placeholder="Nome do grupo"
+            maxlength="120"
+            v-bind="errorAttrs(`optionGroups.${groupIndex}.name`)"
+          />
           <button type="button" class="product-form__small" @click="removeGroup(groupIndex)">
             Remover grupo
           </button>
         </div>
         <p
-          v-if="errors[`optionGroups.${groupIndex}.name`]"
+          v-if="errorFor(`optionGroups.${groupIndex}.name`)"
+          :id="errorId(`optionGroups.${groupIndex}.name`)"
           class="product-form__error"
           role="alert"
         >
-          {{ errors[`optionGroups.${groupIndex}.name`] }}
+          {{ errorFor(`optionGroups.${groupIndex}.name`) }}
         </p>
 
         <div class="product-form__inline">
@@ -304,33 +413,63 @@ function submit(): void {
           </label>
           <label>
             Mínimo
-            <input v-model.number="group.minSelections" type="number" min="0" />
+            <input
+              :id="`product-group-${groupIndex}-min`"
+              v-model.number="group.minSelections"
+              type="number"
+              min="0"
+              v-bind="errorAttrs(`optionGroups.${groupIndex}.minSelections`)"
+            />
+            <span
+              v-if="errorFor(`optionGroups.${groupIndex}.minSelections`)"
+              :id="errorId(`optionGroups.${groupIndex}.minSelections`)"
+              class="product-form__error"
+              role="alert"
+            >
+              {{ errorFor(`optionGroups.${groupIndex}.minSelections`) }}
+            </span>
           </label>
           <label>
             Máximo
-            <input v-model.number="group.maxSelections" type="number" min="0" />
+            <input
+              :id="`product-group-${groupIndex}-max`"
+              v-model.number="group.maxSelections"
+              type="number"
+              min="0"
+              v-bind="errorAttrs(`optionGroups.${groupIndex}.maxSelections`)"
+            />
+            <span
+              v-if="errorFor(`optionGroups.${groupIndex}.maxSelections`)"
+              :id="errorId(`optionGroups.${groupIndex}.maxSelections`)"
+              class="product-form__error"
+              role="alert"
+            >
+              {{ errorFor(`optionGroups.${groupIndex}.maxSelections`) }}
+            </span>
           </label>
         </div>
-        <p
-          v-if="errors[`optionGroups.${groupIndex}.maxSelections`]"
-          class="product-form__error"
-          role="alert"
-        >
-          {{ errors[`optionGroups.${groupIndex}.maxSelections`] }}
-        </p>
 
         <div
           v-for="(option, optionIndex) in group.options"
           :key="option.id"
           class="product-form__option"
         >
-          <input v-model="option.name" type="text" placeholder="Nome da opção" maxlength="120" />
           <input
+            :id="`product-option-${groupIndex}-${optionIndex}-name`"
+            v-model="option.name"
+            type="text"
+            placeholder="Nome da opção"
+            maxlength="120"
+            v-bind="errorAttrs(`optionGroups.${groupIndex}.options.${optionIndex}.name`)"
+          />
+          <input
+            :id="`product-option-${groupIndex}-${optionIndex}-price`"
             v-model="optionAmounts[groupIndex][optionIndex]"
             type="text"
             inputmode="decimal"
             placeholder="0,00"
             :aria-label="`Preço de ${option.name || 'opção'}`"
+            v-bind="errorAttrs(`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`)"
           />
           <label><input v-model="option.available" type="checkbox" /> Disponível</label>
           <button
@@ -341,11 +480,20 @@ function submit(): void {
             Remover
           </button>
           <p
-            v-if="errors[`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`]"
+            v-if="errorFor(`optionGroups.${groupIndex}.options.${optionIndex}.name`)"
+            :id="errorId(`optionGroups.${groupIndex}.options.${optionIndex}.name`)"
             class="product-form__error"
             role="alert"
           >
-            {{ errors[`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`] }}
+            {{ errorFor(`optionGroups.${groupIndex}.options.${optionIndex}.name`) }}
+          </p>
+          <p
+            v-if="errorFor(`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`)"
+            :id="errorId(`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`)"
+            class="product-form__error"
+            role="alert"
+          >
+            {{ errorFor(`optionGroups.${groupIndex}.options.${optionIndex}.priceCents`) }}
           </p>
         </div>
 

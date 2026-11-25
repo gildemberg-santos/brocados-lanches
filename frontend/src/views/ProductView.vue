@@ -134,7 +134,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell product-page">
+  <main id="conteudo" tabindex="-1" class="page-shell product-page">
     <RouterLink class="back-link" :to="{ name: 'menu' }">← Voltar ao cardápio</RouterLink>
 
     <LoadingSkeleton v-if="isLoading" label="Carregando produto" :count="2" />

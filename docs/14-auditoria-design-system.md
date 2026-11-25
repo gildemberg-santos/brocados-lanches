@@ -102,7 +102,9 @@ AUD-01 e AUD-02 foram corrigidos junto com a US-120. A tela de pedido passou a v
 
 AUD-03 foi corrigido junto com a US-121. O dashboard passou a acionar o interruptor manual com confirmação (`PATCH /admin/store`, já auditado pelo servidor), mostrar o status efetivo calculado pelo backend, contar pedidos por status, exibir produtos disponíveis/total, zonas ativas, prazo de entrega e os cinco pedidos recentes com link para o detalhe. A lista não expõe PII.
 
-AUD-07 foi corrigido junto com a US-122. O checkout passou a ter “Revisão e envio” como etapa final, com total cotado e botão de envio dentro dela, mantendo a etapa de endereço oculta na retirada. As demais histórias seguem em aberto.
+AUD-07 foi corrigido junto com a US-122. O checkout passou a ter “Revisão e envio” como etapa final, com total cotado e botão de envio dentro dela, mantendo a etapa de endereço oculta na retirada.
+
+AUD-05 e AUD-11 foram corrigidos junto com a US-124. Os formulários `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm` passaram a marcar o controle inválido com `aria-invalid="true"` e a apontar, por `aria-describedby`, para a mensagem correspondente. O shell administrativo deixou de repetir `<main id="conteudo">`: as views admin mantêm um único `<main>`, e o shell oferece um contêiner focável com `tabindex="-1"` como destino do skip-link. Todos os alvos `#conteudo` das rotas públicas também receberam `tabindex="-1"`, e o link oculto foi reposicionado para o eixo horizontal a fim de permanecer na ordem de tabulação. As demais histórias seguem em aberto.
 
 ### 5.1 Detalhamento dos achados de severidade Alta
 
@@ -117,6 +119,8 @@ AUD-07 foi corrigido junto com a US-122. O checkout passou a ter “Revisão e e
 **AUD-07 — checkout (corrigido).** A implementação tinha quatro etapas (três na retirada) e deixava o botão de envio fora de uma etapa numerada. A correção tornou “Revisão e envio” a etapa final, com o total cotado pelo servidor e o botão dentro da seção; na retirada a etapa de endereço continua oculta e a numeração é ajustada.
 
 **Evidência da US-122:** verificação em navegador headless com produto no carrinho e zona selecionada, nos viewports de 375 px e 1280 px. Título “5. Revisão e envio”, total cotado exibido, botão dentro da seção e `scrollWidth === clientWidth` nas duas larguras. Prints em `/tmp/opencode/checkout-us122-375.png` e `/tmp/opencode/checkout-us122-1280.png` (fora do repositório). O `422` no console é a primeira cotação, feita antes de escolher a zona.
+
+**Evidência da US-124:** verificação em navegador headless nos viewports de 375 px e 1280 px. Há um único `#conteudo` com `tabindex="-1"`, o link “Pular para o conteúdo” recebe foco como primeira parada do Tab ao carregar a página e sua ativação move o foco para o contêiner. Nos formulários de loja, produto e usuário, os campos inválidos expõem `aria-invalid="true"` e `aria-describedby` apontando para mensagens visíveis; `scrollWidth === clientWidth` nas duas larguras. Print do formulário da loja em `/tmp/opencode/a11y-store-us124-375.png` e `/tmp/opencode/a11y-store-us124-1280.png` (fora do repositório). O `401` no console é a consulta preventiva do guard de autenticação antes do login.
 
 ---
 

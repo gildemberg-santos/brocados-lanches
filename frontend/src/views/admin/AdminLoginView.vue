@@ -45,7 +45,7 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main id="conteudo" class="admin-login">
+  <main id="conteudo" tabindex="-1" class="admin-login">
     <section class="admin-login__card" aria-labelledby="admin-login-title">
       <p class="admin-login__kicker">Área da operação</p>
       <h1 id="admin-login-title">Acessar painel</h1>

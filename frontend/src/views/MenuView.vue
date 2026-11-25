@@ -71,7 +71,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell menu-page">
+  <main id="conteudo" tabindex="-1" class="page-shell menu-page">
     <header class="menu-header">
       <p class="eyebrow">Cardápio digital</p>
       <h1>Escolha seu próximo lanche</h1>

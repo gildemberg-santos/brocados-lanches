@@ -89,7 +89,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell order-page">
+  <main id="conteudo" tabindex="-1" class="page-shell order-page">
     <h1>{{ pageTitle }}</h1>
 
     <LoadingSkeleton v-if="loading" label="Carregando pedido" :count="3" />

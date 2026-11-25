@@ -20,7 +20,23 @@ const name = ref('')
 const email = ref('')
 const password = ref('')
 const role = ref<AdminRole>('operator')
-const localError = ref('')
+const errors = ref<Record<string, string>>({})
+
+function errorId(key: string): string {
+  return `admin-user-${key}-error`
+}
+
+function errorFor(key: string): string {
+  return errors.value[key] ?? ''
+}
+
+function errorAttrs(key: string) {
+  const message = errorFor(key)
+  return {
+    'aria-invalid': message ? ('true' as const) : undefined,
+    'aria-describedby': message ? errorId(key) : undefined,
+  }
+}
 
 watch(
   () => props.item,
@@ -29,21 +45,26 @@ watch(
     email.value = item?.email ?? ''
     password.value = ''
     role.value = item?.role ?? 'operator'
-    localError.value = ''
+    errors.value = {}
   },
   { immediate: true },
 )
 
 function submit(): void {
-  if (!name.value.trim() || !email.value.trim()) {
-    localError.value = 'Informe nome e e-mail.'
-    return
+  const nextErrors: Record<string, string> = {}
+  if (!name.value.trim()) {
+    nextErrors.name = 'Informe o nome.'
+  }
+  if (!email.value.trim()) {
+    nextErrors.email = 'Informe o e-mail.'
   }
   if (!props.item && password.value.length < 12) {
-    localError.value = 'A senha temporária precisa ter ao menos 12 caracteres.'
+    nextErrors.password = 'A senha temporária precisa ter ao menos 12 caracteres.'
+  }
+  errors.value = nextErrors
+  if (Object.keys(nextErrors).length > 0) {
     return
   }
-  localError.value = ''
   emit('submit', {
     name: name.value.trim(),
     email: email.value.trim(),
@@ -59,17 +80,49 @@ function submit(): void {
 
     <div class="user-form__field">
       <label for="admin-user-name">Nome</label>
-      <input id="admin-user-name" v-model="name" type="text" maxlength="120" />
+      <input
+        id="admin-user-name"
+        v-model="name"
+        type="text"
+        maxlength="120"
+        v-bind="errorAttrs('name')"
+      />
+      <p v-if="errorFor('name')" :id="errorId('name')" class="user-form__error" role="alert">
+        {{ errorFor('name') }}
+      </p>
     </div>
 
     <div class="user-form__field">
       <label for="admin-user-email">E-mail</label>
-      <input id="admin-user-email" v-model="email" type="email" maxlength="254" />
+      <input
+        id="admin-user-email"
+        v-model="email"
+        type="email"
+        maxlength="254"
+        v-bind="errorAttrs('email')"
+      />
+      <p v-if="errorFor('email')" :id="errorId('email')" class="user-form__error" role="alert">
+        {{ errorFor('email') }}
+      </p>
     </div>
 
     <div v-if="!item" class="user-form__field">
       <label for="admin-user-password">Senha temporária</label>
-      <input id="admin-user-password" v-model="password" type="password" minlength="12" />
+      <input
+        id="admin-user-password"
+        v-model="password"
+        type="password"
+        minlength="12"
+        v-bind="errorAttrs('password')"
+      />
+      <p
+        v-if="errorFor('password')"
+        :id="errorId('password')"
+        class="user-form__error"
+        role="alert"
+      >
+        {{ errorFor('password') }}
+      </p>
     </div>
 
     <div class="user-form__field">
@@ -80,7 +133,6 @@ function submit(): void {
       </select>
     </div>
 
-    <p v-if="localError" class="user-form__error" role="alert">{{ localError }}</p>
     <p v-if="error" class="user-form__error" role="alert">{{ error }}</p>
     <p v-if="success" class="user-form__success" role="status">{{ success }}</p>
 

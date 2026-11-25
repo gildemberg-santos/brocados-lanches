@@ -100,6 +100,14 @@ describe('AdminProductForm', () => {
 
     expect(wrapper.emitted('submit')).toBeUndefined()
     expect(wrapper.text()).toContain('Informe um preço válido em reais.')
+    expect(wrapper.get('#product-price').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#product-price').attributes('aria-describedby')).toBe(
+      'product-priceCents-error',
+    )
+    expect(wrapper.get('#product-option-0-0-price').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#product-option-0-0-price').attributes('aria-describedby')).toBe(
+      'product-optionGroups-0-options-0-priceCents-error',
+    )
   })
 
   it('bloqueia o envio sem categoria e sem descrição', async () => {
@@ -110,5 +118,13 @@ describe('AdminProductForm', () => {
     expect(wrapper.emitted('submit')).toBeUndefined()
     expect(wrapper.text()).toContain('Selecione uma categoria')
     expect(wrapper.text()).toContain('Informe a descrição')
+    expect(wrapper.get('#product-category').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#product-category').attributes('aria-describedby')).toBe(
+      'product-categoryId-error',
+    )
+    expect(wrapper.get('#product-description').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#product-description').attributes('aria-describedby')).toBe(
+      'product-description-error',
+    )
   })
 })

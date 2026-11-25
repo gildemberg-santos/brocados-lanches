@@ -37,6 +37,28 @@ describe('AdminUserForm', () => {
 
     expect(wrapper.emitted('submit')).toBeUndefined()
     expect(wrapper.text()).toContain('12 caracteres')
+    expect(wrapper.get('#admin-user-password').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#admin-user-password').attributes('aria-describedby')).toBe(
+      'admin-user-password-error',
+    )
+    expect(wrapper.get('#admin-user-password-error').text()).toContain('12 caracteres')
+  })
+
+  it('associa os erros de nome e e-mail aos campos correspondentes', async () => {
+    const wrapper = mount(AdminUserForm, {
+      props: { item: null, saving: false, error: '', success: '' },
+    })
+
+    await wrapper.find('form').trigger('submit')
+
+    expect(wrapper.get('#admin-user-name').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#admin-user-name').attributes('aria-describedby')).toBe(
+      'admin-user-name-error',
+    )
+    expect(wrapper.get('#admin-user-email').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#admin-user-email').attributes('aria-describedby')).toBe(
+      'admin-user-email-error',
+    )
   })
 
   it('não pede senha ao editar', () => {

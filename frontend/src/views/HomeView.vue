@@ -78,7 +78,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell home">
+  <main id="conteudo" tabindex="-1" class="page-shell home">
     <section class="home-hero" :class="{ 'home-hero--with-feature': heroProduct }">
       <div class="home-hero__copy">
         <p class="eyebrow">Brocados Lanches</p>

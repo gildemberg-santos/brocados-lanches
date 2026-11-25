@@ -67,7 +67,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" class="page-shell contact-page">
+  <main id="conteudo" tabindex="-1" class="page-shell contact-page">
     <h1>Contato</h1>
     <p class="contact-page__lead">Estes dados vêm do status publicado pela loja no servidor.</p>
 

@@ -45,9 +45,9 @@ async function logout(): Promise<void> {
         </RouterLink>
       </nav>
 
-      <main id="conteudo" class="admin-shell__main">
+      <div id="conteudo" class="admin-shell__main" tabindex="-1">
         <RouterView />
-      </main>
+      </div>
     </div>
 
     <nav class="admin-shell__mobile-nav" aria-label="Navegação principal do painel">
