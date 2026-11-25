@@ -43,4 +43,31 @@ describe('PrivacyView', () => {
     expect(text).not.toContain('+55')
     expect(text).not.toContain('@')
   })
+
+  it('explains the real data flow, retention and rights', async () => {
+    const wrapper = await mountPrivacy()
+    const text = wrapper.text()
+
+    expect(wrapper.findAll('section h2')).toHaveLength(8)
+    expect(text).toContain('Aquiraz–CE')
+    expect(text).toContain('hash Argon2id')
+    expect(text).toContain('link wa.me')
+    expect(text).toContain('Não usamos analytics')
+    expect(text).toContain('24 meses')
+    expect(text).toContain('7 dias')
+    expect(text).toContain('12 meses')
+    expect(text).toContain('30 dias')
+    expect(text).toContain('anonimização ou eliminação')
+  })
+
+  it('does not copy providers or features from the reference policy', async () => {
+    const wrapper = await mountPrivacy()
+    const text = wrapper.text()
+
+    for (const name of ['Stripe', 'Firebase', 'Clarity', 'Anthropic', 'LocationIQ', 'Microsoft']) {
+      expect(text).not.toContain(name)
+    }
+    expect(text).not.toContain('geocodificação de endereços')
+    expect(text).not.toContain('inteligência artificial para importar')
+  })
 })
