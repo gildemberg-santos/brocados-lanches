@@ -300,7 +300,7 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 
 - Endereço, horários, WhatsApp e Instagram.
 - Link para mapa, se aprovado.
-- Política de privacidade e termos com data. Desde a US-126 as páginas exibem a data do rascunho (25/11/2026) e sinalizam que a publicação depende de `E0`; o texto provisório não é apresentado como vigente. A privacidade foi detalhada em 25/11/2026 com base em modelo externo, adaptada apenas ao fluxo real (dados do pedido, sessão administrativa, IP para limite de requisições, link `wa.me` e retenção proposta), sem copiar prestadores ou recursos que a loja não usa.
+- Política de privacidade e termos com data. Desde a US-126 as páginas exibem a data do rascunho (25/11/2026) e sinalizam que a publicação depende de `E0`; o texto provisório não é apresentado como vigente. A privacidade e os termos foram detalhados em 25/11/2026 com base em modelos externos, adaptados apenas ao fluxo real (dados do pedido, sessão administrativa, IP para limite de requisições, link `wa.me`, retenção proposta, registro/idempotência, regras de preço/entrega/pagamento e acesso ao painel), sem copiar prestadores, assinaturas ou recursos que a loja não usa.
 - Canal do titular (pendente de `E0`).
 
 ---

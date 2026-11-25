@@ -187,3 +187,4 @@ Origem: `14-auditoria-design-system.md` e §14 de `07-design-system-e-experienci
 | 25/11/2026 | Ferramentas alinhadas: `.tool-versions` fixa Node 22.23.5 e `golangci-lint` v2.15.0 passou a rodar no `make lint`; 16 achados do lint completo corrigidos (fechamento de cursor/arquivo e código morto em testes) |
 | 25/11/2026 | Épico 12 concluído com D-029/D-030/D-031: drawer completo no painel mobile, emojis removidos do seed, tokens mantidos e textos legais mantidos como rascunho até `E0` |
 | 25/11/2026 | Política de privacidade detalhada com base em `menuaqui.com.br/privacidade`, ajustada ao tratamento real da Brocados; controlador completo, canal do titular e publicação definitiva seguem pendentes de `E0` |
+| 25/11/2026 | Termos de uso detalhados com base em `menuaqui.com.br/termos`, ajustados a pedido gravado no servidor, valores calculados pela loja, pagamento na entrega/retirada e acesso restrito ao painel; versão vigente segue pendente de `E0` |

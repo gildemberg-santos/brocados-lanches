@@ -336,7 +336,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-080 | Páginas institucionais e legais | P1 | M | E0 | Parcial: `/contato`, `/privacidade`, `/termos`, `/creditos`, 404 e rodapé entregues; contato usa apenas `GET /store`; privacidade detalhada em 25/11/2026 a partir de modelo externo adaptado ao fluxo real, mantida como rascunho até aprovação |
+| US-080 | Páginas institucionais e legais | P1 | M | E0 | Parcial: `/contato`, `/privacidade`, `/termos`, `/creditos`, 404 e rodapé entregues; contato usa apenas `GET /store`; privacidade e termos detalhados em 25/11/2026 a partir de modelos externos adaptados ao fluxo real, mantidos como rascunho até aprovação |
 | US-081 | SEO e dados estruturados | P1 | M | US-023 | Parcial: título/descrição/robots por rota, JSON-LD `Restaurant`/`Menu`/`Product` e `robots.txt` entregues; faltam sitemap e canonical (domínio pendente) |
 | US-082 | Acessibilidade | P1 | G | US-023, US-033, US-061 | Parcial: rótulos/`aria-describedby` no checkout, alvos de 44 px no rodapé, aviso de conexão e foco preservados; auditoria axe pendente |
 | US-083 | Imagens e performance | P1 | M | US-023 | Concluída no seed: WebP/AVIF, dimensões, lazy, fontes self-hosted e validação no design-check; fotos definitivas dependem do cliente |

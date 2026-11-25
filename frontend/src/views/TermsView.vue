@@ -15,32 +15,143 @@ import { RouterLink } from 'vue-router'
       >
     </aside>
 
-    <section aria-labelledby="terms-order-title">
-      <h2 id="terms-order-title">Pedidos</h2>
+    <section aria-labelledby="terms-service-title">
+      <h2 id="terms-service-title">1. Sobre o serviço</h2>
       <p>
-        O pedido só é considerado registrado depois de gravado no servidor. O acompanhamento é feito
-        por um código público opaco, sem exposição de dados pessoais.
+        Este site permite montar e registrar pedidos da Brocados Lanches, lanchonete em Aquiraz–CE,
+        e acompanhar o andamento pelo código público do pedido. Não há cadastro para o cliente nem
+        cobrança online.
+      </p>
+      <p>
+        Ao pedir neste site, você concorda com estas regras na versão publicada. O painel
+        administrativo é restrito a usuários autorizados pela loja.
       </p>
     </section>
 
+    <section aria-labelledby="terms-order-title">
+      <h2 id="terms-order-title">2. Registro e acompanhamento do pedido</h2>
+      <ul>
+        <li>
+          o pedido só é considerado registrado depois de gravado no servidor, com número sequencial
+          e código público opaco de acompanhamento;
+        </li>
+        <li>
+          o link do WhatsApp é gerado depois da gravação. Se o handoff falhar, o pedido continua
+          salvo e o link pode ser reenviado na confirmação, na mesma sessão;
+        </li>
+        <li>
+          a chave de idempotência evita que um mesmo envio gere dois pedidos. O acompanhamento
+          mostra apenas o status disponível, sem expor nome, telefone ou endereço de terceiros.
+        </li>
+      </ul>
+    </section>
+
     <section aria-labelledby="terms-price-title">
-      <h2 id="terms-price-title">Preços, taxas e disponibilidade</h2>
+      <h2 id="terms-price-title">3. Preços, taxas e disponibilidade</h2>
+      <ul>
+        <li>
+          preços, adicionais, taxa de entrega, total e disponibilidade são validados no servidor; a
+          cotação não grava pedido e o checkout recalcula os valores antes de gravar;
+        </li>
+        <li>
+          a loja não aceita pedido com horário fechado, interruptor manual desligado, zona inativa,
+          produto indisponível ou adicional inválido;
+        </li>
+        <li>
+          depois do registro, nome, preços, adicionais, taxa e total ficam congelados no pedido;
+          mudanças posteriores no catálogo não alteram pedidos antigos.
+        </li>
+      </ul>
       <p>
-        Preços, adicionais, taxa de entrega, total e disponibilidade são validados no servidor.
         Valores exibidos apenas nesta página não são contratuais; o valor cotado no checkout é
         calculado pela loja.
       </p>
     </section>
 
-    <section aria-labelledby="terms-payment-title">
-      <h2 id="terms-payment-title">Entrega e pagamento</h2>
+    <section aria-labelledby="terms-delivery-title">
+      <h2 id="terms-delivery-title">4. Entrega, retirada e pagamento</h2>
       <p>
-        A retirada zera a taxa de entrega e a entrega usa a taxa da zona escolhida. O pagamento
-        acontece na entrega ou na retirada; nenhum dado de cartão é solicitado.
+        Na entrega, a taxa é a da zona escolhida. Na retirada, a taxa de entrega é zero. O pagamento
+        acontece na entrega ou na retirada, em Pix, cartão ou dinheiro; não há gateway online e
+        nenhum dado de cartão é solicitado.
       </p>
       <p>
-        Para dúvidas sobre o pedido, use os canais da
+        No pagamento em dinheiro, você pode informar o valor para troco. A forma de pagamento e o
+        troco informado ficam registrados no pedido para o atendimento.
+      </p>
+    </section>
+
+    <section aria-labelledby="terms-status-title">
+      <h2 id="terms-status-title">5. Status, cancelamento e atendimento</h2>
+      <p>
+        A loja acompanha e muda o status no painel dentro das transições permitidas: pendente,
+        confirmado, em preparo, pronto, a caminho, entregue, retirado ou cancelado. Entregue,
+        retirado e cancelado são estados finais.
+      </p>
+      <p>
+        Depois do registro, itens e valores não são editados pela loja no painel. Para corrigir ou
+        cancelar um pedido, use os canais da
         <RouterLink to="/contato">página de contato</RouterLink>.
+      </p>
+    </section>
+
+    <section aria-labelledby="terms-admin-title">
+      <h2 id="terms-admin-title">6. Acesso ao painel</h2>
+      <ul>
+        <li>
+          o acesso exige sessão válida; escrita anônima é bloqueada e as permissões dependem do
+          papel do usuário;
+        </li>
+        <li>
+          credenciais são pessoais e intransferíveis; toda alteração relevante gera auditoria;
+        </li>
+        <li>
+          a loja pode desligar temporariamente os pedidos pelo interruptor manual e ajustar
+          horários, sem apagar pedidos já registrados.
+        </li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="terms-availability-title">
+      <h2 id="terms-availability-title">7. Disponibilidade do site</h2>
+      <p>
+        O site depende de conexão e da infraestrutura da loja e pode ficar indisponível
+        temporariamente. Um pedido já gravado permanece no servidor mesmo que a página falhe depois.
+      </p>
+      <p>
+        O acompanhamento depende do código correto; um código inválido não revela dados de outros
+        pedidos.
+      </p>
+    </section>
+
+    <section aria-labelledby="terms-content-title">
+      <h2 id="terms-content-title">8. Conteúdo e propriedade intelectual</h2>
+      <p>
+        Cardápio, descrições, preços, imagens, marca e textos exibidos pertencem à Brocados Lanches
+        ou a quem os forneceu e são usados aqui apenas para operar o serviço. Imagens de
+        desenvolvimento são ilustrativas até a substituição pelas definitivas.
+      </p>
+      <p>Não reproduza nem use esse conteúdo para outro fim sem autorização da loja.</p>
+    </section>
+
+    <section aria-labelledby="terms-privacy-title">
+      <h2 id="terms-privacy-title">9. Privacidade</h2>
+      <p>
+        O tratamento dos dados informados no pedido e no painel segue a
+        <RouterLink to="/privacidade">Política de Privacidade</RouterLink>.
+      </p>
+    </section>
+
+    <section aria-labelledby="terms-changes-title">
+      <h2 id="terms-changes-title">10. Alterações, contato e legislação</h2>
+      <p>
+        A data no aviso do topo indica a versão deste rascunho. A versão vigente será publicada após
+        aprovação, e mudanças relevantes passam a valer depois de publicadas neste site.
+      </p>
+      <p>
+        Para dúvidas sobre pedido, entrega ou pagamento, use os canais já publicados pela loja na
+        <RouterLink to="/contato">página de contato</RouterLink>. Aplica-se a legislação brasileira,
+        inclusive a LGPD (Lei nº 13.709/2018) no que couber.
       </p>
     </section>
   </main>
@@ -87,10 +198,18 @@ import { RouterLink } from 'vue-router'
   font-size: var(--font-size-h2);
 }
 
-.info-page p {
+.info-page p,
+.info-page li {
   margin: 0;
   color: var(--text-sub);
   line-height: 1.6;
+}
+
+.info-page ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
 }
 
 .info-page a {
