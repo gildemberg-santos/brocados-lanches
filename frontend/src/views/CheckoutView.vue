@@ -537,7 +537,7 @@ onUnmounted(() => {
   padding: 10px 12px;
   border: 1px solid var(--bg-border);
   border-radius: 10px;
-  background: var(--bg-base);
+  background: var(--bg-input);
   color: var(--text-main);
   font: inherit;
   font-weight: 400;

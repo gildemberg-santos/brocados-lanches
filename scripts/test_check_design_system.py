@@ -108,6 +108,38 @@ class CheckDesignSystemTest(unittest.TestCase):
 
         self.assertEqual(check_design_system.collect_errors(self.root), [])
 
+    def test_detects_unknown_css_variable(self) -> None:
+        self.write(
+            "frontend/src/components/Bad.vue",
+            "<style>.bad { background: var(--bg-base); }</style>\n",
+        )
+
+        errors = check_design_system.collect_errors(self.root)
+
+        self.assertTrue(
+            any("token CSS inexistente --bg-base" in error for error in errors)
+        )
+
+    def test_detects_unknown_css_variable_with_fallback(self) -> None:
+        self.write(
+            "frontend/src/components/Bad.vue",
+            "<style>.bad { background: var(--bg-base, transparent); }</style>\n",
+        )
+
+        errors = check_design_system.collect_errors(self.root)
+
+        self.assertTrue(
+            any("token CSS inexistente --bg-base" in error for error in errors)
+        )
+
+    def test_accepts_known_token_with_fallback(self) -> None:
+        self.write(
+            "frontend/src/components/Good.vue",
+            "<style>.good { background: var(--bg-input, transparent); }</style>\n",
+        )
+
+        self.assertEqual(check_design_system.collect_errors(self.root), [])
+
     def test_detects_tailwind_cdn(self) -> None:
         self.write(
             "frontend/index.html",

@@ -23,6 +23,7 @@ IGNORED_PARTS = {
 }
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 COLOR_FUNCTION_RE = re.compile(r"\b(?:rgb|rgba|hsl|hsla)\s*\(", re.IGNORECASE)
+CSS_VAR_RE = re.compile(r"var\(\s*(--[a-z0-9-]+)\s*(?:,|\))", re.IGNORECASE)
 CDN_PATTERNS = {
     "Tailwind CDN": "cdn.tailwindcss.com",
     "Google Fonts CDN": "fonts.googleapis.com",
@@ -189,6 +190,27 @@ def frontend_files(root: Path) -> list[Path]:
     return sorted(files)
 
 
+def validate_token_references(root: Path) -> list[str]:
+    """Falha quando o frontend referencia uma variável CSS não declarada."""
+    declared = set(read_css_variables(root / TOKENS_CSS))
+    if not declared:
+        return []
+
+    errors: list[str] = []
+    for path in frontend_files(root):
+        relative = path.relative_to(root)
+        text = path.read_text(encoding="utf-8")
+        for line_number, line in enumerate(text.splitlines(), 1):
+            for match in CSS_VAR_RE.finditer(line):
+                name = match.group(1)
+                if name not in declared:
+                    errors.append(
+                        f"{relative}:{line_number}: token CSS inexistente {name}; "
+                        "use um token do design system"
+                    )
+    return errors
+
+
 def scan_frontend(root: Path) -> list[str]:
     """Procura cores literais e dependências visuais proibidas no frontend."""
     errors: list[str] = []
@@ -267,7 +289,12 @@ def validate_assets(root: Path) -> list[str]:
 
 def collect_errors(root: Path = ROOT) -> list[str]:
     """Retorna inconsistências de token e violações visuais no frontend."""
-    return validate_tokens(root) + scan_frontend(root) + validate_assets(root)
+    return (
+        validate_tokens(root)
+        + scan_frontend(root)
+        + validate_token_references(root)
+        + validate_assets(root)
+    )
 
 
 def main() -> int:

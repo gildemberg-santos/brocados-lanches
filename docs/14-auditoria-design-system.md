@@ -96,13 +96,15 @@ Severidade: **Alta** = corrige comportamento fora do planejado ou informação e
 | AUD-13 | Baixa | Bottom nav do admin expõe só 4 atalhos | `frontend/src/components/admin/AdminShell.vue:53-62` | `07` §14 (decisão aberta) | US-126 |
 | AUD-14 | Média | `make design-check` não detecta token CSS inexistente | `scripts/check_design_system.py` | Gate do `../AGENTS.md` §8.5/§12.1 | US-123 |
 
+**Atualização em 25/11/2026:** AUD-04 e AUD-14 foram corrigidos junto com a US-123. O checkout passou a usar `--bg-input`, e `scripts/check_design_system.py` passou a reprovar qualquer `var(--…)` não declarado em `tokens.css`, inclusive com sintaxe de fallback. Três testes de regressão foram adicionados a `scripts/test_check_design_system.py`. Os demais achados seguem em aberto.
+
 ### 5.1 Detalhamento dos achados de severidade Alta
 
 **AUD-01 e AUD-02 — tela de pedido.** O `<h1>` é estático e aparece mesmo quando `ErrorState` é renderizado. A rota serve simultaneamente como confirmação e acompanhamento, mas não apresenta a timeline prevista no §5.7 nem o contato da loja para o caso de o link do WhatsApp não estar mais na sessão. O bloco de handoff traz o aviso “Seu pedido já está salvo” apenas quando `handoffUrl` existe. Correção: título por estado, timeline com os eventos disponíveis na resposta pública, bloco de contato e aviso explícito de registro em todos os caminhos de sucesso.
 
 **AUD-03 — dashboard.** O protótipo Admin 01 traz “Controle Master da Loja” com botão ABERTO/FECHADO, “Produtos Disponíveis X / total”, “Bairros Ativos”, “Tempo Médio Delivery” e “Pedidos Recentes”. A versão implementada mantém status somente leitura, substitui “pedidos recentes” pelo total da fila e mostra apenas contagem de produtos ativos. Correção: expor a ação de kill switch (com auditoria, reaproveitando `PATCH /admin/store`), agregar contagem por status, disponíveis/total, prazo de entrega e lista de pedidos recentes com link para o detalhe.
 
-**AUD-04 — token inexistente.** O valor resolvido de `--bg-base` é vazio no navegador; o input do checkout herda `background-color: rgba(0, 0, 0, 0)`. O validador atual confere cores literais e consistência entre `tokens.css`/`tokens.json`, mas não confere se `var(--…)` existe. Correção pontual para `--bg-input` e reforço do validador (AUD-14).
+**AUD-04 — token inexistente (corrigido).** O valor resolvido de `--bg-base` era vazio no navegador; o input do checkout herdava `background-color: rgba(0, 0, 0, 0)`. O validador conferia cores literais e a consistência entre `tokens.css`/`tokens.json`, mas não conferia a existência de `var(--…)`. A correção trocou o token por `--bg-input` e reforçou o validador (AUD-14).
 
 ---
 

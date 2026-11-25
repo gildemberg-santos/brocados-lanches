@@ -444,8 +444,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [ ] AUD-02: componente/timeline pública e bloco de contato em `OrderView.vue`, reaproveitando `GET /store`.
 - [ ] AUD-03: ação de kill switch no dashboard via `PATCH /admin/store`, com confirmação e auditoria.
 - [ ] AUD-03: agregações de status, disponíveis/total, prazo e pedidos recentes no dashboard.
-- [ ] AUD-04: substituir `--bg-base` por `--bg-input` no checkout.
-- [ ] AUD-14: detectar token `var(--…)` inexistente no validador de design system e testar a falha.
+- [x] AUD-04: substituir `--bg-base` por `--bg-input` no checkout.
+- [x] AUD-14: detectar token `var(--…)` inexistente no validador de design system e testar a falha.
 - [ ] AUD-07: numerar a revisão final como etapa no checkout e mover o envio para dentro dela.
 - [ ] AUD-05: associar erros aos inputs em `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm`.
 - [ ] AUD-11: remover o `<main id="conteudo">` duplicado do shell ou das views, mantendo um único destino do skip-link.
@@ -455,6 +455,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [ ] AUD-12/AUD-13: decidir emoji e navegação mobile antes de alterar a interface; registrar a decisão em `13-decisoes-e-pendencias.md`.
 
 **Ordem sugerida:** US-123 → US-120 → US-121 → US-122 → US-124 → US-125 → US-126. Nenhuma história entra em andamento sem teste automatizado previsto na Definition of Done da seção 1.5.
+
+**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`; `make design-check` e `make test-design` passando. As demais histórias do épico estão `Planejado`.
 
 ---
 
