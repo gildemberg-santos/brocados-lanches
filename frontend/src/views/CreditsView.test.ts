@@ -28,8 +28,8 @@ describe('CreditsView', () => {
     const text = wrapper.text()
 
     expect(wrapper.get('h1').text()).toBe('Créditos')
-    expect(wrapper.get('[role="note"]').text()).toContain('Página institucional em avaliação')
-    expect(wrapper.get('[role="note"]').text()).toContain('currículo fornecido pelo autor')
+    expect(wrapper.get('[role="note"] p').text()).toContain('Página institucional em avaliação')
+    expect(wrapper.get('[role="note"] p').text()).toContain('currículo fornecido pelo autor')
     expect(text).toContain('Gildemberg Santos')
     expect(text).toContain('Desenvolvedor de software com mais de uma década de experiência')
     expect(text).toContain('Leadster')
@@ -41,9 +41,11 @@ describe('CreditsView', () => {
     const wrapper = await mountCredits()
     const text = wrapper.text()
 
-    const linkedin = wrapper.get('a[href="https://linkedin.com/in/gildembergsantos"]')
-    const github = wrapper.get('a[href="https://github.com/gildemberg-santos"]')
+    const professionalLinks = wrapper.get('nav[aria-label="Links profissionais"]')
+    const linkedin = professionalLinks.get('a[href="https://linkedin.com/in/gildembergsantos"]')
+    const github = professionalLinks.get('a[href="https://github.com/gildemberg-santos"]')
 
+    expect(professionalLinks.findAll('a')).toHaveLength(2)
     for (const link of [linkedin, github]) {
       expect(link.attributes('target')).toBe('_blank')
       expect(link.attributes('rel')).toBe('noopener noreferrer')

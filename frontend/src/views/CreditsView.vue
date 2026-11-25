@@ -7,10 +7,12 @@ import { RouterLink } from 'vue-router'
     <h1>Créditos</h1>
 
     <aside class="info-page__notice" role="note" aria-label="Situação do texto">
-      <strong>Página institucional em avaliação.</strong>
-      Os créditos de desenvolvimento abaixo usam dados do currículo fornecido pelo autor. Logotipo,
-      fotografias e textos definitivos da loja ainda dependem de validação; nenhum crédito sobre
-      esses itens é afirmado antes dessa confirmação.
+      <p>
+        <strong>Página institucional em avaliação.</strong>
+        Os créditos de desenvolvimento abaixo usam dados do currículo fornecido pelo autor.
+        Logotipo, fotografias e textos definitivos da loja ainda dependem de validação; nenhum
+        crédito sobre esses itens é afirmado antes dessa confirmação.
+      </p>
     </aside>
 
     <section class="credit-hero" aria-labelledby="credits-author-title">
@@ -20,21 +22,14 @@ import { RouterLink } from 'vue-router'
         Rails, com conhecimento em Go, Python, RSpec e Docker.
       </p>
       <p class="credit-hero__meta">Aquiraz, CE</p>
-      <ul class="credit-links">
-        <li>
-          <a
-            href="https://linkedin.com/in/gildembergsantos"
-            target="_blank"
-            rel="noopener noreferrer"
-            >LinkedIn</a
-          >
-        </li>
-        <li>
-          <a href="https://github.com/gildemberg-santos" target="_blank" rel="noopener noreferrer"
-            >GitHub</a
-          >
-        </li>
-      </ul>
+      <nav class="credit-links" aria-label="Links profissionais">
+        <a href="https://linkedin.com/in/gildembergsantos" target="_blank" rel="noopener noreferrer"
+          >LinkedIn</a
+        >
+        <a href="https://github.com/gildemberg-santos" target="_blank" rel="noopener noreferrer"
+          >GitHub</a
+        >
+      </nav>
     </section>
 
     <div class="credit-grid">
@@ -142,6 +137,10 @@ import { RouterLink } from 'vue-router'
   line-height: 1.6;
 }
 
+.info-page p {
+  max-width: 72ch;
+}
+
 .info-page ul {
   display: grid;
   gap: 6px;
@@ -173,6 +172,11 @@ import { RouterLink } from 'vue-router'
   color: var(--brand-primary);
 }
 
+.credit-hero p:not(.credit-hero__meta) {
+  max-width: 60ch;
+  margin-inline: auto;
+}
+
 .credit-hero__meta {
   color: var(--text-sub);
   font-size: var(--font-size-caption);
@@ -183,8 +187,6 @@ import { RouterLink } from 'vue-router'
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
-  padding: 0;
-  list-style: none;
 }
 
 .credit-links a {
