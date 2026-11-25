@@ -10,6 +10,9 @@ import { RouterLink } from 'vue-router'
       <strong>Texto sujeito a aprovação.</strong>
       Estes termos são informativos e provisórios: o texto definitivo depende de aprovação do
       cliente e do jurídico. Não substituem um termo aprovado.
+      <span class="info-page__date"
+        >Rascunho preparado em 25/11/2026. Publicação: pendente de E0.</span
+      >
     </aside>
 
     <section aria-labelledby="terms-order-title">
@@ -65,6 +68,13 @@ import { RouterLink } from 'vue-router'
 
 .info-page__notice strong {
   color: var(--brand-primary);
+}
+
+.info-page__date {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
 }
 
 .info-page section {

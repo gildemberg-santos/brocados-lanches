@@ -300,8 +300,8 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 
 - Endereço, horários, WhatsApp e Instagram.
 - Link para mapa, se aprovado.
-- Política de privacidade e termos com data.
-- Canal do titular.
+- Política de privacidade e termos com data. Desde a US-126 as páginas exibem a data do rascunho (25/11/2026) e sinalizam que a publicação depende de `E0`; o texto provisório não é apresentado como vigente.
+- Canal do titular (pendente de `E0`).
 
 ---
 

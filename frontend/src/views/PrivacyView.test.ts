@@ -28,6 +28,8 @@ describe('PrivacyView', () => {
     expect(wrapper.get('h1').text()).toBe('Privacidade')
     expect(wrapper.get('[role="note"]').text()).toContain('Texto sujeito a aprovação')
     expect(wrapper.text()).toContain('aprovação do cliente e do jurídico')
+    expect(wrapper.get('.info-page__date').text()).toContain('Rascunho preparado em 25/11/2026')
+    expect(wrapper.get('.info-page__date').text()).toContain('Publicação: pendente de E0')
   })
 
   it('describes only documented data and does not invent legal details', async () => {

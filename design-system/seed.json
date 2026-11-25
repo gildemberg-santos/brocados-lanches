@@ -2,7 +2,7 @@
   "_meta": {
     "fonte": "brocados-lanches-design-system-v2.5.html",
     "extraido_em": "2026-11-18",
-    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders fictícios, em formato E.164, e precisam de confirmação.",
+    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders fictícios, em formato E.164, e precisam de confirmação. Os emojis em nomes de categoria vêm do protótipo e são apenas ilustração de dados de desenvolvimento; não são padrão de interface e devem ser removidos ou aprovados antes de produção.",
     "catalogo_original": {
       "url": "https://cardpiobrocadoslanchess.ola.click/products",
       "extraido_em": "2026-11-23",

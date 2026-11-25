@@ -141,11 +141,12 @@ Origem: `14-auditoria-design-system.md` e §14 de `07-design-system-e-experienci
 
 | Decisão | Situação atual | História afetada |
 |---|---|---|
-| Navegação mobile do painel: bottom nav de 4 atalhos ou drawer completo | Bottom nav implementado; telas secundárias dependem dos atalhos do dashboard | US-126 |
-| Carrinho no desktop: sidebar fixa ou drawer | Não implementado; mobile também pendente | US-125 |
-| Emoji na interface e em nomes do seed | Emojis presentes nos dados de desenvolvimento | US-126 |
+| Navegação mobile do painel: bottom nav de 4 atalhos, bottom nav completo ou drawer | Bottom nav com quatro atalhos implementado; telas secundárias dependem dos atalhos do dashboard. Nenhuma opção foi aprovada, então a interface não foi alterada na US-126 | US-126 (AUD-13, bloqueada) |
+| Carrinho no desktop: sidebar fixa ou drawer | Barra fixa entregue no mobile na US-125; versão desktop não implementada | US-125 (parcial) |
+| Emoji na interface e em nomes do seed | Emojis presentes nos dados de desenvolvimento; `seed.json` passou a declará-los como fictícios e não padrão de interface. Remoção efetiva aguarda aprovação | US-126 (AUD-12, parcial) |
 | Tokens de espaçamento, raio, sombra, movimento e z-index | Valores aplicados no CSS, sem token canônico | Mudança de padrão; exige `tokens.css`, `tokens.json` e documentação |
-| Token de aviso/info ou manter apenas aberto/erro | Somente `--status-open` e `--status-error` | US-125 |
+| Token de aviso/info ou manter apenas aberto/erro | Somente `--status-open` e `--status-error`; “Loja fechada” usa cor neutra desde a US-125 | US-125 (resolvido sem token novo) |
+| Data de publicação de privacidade/termos e canal do titular | Páginas exibem data de rascunho e publicação explicitamente pendente de `E0`; texto provisório não é apresentado como vigente | US-126 (AUD-10, parcial) |
 
 ---
 

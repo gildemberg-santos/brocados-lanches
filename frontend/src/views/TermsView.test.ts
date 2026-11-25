@@ -28,6 +28,8 @@ describe('TermsView', () => {
     expect(wrapper.get('h1').text()).toBe('Termos de uso')
     expect(wrapper.get('[role="note"]').text()).toContain('Texto sujeito a aprovação')
     expect(wrapper.text()).toContain('Não substituem um termo aprovado')
+    expect(wrapper.get('.info-page__date').text()).toContain('Rascunho preparado em 25/11/2026')
+    expect(wrapper.get('.info-page__date').text()).toContain('Publicação: pendente de E0')
   })
 
   it('keeps the rules factual and never invents business data', async () => {

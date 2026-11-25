@@ -126,6 +126,8 @@ AUD-06, AUD-08 e AUD-09 foram corrigidos junto com a US-125. O painel passou a u
 
 **Evidência da US-125:** verificação em navegador headless com `GET /api/v1/store` interceptado como fechado e dois itens no carrinho, nos viewports de 375 px e 1280 px. A barra de carrinho fica visível em 375 px (“Ver carrinho (2)”, subtotal R$ 99,98 e altura mínima de 56 px) e oculta em 1280 px; o aviso de loja fechada aparece com texto nos dois tamanhos, e `scrollWidth === clientWidth` em ambos. Prints em `/tmp/opencode/home-us125-375.png` e `/tmp/opencode/home-us125-1280.png` (fora do repositório).
 
+**Atualização da US-126 em 25/11/2026:** AUD-10 e AUD-12 foram tratados na parte que não depende de aprovação. Privacidade e termos exibem “Rascunho preparado em 25/11/2026. Publicação: pendente de E0”, sem apresentar texto provisório como vigente; `design-system/seed.json` passou a declarar que os emojis nos nomes de categoria vêm do protótipo e são apenas ilustração de desenvolvimento, não padrão de interface. Testes de DOM cobrem a data nas duas páginas. AUD-13 (bottom nav do painel) permanece em aberto: a decisão entre bottom nav completo e drawer ainda não foi registrada em `13-decisoes-e-pendencias.md`, então a navegação não foi alterada. A data de publicação efetiva e a remoção dos emojis dependem de `E0` e de design, respectivamente. Não há evidência visual nova porque a US-126 não alterou layout.
+
 ---
 
 ## 6. Diferenças entre protótipo e documento que **não** são desvios
