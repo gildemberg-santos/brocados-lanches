@@ -1,0 +1,157 @@
+# Auditoria de conformidade com o design system — 25/11/2026
+
+**Versão:** 1.0  
+**Atualizado em:** 25/11/2026  
+**Status:** auditoria concluída; achados convertidos no Épico 12 de `08-backlog.md`.  
+**Relacionados:** `../AGENTS.md`, `07-design-system-e-experiencia.md`, `08-backlog.md`, `13-decisoes-e-pendencias.md`, `../design-system/README.md`.
+
+---
+
+## 1. Objetivo
+
+Verificar se as telas implementadas no frontend estão dentro do planejado no design system e na documentação de experiência, sem alterar o protótipo ou os tokens. O resultado é um inventário de aderência, uma lista de desvios com evidência e as tarefas de correção correspondentes.
+
+Esta auditoria **não altera a hierarquia de fontes de verdade** definida em `../AGENTS.md` e `README.md`: em conflito, valem `AGENTS.md`, `briefing/chamado.md`, `docs/`, protótipo HTML. Quando o protótipo e `07-design-system-e-experiencia.md` divergem, o documento de design prevalece — a divergência está registrada na seção 6.
+
+---
+
+## 2. Escopo e método
+
+Foram consultados:
+
+- `../design-system/README.md`, `../design-system/tokens.css` e `../design-system/tokens.json` na íntegra;
+- `../design-system/brocados-lanches-design-system-v2.5.html` (2023 linhas): funções `buildClientScreenContent` (linhas 928–1348), `buildAdminScreenContent` (linhas 1446–1674), rodapé fixo, sidebar desktop e navegação;
+- `07-design-system-e-experiencia.md`, seções 2 a 14;
+- 11 views do cliente e 13 views do painel, além dos componentes compartilhados e do shell administrativo;
+- `make design-check`: aprovado — tokens consistentes e 205 arquivos de frontend validados;
+- navegação real em `http://localhost:8081` nos viewports de 375 px e 1280 px, com medição de `scrollWidth` (nenhum scroll horizontal nas rotas medidas) e login com usuário administrativo de desenvolvimento.
+
+**Limitações da verificação:** a suíte completa (`make test`, `make lint`) não foi reexecutada nesta auditoria documental; as conclusões sobre comportamento vêm de leitura de código, do `design-check` e da navegação manual. As tarefas do Épico 12 exigem testes automatizados conforme a Definition of Done de `08-backlog.md`.
+
+---
+
+## 3. Veredito
+
+A implementação está **majoritariamente dentro do planejado**. Identidade visual, tokens, tipografia, componentes base, estados de dados, regra de servidor autoritativo e acessibilidade básica atendem ao documento de design e ao protótipo. Os desvios relevantes concentram-se em quatro frentes:
+
+1. tela pública de pedido (título, timeline e orientação de handoff);
+2. dashboard administrativo (kill switch e indicadores do protótipo);
+3. checkout (token CSS inexistente e etapa de revisão);
+4. acessibilidade dos formulários administrativos e semântica do shell.
+
+Nenhum desses achados bloqueia segurança ou persistência do pedido; por isso viraram histórias **P1/P2**, não P0.
+
+---
+
+## 4. Matriz de aderência
+
+### 4.1 Telas do cliente
+
+| Tela | Situação | Base | Observação |
+|---|---|---|---|
+| Home `/` | Parcial | `07` §5.1 e protótipo Tela 00 | Hero, categorias, destaques e contatos OK; falta barra fixa de carrinho no mobile e aviso de que o pedido não pode ser concluído com a loja fechada |
+| Cardápio `/cardapio` | Conforme | `07` §5.2 e protótipo Tela 01 | Busca, filtro, grid 2/3 colunas, esgotado, contagem e estados presentes |
+| Produto `/produto/:slug` | Conforme | `07` §5.3 e protótipo Tela 02 | Imagem, alergênicos, grupos, adicionais, observação, preço e CTA sticky presentes |
+| Carrinho `/carrinho` | Conforme | `07` §5.4 e protótipo Tela 03 | Itens, quantidade, remoção, limpeza, totais, aviso de total final e estado vazio presentes |
+| Checkout `/checkout` | Parcial | `07` §5.5 | Regras de negócio OK; 4 etapas (3 na retirada) em vez das 5 do documento e token CSS inválido |
+| Pedido `/pedido/:publicId` | Fora do planejado | `07` §5.6/§5.7 | Título fixo “Pedido registrado” mesmo em erro; sem timeline, contato da loja e aviso de registro fora do handoff |
+| Contato `/contato` | Conforme | `07` §5.8 | Dados vêm de `GET /store` |
+| Privacidade / Termos | Parcial | `07` §5.8 e §9 | Sem data de publicação; canal do titular da privacidade ainda pendente |
+| Créditos `/creditos` | Conforme | `07` §12 e protótipo Tela 05 | Página institucional mantida com `noindex` |
+
+### 4.2 Telas administrativas
+
+| Tela | Situação | Base | Observação |
+|---|---|---|---|
+| Login `/admin/login` | Conforme | `07` §6.1 | Erro genérico, loading, sem “lembrar-me” e redirect seguro |
+| Dashboard `/admin` | Fora do planejado | `07` §6.2 e protótipo Admin 01 | Faltam kill switch, pedidos por status, disponíveis/total, prazo de entrega e pedidos recentes |
+| Produtos `/admin/produtos` | Conforme | `07` §6.3 e protótipo Admin 02 | CRUD, preço em reais, opções, adicionais e auditoria |
+| Categorias e adicionais | Conforme | `07` §6.4/§6.5 e protótipo Admin 03 | CRUD com slug, ordem e ativo |
+| Zonas `/admin/locais` | Conforme | `07` §6.6 e protótipo Admin 04 | Taxa em reais, centavos na API e aviso de snapshot |
+| Loja `/admin/loja` | Parcial | `07` §6.7 | Kill switch, horários e preview OK; “Loja fechada” em cor de erro, mas o §2.1 pede neutro |
+| Pedidos e detalhe | Conforme | `07` §6.8 | Filtros, paginação, PII mascarada, transições e histórico; datas UTC nos filtros conforme o documento |
+| Usuários, auditoria e conta | Conforme | `07` §6.9–§6.11 | Papéis, último owner protegido, sem PII e logout |
+| Shell do painel | Parcial | `07` §8 e §14 | Bottom nav mobile com 4 atalhos; `<main id="conteudo">` duplicado/aninhado |
+
+---
+
+## 5. Achados
+
+Severidade: **Alta** = corrige comportamento fora do planejado ou informação enganosa; **Média** = fidelity visual/acessibilidade relevante; **Baixa** = ajuste de conteúdo ou decisão ainda aberta. A severidade documental não é prioridade de backlog; o mapeamento está na seção 8.
+
+| ID | Sev. | Achado | Evidência | Origem | Tarefa |
+|---|---|---|---|---|---|
+| AUD-01 | Alta | Título “Pedido registrado” fixo, inclusive em erro/404 | `frontend/src/views/OrderView.vue:63` | `07` §5.7 e §9 | US-120 |
+| AUD-02 | Alta | Falta timeline, contato da loja e aviso de registro quando não há link do WhatsApp | `frontend/src/views/OrderView.vue:61-128` | `07` §5.6/§5.7 | US-120 |
+| AUD-03 | Alta | Dashboard sem kill switch, pedidos por status, disponíveis/total, prazo e recentes | `frontend/src/views/admin/AdminDashboardView.vue:73-112` | `07` §6.2 e protótipo Admin 01 | US-121 |
+| AUD-04 | Alta | `var(--bg-base)` não existe; input do checkout fica com fundo transparente | `frontend/src/views/CheckoutView.vue:540` | `07` §2.1 e tokens | US-122 |
+| AUD-05 | Média | Erros de formulário admin sem `aria-describedby`/`aria-invalid` no campo | `AdminCatalogForm.vue:117-131`, `AdminProductForm.vue:192+`, `AdminStoreView.vue:159`, `AdminUserForm.vue:83` | `07` §8 | US-124 |
+| AUD-06 | Média | “Loja fechada” em `--status-error` no painel | `frontend/src/views/admin/AdminStoreView.vue:285-287` | `07` §2.1 | US-125 |
+| AUD-07 | Média | Checkout sem etapa explícita “Revisão e envio” | `frontend/src/views/CheckoutView.vue:180-415` | `07` §5.5 | US-122 |
+| AUD-08 | Média | Falta barra fixa de carrinho no mobile | `frontend/src/views/HomeView.vue:81-204` e `SiteHeader.vue` | `07` §5.1 e protótipo Tela 00 | US-125 |
+| AUD-09 | Média | Loja fechada na home sem aviso de que o pedido não pode ser concluído | `frontend/src/views/HomeView.vue:123-142` | `07` §5.1 | US-125 |
+| AUD-10 | Baixa | Páginas legais sem data de publicação e canal do titular pendente | `frontend/src/views/PrivacyView.vue`, `TermsView.vue` | `07` §5.8 e §9 | US-126 |
+| AUD-11 | Média | `<main id="conteudo">` no shell e nas views, com IDs duplicados e landmark aninhado | `frontend/src/components/admin/AdminShell.vue:48`, views `admin/*.vue` | `07` §8 | US-124 |
+| AUD-12 | Baixa | Emojis do seed em nomes de categoria | `design-system/seed.json` | `07` §12 e §14 | US-126 |
+| AUD-13 | Baixa | Bottom nav do admin expõe só 4 atalhos | `frontend/src/components/admin/AdminShell.vue:53-62` | `07` §14 (decisão aberta) | US-126 |
+| AUD-14 | Média | `make design-check` não detecta token CSS inexistente | `scripts/check_design_system.py` | Gate do `../AGENTS.md` §8.5/§12.1 | US-123 |
+
+### 5.1 Detalhamento dos achados de severidade Alta
+
+**AUD-01 e AUD-02 — tela de pedido.** O `<h1>` é estático e aparece mesmo quando `ErrorState` é renderizado. A rota serve simultaneamente como confirmação e acompanhamento, mas não apresenta a timeline prevista no §5.7 nem o contato da loja para o caso de o link do WhatsApp não estar mais na sessão. O bloco de handoff traz o aviso “Seu pedido já está salvo” apenas quando `handoffUrl` existe. Correção: título por estado, timeline com os eventos disponíveis na resposta pública, bloco de contato e aviso explícito de registro em todos os caminhos de sucesso.
+
+**AUD-03 — dashboard.** O protótipo Admin 01 traz “Controle Master da Loja” com botão ABERTO/FECHADO, “Produtos Disponíveis X / total”, “Bairros Ativos”, “Tempo Médio Delivery” e “Pedidos Recentes”. A versão implementada mantém status somente leitura, substitui “pedidos recentes” pelo total da fila e mostra apenas contagem de produtos ativos. Correção: expor a ação de kill switch (com auditoria, reaproveitando `PATCH /admin/store`), agregar contagem por status, disponíveis/total, prazo de entrega e lista de pedidos recentes com link para o detalhe.
+
+**AUD-04 — token inexistente.** O valor resolvido de `--bg-base` é vazio no navegador; o input do checkout herda `background-color: rgba(0, 0, 0, 0)`. O validador atual confere cores literais e consistência entre `tokens.css`/`tokens.json`, mas não confere se `var(--…)` existe. Correção pontual para `--bg-input` e reforço do validador (AUD-14).
+
+---
+
+## 6. Diferenças entre protótipo e documento que **não** são desvios
+
+- **Checkout:** o protótipo tem 3 etapas numeradas e botão “Finalizar no WhatsApp”; o `07` §5.5 define 5 etapas, incluindo dados do cliente e revisão. A implementação tem 4 etapas (3 na retirada) e resumo lateral — atende ao protótipo e fica aquém do documento. Por isso AUD-07 é classificado como Média, e não como regressão do protótipo.
+- **Conta:** o Admin 05 do protótipo reúne dados da loja; na produção isso foi separado em `/admin/loja`, enquanto `/admin/conta` mostra usuário/papel da sessão, conforme `07` §6.11.
+- **Telas adicionais:** confirmação/acompanhamento, contato, privacidade, termos, adicionais, gestão de loja, fila de pedidos, usuários e auditoria são expansões previstas no `07`, ausentes do protótipo por ser ele apenas uma maquete sem backend.
+- **Datas UTC nos filtros do admin:** o `07` §6.8 define UTC para filtros e `America/Fortaleza` para exibição; os rótulos “De (UTC)” são fiéis ao documento. A eventual troca por máscara local é decisão de microcopy, registrada como pendência, não como defeito.
+- **Hero da home:** o protótipo usa gradiente laranja e a produção usa superfície neutra com card de destaque. Está dentro dos tokens e atende ao §5.1; trata-se de diferença de fidelidade visual, não de quebra de padrão.
+
+---
+
+## 7. Lacunas do próprio design system
+
+`tokens.css` e `tokens.json` cobrem cores e escala tipográfica, mas não espaçamento, raio, sombra, movimento nem z-index. Valores como 12/16/18/24 px aparecem aplicados de forma consistente no frontend, porém sem token canônico. O `07` §3 e §14 já registram essas lacunas e as decisões abertas (warning/info, emoji, carrinho desktop, navegação mobile do admin). Elas não devem ser resolvidas unilateralmente em código: a decisão de design precisa atualizar `tokens.css`, `tokens.json` e a documentação juntos, conforme `../design-system/README.md`.
+
+---
+
+## 8. Tarefas geradas
+
+As histórias abaixo foram adicionadas ao Épico 12 de `08-backlog.md`. Status inicial: `Planejado`.
+
+| História | Prioridade | Tam. | Achados | Objetivo |
+|---|---|---|---|---|
+| US-120 | P1 | M | AUD-01, AUD-02 | Tela de pedido com estado correto, timeline e orientação de handoff |
+| US-121 | P1 | M | AUD-03 | Dashboard operacional completo, com kill switch e indicadores |
+| US-122 | P1 | P | AUD-04, AUD-07 | Checkout com token válido e etapa de revisão explícita |
+| US-123 | P1 | P | AUD-14 | Validador de design system rejeita tokens inexistente |
+| US-124 | P1 | M | AUD-05, AUD-11 | Acessibilidade dos formulários admin e semântica do shell |
+| US-125 | P2 | M | AUD-06, AUD-08, AUD-09 | Status fechado neutro, carrinho fixo no mobile e aviso na home |
+| US-126 | P2 | P | AUD-10, AUD-12, AUD-13 | Conteúdo legal datado, emojis do seed e decisões abertas de navegação |
+
+Ordem sugerida: US-123 primeiro (fortalece o gate antes de mexer em UI), depois US-120/US-121/US-122, e por fim US-124/US-125/US-126. US-126 depende de decisão de design/cliente nas partes que envolvem emoji, navegação mobile e conteúdo legal; a data de publicação das páginas legais depende de `E0`.
+
+---
+
+## 9. Validação e evidência
+
+Antes de marcar qualquer história como concluída:
+
+1. `make fmt-check`, `make lint`, `make test`, `make docs-check` e `make design-check` passando.
+2. Teste automatizado novo ou alterado cobrindo o comportamento (Vitest/Vue Test Utils no frontend; `unittest` em `scripts/`).
+3. Para mudanças de UI: print ou evidência equivalente em 375 px e 1280 px, verificando foco visível, alvos de 44 px e ausência de scroll horizontal.
+4. Contrato de API alterado? Atualizar `06-contrato-api.md` na mesma mudança.
+5. Decisão de padrão visual alterada? Atualizar `tokens.css`, `tokens.json`, `../design-system/README.md` e este documento na mesma mudança, com aprovação de design.
+
+---
+
+## 10. Estado desta auditoria
+
+Nenhum arquivo de código foi alterado pela auditoria. O objetivo deste documento é servir de registro único dos achados e de ponte para as tarefas executáveis no backlog; a execução das histórias deve atualizar a coluna de status e anexar evidência conforme a seção 9.

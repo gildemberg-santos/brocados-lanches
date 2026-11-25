@@ -135,6 +135,18 @@ As decisões D-008 (`POST /orders/quote`) e D-010 (`/admin/users` e `/admin/audi
 
 Elas entram em P2 ou no roadmap seguinte.
 
+### 5.1 Decisões abertas de design — auditoria de 25/11/2026
+
+Origem: `14-auditoria-design-system.md` e §14 de `07-design-system-e-experiencia.md`. Nenhuma foi decidida pela auditoria; todas precisam de aprovação de design antes de virar padrão.
+
+| Decisão | Situação atual | História afetada |
+|---|---|---|
+| Navegação mobile do painel: bottom nav de 4 atalhos ou drawer completo | Bottom nav implementado; telas secundárias dependem dos atalhos do dashboard | US-126 |
+| Carrinho no desktop: sidebar fixa ou drawer | Não implementado; mobile também pendente | US-125 |
+| Emoji na interface e em nomes do seed | Emojis presentes nos dados de desenvolvimento | US-126 |
+| Tokens de espaçamento, raio, sombra, movimento e z-index | Valores aplicados no CSS, sem token canônico | Mudança de padrão; exige `tokens.css`, `tokens.json` e documentação |
+| Token de aviso/info ou manter apenas aberto/erro | Somente `--status-open` e `--status-error` | US-125 |
+
 ---
 
 ## 6. Processo de mudança

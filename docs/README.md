@@ -1,8 +1,8 @@
 # Documentação — Brocados Lanches
 
-**Versão:** 1.1  
+**Versão:** 1.2  
 **Atualizado em:** 25/11/2026  
-**Status:** documentação da V1 concluída; fases 1 a 4 entregues no código, Épico 8 parcialmente entregue, épicos 9 e 10 e decisões de negócio em aberto.  
+**Status:** documentação da V1 concluída; fases 1 a 4 entregues no código, Épico 8 parcialmente entregue, épicos 9 e 10 e decisões de negócio em aberto; auditoria de conformidade visual registrada em `14-auditoria-design-system.md`, com correções no Épico 12 do backlog.  
 **Entrada recomendada:** este arquivo.
 
 ---
@@ -47,6 +47,7 @@ Dentro de `docs/`, a precedência é:
 | Sequência e marcos | `11-roadmap.md` |
 | Referência externa | `12-referencia-ola-click.md` |
 | Decisões e pendências | `13-decisoes-e-pendencias.md` |
+| Auditoria de conformidade visual | `14-auditoria-design-system.md` |
 
 `01-inventario-prototipo.md` e `02-plano-de-producao.md` são documentos históricos da descoberta e da Fase 1. O plano executável atual está em `11-roadmap.md` e `08-backlog.md`.
 
@@ -69,6 +70,7 @@ Dentro de `docs/`, a precedência é:
 | `11-roadmap.md` | Gestão, engenharia | Fases, marcos, caminho crítico e riscos | Concluído |
 | `12-referencia-ola-click.md` | Produto, design, conteúdo | Análise do site público e matriz de paridade | Concluído |
 | `13-decisoes-e-pendencias.md` | Todos | Registro de decisões e perguntas abertas | Vivo |
+| `14-auditoria-design-system.md` | Design, frontend, produto | Aderência das telas ao design system, desvios e tarefas de correção | Vivo — Épico 12 no backlog |
 | `adr/` | Engenharia | Decisões arquiteturais com contexto e consequências | Vivo |
 
 ---
@@ -94,10 +96,11 @@ Dentro de `docs/`, a precedência é:
 ### Frontend e design
 
 1. `07-design-system-e-experiencia.md`
-2. `03-prd.md`
-3. `06-contrato-api.md`
-4. `09-qualidade-e-testes.md`
-5. `12-referencia-ola-click.md`
+2. `14-auditoria-design-system.md`
+3. `03-prd.md`
+4. `06-contrato-api.md`
+5. `09-qualidade-e-testes.md`
+6. `12-referencia-ola-click.md`
 
 ### Produto, operação e gestão
 
@@ -158,4 +161,4 @@ Prioridades:
 
 ## 8. Próximo passo
 
-As próximas entregas de código estão em **Épico 8 — Conteúdo, SEO, acessibilidade e LGPD** e **Épico 10 — Deploy e go-live**, em `08-backlog.md`. O **Épico 0 — Descoberta e conteúdo** continua bloqueando catálogo real, taxas, horários, contatos, pagamentos e textos legais: o seed é fictício e não deve ir para produção sem validação do cliente.
+As próximas entregas de código estão em **Épico 12 — Conformidade com o design system**, com as correções priorizadas da auditoria em `14-auditoria-design-system.md`, além dos **Épicos 8 e 10** em `08-backlog.md`. O **Épico 0 — Descoberta e conteúdo** continua bloqueando catálogo real, taxas, horários, contatos, pagamentos e textos legais: o seed é fictício e não deve ir para produção sem validação do cliente.

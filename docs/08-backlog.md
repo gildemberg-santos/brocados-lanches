@@ -1,9 +1,9 @@
 # Backlog — Brocados Lanches V1
 
-**Versão:** 1.1  
+**Versão:** 1.2  
 **Atualizado em:** 25/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes).  
-**Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 planejado a partir da auditoria de conformidade visual.  
+**Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`, `14-auditoria-design-system.md`.
 
 ---
 
@@ -106,6 +106,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | E9 — Qualidade e segurança | Testes, E2E, segurança e performance | P0 | GG | E2–E7 |
 | E10 — Deploy e go-live | Ambientes, backup, monitoramento e lançamento | P0 | G | E9 |
 | E11 — Pós-lançamento | Medição, correções e evolução | P2 | M | E10 |
+| E12 — Conformidade com o design system | Corrigir os desvios da auditoria de 25/11/2026 | P1/P2 | M | E4, E6, E8 |
 
 ---
 
@@ -421,7 +422,43 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 ---
 
-## 16. Rastreabilidade requisito → história
+## 16. Épico 12 — Conformidade com o design system
+
+**Origem:** `14-auditoria-design-system.md`, auditoria realizada em 25/11/2026.  
+**Objetivo:** eliminar os desvios entre as telas implementadas e `07-design-system-e-experiencia.md` sem alterar o protótipo ou os tokens sem aprovação de design.  
+**Fora do escopo:** mudanças de padrão visual. As decisões abertas do §14 do documento de design continuam em `13-decisoes-e-pendencias.md`.
+
+| ID | História | Prioridade | Tam. | Depende de | Aceite |
+|---|---|---|---|---|---|
+| US-120 | Tela de pedido conforme o planejado | P1 | M | US-050, US-051 | Título varia por estado; timeline e contato da loja presentes; aviso de pedido registrado mesmo sem link do WhatsApp; 404 não revela dados; testes cobrem sucesso, erro e recarga |
+| US-121 | Dashboard operacional completo | P1 | M | US-065, US-070 | Kill switch acionável com auditoria; pedidos por status; produtos disponíveis/total; prazo de entrega; pedidos recentes com link para o detalhe; sem PII; testes e evidência em 375/1280 px |
+| US-122 | Checkout conforme o §5.5 | P1 | P | US-033, US-034 | Nenhum `var(--…)` inexistente; etapa “Revisão e envio” explícita com total cotado e botão de envio; retirada continua com etapa de endereço oculta; testes atualizados |
+| US-123 | Gate de tokens inexistente | P1 | P | US-010 | `scripts/check_design_system.py` falha quando o frontend usa `var(--token)` não declarado; teste unitário cobre token válido e inválido; `make design-check` continua passando |
+| US-124 | Acessibilidade dos formulários admin e do shell | P1 | M | US-061, US-062, US-065, US-066 | Erros associados por `aria-describedby`/`aria-invalid`; landmark `<main>` único; skip-link funcional; foco visível e alvos de 44 px preservados; testes de DOM |
+| US-125 | Status fechado e carrinho persistente | P2 | M | US-023, US-065 | “Loja fechada” em cor neutra no painel; barra fixa de carrinho no mobile com contagem e subtotal; aviso de que o pedido não pode ser concluído na home; prints em 375/1280 px |
+| US-126 | Conteúdo e decisões pendentes de design | P2 | P | US-080, E0 | Páginas legais com data de publicação; emoji do seed sinalizado como dado fictício; navegação mobile do admin revisada após decisão registrada; testes de conteúdo |
+
+**Tarefas técnicas:**
+
+- [ ] AUD-01: título dinâmico em `frontend/src/views/OrderView.vue` com microcopy do `07` §9.
+- [ ] AUD-02: componente/timeline pública e bloco de contato em `OrderView.vue`, reaproveitando `GET /store`.
+- [ ] AUD-03: ação de kill switch no dashboard via `PATCH /admin/store`, com confirmação e auditoria.
+- [ ] AUD-03: agregações de status, disponíveis/total, prazo e pedidos recentes no dashboard.
+- [ ] AUD-04: substituir `--bg-base` por `--bg-input` no checkout.
+- [ ] AUD-14: detectar token `var(--…)` inexistente no validador de design system e testar a falha.
+- [ ] AUD-07: numerar a revisão final como etapa no checkout e mover o envio para dentro dela.
+- [ ] AUD-05: associar erros aos inputs em `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm`.
+- [ ] AUD-11: remover o `<main id="conteudo">` duplicado do shell ou das views, mantendo um único destino do skip-link.
+- [ ] AUD-06: trocar `--status-error` por cor neutra no badge “Loja fechada”.
+- [ ] AUD-08/AUD-09: barra fixa de carrinho no mobile e aviso de loja fechada na home.
+- [ ] AUD-10: data de publicação em privacidade/termos, sujeita a `E0`.
+- [ ] AUD-12/AUD-13: decidir emoji e navegação mobile antes de alterar a interface; registrar a decisão em `13-decisoes-e-pendencias.md`.
+
+**Ordem sugerida:** US-123 → US-120 → US-121 → US-122 → US-124 → US-125 → US-126. Nenhuma história entra em andamento sem teste automatizado previsto na Definition of Done da seção 1.5.
+
+---
+
+## 17. Rastreabilidade requisito → história
 
 | Requisito | Histórias |
 |---|---|
@@ -443,24 +480,26 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | FR-A11Y-01/02 | US-082 |
 | FR-LGPD-01 | US-080, US-093 |
 | FR-OPS-01 | US-011, US-103 |
+| Auditoria de conformidade AUD-01..14 | US-120 a US-126 |
 
 ---
 
-## 17. Bloqueios atuais
+## 18. Bloqueios atuais
 
 | Bloqueio | Histórias afetadas | Ação |
 |---|---|---|
 | Catálogo não validado | US-001, US-020–US-024 | Fechar com cliente |
 | Taxas/horários não validados | US-002, US-032, US-033 | Fechar com cliente |
 | Hospedagem/domínio indefinidos | US-100–US-104 | Decidir |
-| Texto legal indefinido | US-080 | Jurídico/cliente |
+| Texto legal indefinido | US-080, US-126 | Jurídico/cliente |
 | Fotos/logo indefinidos | US-004, US-083 | Cliente |
 | CI provider indefinido | US-010 | Decidir |
 | WhatsApp/API indefinido | US-042 | Decidir |
+| Decisões abertas de design (§14 de `07-design-system-e-experiencia.md`) | US-125, US-126 | Aprovar nav mobile, carrinho desktop, emoji e tokens de espaço/sombra; registrar em `13-decisoes-e-pendencias.md` |
 
 ---
 
-## 18. Regras de gestão
+## 19. Regras de gestão
 
 - Uma história por PR; se crescer, divida.
 - Não iniciar P1 antes de fechar P0 do mesmo fluxo.

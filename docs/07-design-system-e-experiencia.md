@@ -544,3 +544,5 @@ Regras:
 5. Definir fotos, logo e direitos de uso.
 6. Definir se o admin mobile usa bottom nav ou drawer.
 7. Definir se o carrinho desktop é sidebar fixa ou drawer.
+
+A auditoria de 25/11/2026 comparou a implementação com estas decisões e registrou os desvios e as tarefas de correção em `14-auditoria-design-system.md`.
