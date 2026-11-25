@@ -104,7 +104,9 @@ AUD-03 foi corrigido junto com a US-121. O dashboard passou a acionar o interrup
 
 AUD-07 foi corrigido junto com a US-122. O checkout passou a ter “Revisão e envio” como etapa final, com total cotado e botão de envio dentro dela, mantendo a etapa de endereço oculta na retirada.
 
-AUD-05 e AUD-11 foram corrigidos junto com a US-124. Os formulários `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm` passaram a marcar o controle inválido com `aria-invalid="true"` e a apontar, por `aria-describedby`, para a mensagem correspondente. O shell administrativo deixou de repetir `<main id="conteudo">`: as views admin mantêm um único `<main>`, e o shell oferece um contêiner focável com `tabindex="-1"` como destino do skip-link. Todos os alvos `#conteudo` das rotas públicas também receberam `tabindex="-1"`, e o link oculto foi reposicionado para o eixo horizontal a fim de permanecer na ordem de tabulação. As demais histórias seguem em aberto.
+AUD-05 e AUD-11 foram corrigidos junto com a US-124. Os formulários `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm` passaram a marcar o controle inválido com `aria-invalid="true"` e a apontar, por `aria-describedby`, para a mensagem correspondente. O shell administrativo deixou de repetir `<main id="conteudo">`: as views admin mantêm um único `<main>`, e o shell oferece um contêiner focável com `tabindex="-1"` como destino do skip-link. Todos os alvos `#conteudo` das rotas públicas também receberam `tabindex="-1"`, e o link oculto foi reposicionado para o eixo horizontal a fim de permanecer na ordem de tabulação.
+
+AUD-06, AUD-08 e AUD-09 foram corrigidos junto com a US-125. O painel passou a usar `--text-sub` para “Loja fechada”, sem cor de erro. A home exibe uma barra fixa no mobile quando há itens no carrinho, com contagem e subtotal derivados do catálogo, além de um aviso em superfície neutra de que o pedido não pode ser concluído com a loja fechada; o CTA do cardápio continua disponível. Somente as pendências da US-126 seguem em aberto.
 
 ### 5.1 Detalhamento dos achados de severidade Alta
 
@@ -121,6 +123,8 @@ AUD-05 e AUD-11 foram corrigidos junto com a US-124. Os formulários `AdminCatal
 **Evidência da US-122:** verificação em navegador headless com produto no carrinho e zona selecionada, nos viewports de 375 px e 1280 px. Título “5. Revisão e envio”, total cotado exibido, botão dentro da seção e `scrollWidth === clientWidth` nas duas larguras. Prints em `/tmp/opencode/checkout-us122-375.png` e `/tmp/opencode/checkout-us122-1280.png` (fora do repositório). O `422` no console é a primeira cotação, feita antes de escolher a zona.
 
 **Evidência da US-124:** verificação em navegador headless nos viewports de 375 px e 1280 px. Há um único `#conteudo` com `tabindex="-1"`, o link “Pular para o conteúdo” recebe foco como primeira parada do Tab ao carregar a página e sua ativação move o foco para o contêiner. Nos formulários de loja, produto e usuário, os campos inválidos expõem `aria-invalid="true"` e `aria-describedby` apontando para mensagens visíveis; `scrollWidth === clientWidth` nas duas larguras. Print do formulário da loja em `/tmp/opencode/a11y-store-us124-375.png` e `/tmp/opencode/a11y-store-us124-1280.png` (fora do repositório). O `401` no console é a consulta preventiva do guard de autenticação antes do login.
+
+**Evidência da US-125:** verificação em navegador headless com `GET /api/v1/store` interceptado como fechado e dois itens no carrinho, nos viewports de 375 px e 1280 px. A barra de carrinho fica visível em 375 px (“Ver carrinho (2)”, subtotal R$ 99,98 e altura mínima de 56 px) e oculta em 1280 px; o aviso de loja fechada aparece com texto nos dois tamanhos, e `scrollWidth === clientWidth` em ambos. Prints em `/tmp/opencode/home-us125-375.png` e `/tmp/opencode/home-us125-1280.png` (fora do repositório).
 
 ---
 

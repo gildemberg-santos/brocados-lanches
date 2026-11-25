@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import BaseButton from '../components/BaseButton.vue'
+import CartSummaryBar from '../components/CartSummaryBar.vue'
 import CategoryPill from '../components/CategoryPill.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
@@ -10,10 +11,13 @@ import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import PriceText from '../components/PriceText.vue'
 import ProductCardCompact from '../components/ProductCardCompact.vue'
 import ProductImage from '../components/ProductImage.vue'
+import { buildCartLines, calculateSubtotalCents } from '../features/cart/cart'
+import { useCartStore } from '../stores/cart'
 import { useMenuStore } from '../stores/menu'
 import { useStoreStatusStore } from '../stores/storeStatus'
 
 const menu = useMenuStore()
+const cart = useCartStore()
 const statusStore = useStoreStatusStore()
 const router = useRouter()
 
@@ -44,6 +48,9 @@ const address = computed(() => currentStatus.value?.address.trim() ?? '')
 const hasContacts = computed(
   () => whatsappUrl.value.length > 0 || instagram.value.length > 0 || address.value.length > 0,
 )
+const isStoreClosed = computed(() => currentStatus.value?.status === 'closed')
+const cartLines = computed(() => buildCartLines(cart.items, menu.products).lines)
+const cartSubtotalCents = computed(() => calculateSubtotalCents(cartLines.value))
 const nextOpening = computed(() => {
   if (currentStatus.value?.status !== 'closed' || !currentStatus.value.nextOpeningAt) {
     return ''
@@ -130,6 +137,14 @@ onMounted(() => {
         </h2>
         <p v-if="deliveryTime" class="home-status__line">Entrega: {{ deliveryTime }}</p>
         <p v-if="nextOpening" class="home-status__line">Próxima abertura: {{ nextOpening }}</p>
+        <p
+          v-if="isStoreClosed"
+          class="home-status__line home-status__warning"
+          data-testid="store-closed-warning"
+        >
+          Não é possível concluir pedidos enquanto a loja estiver fechada. Você pode explorar o
+          cardápio e voltar mais tarde.
+        </p>
         <ul v-if="hasContacts" class="home-status__contacts">
           <li v-if="whatsappUrl">
             <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer">
@@ -200,6 +215,8 @@ onMounted(() => {
         </div>
       </section>
     </template>
+
+    <CartSummaryBar v-if="!cart.isEmpty" :count="cart.count" :subtotal-cents="cartSubtotalCents" />
   </main>
 </template>
 
@@ -335,6 +352,14 @@ onMounted(() => {
   margin: 0;
   color: var(--text-sub);
   line-height: 1.5;
+}
+
+.home-status__warning {
+  padding: 10px 12px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  background: var(--bg-input);
+  color: var(--text-main);
 }
 
 .home-status__contacts {

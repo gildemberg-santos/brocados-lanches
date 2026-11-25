@@ -124,7 +124,7 @@ onMounted(() => {
       class="store-status"
       data-testid="store-effective-status"
     >
-      <strong :class="statusStore.status.status === 'open' ? 'is-open' : 'is-closed'">
+      <strong :class="statusStore.status.status === 'open' ? 'is-open' : 'is-closed is-neutral'">
         {{ statusStore.status.status === 'open' ? 'Loja aberta' : 'Loja fechada' }}
       </strong>
       <span>Status calculado pelo servidor em {{ statusStore.status.timezone }}.</span>
@@ -351,7 +351,7 @@ onMounted(() => {
 }
 
 .store-status .is-closed {
-  color: var(--status-error);
+  color: var(--text-sub);
 }
 
 .store-form {

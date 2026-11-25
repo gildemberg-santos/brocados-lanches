@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchMenu } from '../services/menu'
 import { fetchStoreStatus } from '../services/store'
+import { useCartStore } from '../stores/cart'
 import { makeCategory, makeMenu, makeProduct } from '../test/fixtures/catalog'
 import type { PublicStoreStatus } from '../types/store'
 import HomeView from './HomeView.vue'
@@ -35,6 +36,7 @@ async function mountHome() {
       { path: '/', name: 'home', component: StubView },
       { path: '/cardapio', name: 'menu', component: StubView },
       { path: '/produto/:slug', name: 'product', component: StubView },
+      { path: '/carrinho', name: 'cart', component: StubView },
     ],
   })
 
@@ -126,6 +128,7 @@ describe('HomeView', () => {
     const banner = wrapper.get('[data-testid="store-status-banner"]')
 
     expect(banner.text()).toContain('Loja aberta')
+    expect(banner.text()).not.toContain('Não é possível concluir pedidos')
     expect(banner.text()).toContain('Entrega: 30-90 min')
     expect(banner.get('a').attributes('href')).toBe('https://wa.me/5585999999999')
     expect(banner.text()).toContain('+5585999999999')
@@ -154,6 +157,9 @@ describe('HomeView', () => {
     expect(banner.text()).toContain('Loja fechada')
     expect(banner.text()).toContain(`Próxima abertura: ${formatted}`)
     expect(banner.text()).not.toContain('2026-11-23T02:00:00Z')
+    expect(banner.get('[data-testid="store-closed-warning"]').text()).toContain(
+      'Não é possível concluir pedidos enquanto a loja estiver fechada',
+    )
   })
 
   it('shows a neutral message with retry when the status fails without breaking the menu', async () => {
@@ -185,6 +191,29 @@ describe('HomeView', () => {
     expect(banner.text()).toContain('Status da loja indisponível.')
     expect(banner.text()).toContain('Tentar novamente')
     expect(banner.text()).not.toContain('Loja aberta')
+  })
+
+  it('shows the persistent cart bar with count and subtotal when the cart has items', async () => {
+    const { wrapper } = await mountHome()
+    const cart = useCartStore()
+    cart.add(
+      {
+        ...makeProduct({ id: 'product-1', priceCents: 2300 }),
+        categoryId: 'category-1',
+        categoryName: 'Hambúrgueres',
+        categorySlug: 'hamburgueres',
+      },
+      {},
+      [],
+      '',
+      2,
+    )
+    await flushPromises()
+
+    const bar = wrapper.get('[data-testid="mobile-cart-bar"]')
+    expect(bar.text()).toContain('Ver carrinho (2)')
+    expect(bar.text()).toContain('46,00')
+    expect(bar.attributes('href')).toBe('/carrinho')
   })
 
   it('omits empty contacts instead of inventing values', async () => {

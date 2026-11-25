@@ -74,6 +74,7 @@ describe('AdminStoreView', () => {
     expect(badge.text()).toContain('Loja fechada')
     expect(badge.text()).toContain('America/Fortaleza')
     expect(badge.text()).toContain('Próxima abertura')
+    expect(badge.get('.is-closed').classes()).toContain('is-neutral')
   })
 
   it('recarrega o status efetivo depois de salvar', async () => {

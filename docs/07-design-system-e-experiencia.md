@@ -196,13 +196,15 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 - Categorias ativas em chips horizontais.
 - “Mais pedidos” com produtos disponíveis.
 - Cartão de endereço, WhatsApp e horário.
-- Barra fixa de carrinho no mobile; sidebar no desktop.
+- Barra fixa de carrinho no mobile; sidebar no desktop (a sidebar fica pendente de decisão em §14).
+
+Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummaryBar` aparece somente com itens, exibe contagem e subtotal calculados a partir do catálogo e leva a `/carrinho`; some a partir de 768 px para não concorrer com a navegação desktop.
 
 **Estados:**
 
 - carregando: skeleton do hero e cards;
 - erro: mensagem + tentar novamente;
-- loja fechada: status claro, CTA de cardápio ainda visível, aviso de que o pedido não pode ser concluído;
+- loja fechada: status claro, CTA de cardápio ainda visível, aviso de que o pedido não pode ser concluído (implementado na US-125, sem usar cor de erro);
 - catálogo vazio: estado próprio, sem hero quebrado.
 
 ### 5.2 Cardápio — `/cardapio`
