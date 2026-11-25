@@ -129,6 +129,9 @@ describe('checkout', () => {
 
   it('maps API codes to friendly messages', () => {
     expect(checkoutApiMessage(new ApiError(409, 'STORE_CLOSED', 'closed'))).toContain('fechada')
+    expect(checkoutApiMessage(new ApiError(404, 'NOT_FOUND', 'dados de terceiros'))).toBe(
+      'Pedido não encontrado ou código de acompanhamento inválido.',
+    )
     expect(checkoutApiMessage(new Error('unknown'))).toContain('Seus dados foram mantidos')
   })
 

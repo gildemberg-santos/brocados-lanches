@@ -440,8 +440,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Tarefas técnicas:**
 
-- [ ] AUD-01: título dinâmico em `frontend/src/views/OrderView.vue` com microcopy do `07` §9.
-- [ ] AUD-02: componente/timeline pública e bloco de contato em `OrderView.vue`, reaproveitando `GET /store`.
+- [x] AUD-01: título dinâmico em `frontend/src/views/OrderView.vue` com microcopy do `07` §9.
+- [x] AUD-02: componente/timeline pública e bloco de contato em `OrderView.vue`, reaproveitando `GET /store`.
 - [ ] AUD-03: ação de kill switch no dashboard via `PATCH /admin/store`, com confirmação e auditoria.
 - [ ] AUD-03: agregações de status, disponíveis/total, prazo e pedidos recentes no dashboard.
 - [x] AUD-04: substituir `--bg-base` por `--bg-input` no checkout.
@@ -456,7 +456,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Ordem sugerida:** US-123 → US-120 → US-121 → US-122 → US-124 → US-125 → US-126. Nenhuma história entra em andamento sem teste automatizado previsto na Definition of Done da seção 1.5.
 
-**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`; `make design-check` e `make test-design` passando. As demais histórias do épico estão `Planejado`.
+**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`. US-120 concluída — título por estado, aviso de registro, `OrderStatusTimeline` com teste dedicado, contato da loja e mensagem genérica para `NOT_FOUND`; `OrderView.test.ts` cobre sucesso, recarga, finalização, carregamento, erro e 404. As demais histórias do épico estão `Planejado`.
 
 ---
 

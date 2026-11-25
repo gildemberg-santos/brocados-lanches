@@ -196,6 +196,7 @@ export function validateCheckoutForm(
 export function checkoutApiMessage(error: unknown): string {
   if (error instanceof ApiError) {
     const messages: Record<string, string> = {
+      NOT_FOUND: 'Pedido não encontrado ou código de acompanhamento inválido.',
       STORE_CLOSED: 'A loja está fechada no momento. Volte ao cardápio para escolher outros itens.',
       ZONE_UNAVAILABLE: 'Essa zona de entrega não está disponível. Escolha outra.',
       PRODUCT_UNAVAILABLE: 'Um dos itens do carrinho não está mais disponível.',

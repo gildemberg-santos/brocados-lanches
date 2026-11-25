@@ -96,11 +96,13 @@ Severidade: **Alta** = corrige comportamento fora do planejado ou informação e
 | AUD-13 | Baixa | Bottom nav do admin expõe só 4 atalhos | `frontend/src/components/admin/AdminShell.vue:53-62` | `07` §14 (decisão aberta) | US-126 |
 | AUD-14 | Média | `make design-check` não detecta token CSS inexistente | `scripts/check_design_system.py` | Gate do `../AGENTS.md` §8.5/§12.1 | US-123 |
 
-**Atualização em 25/11/2026:** AUD-04 e AUD-14 foram corrigidos junto com a US-123. O checkout passou a usar `--bg-input`, e `scripts/check_design_system.py` passou a reprovar qualquer `var(--…)` não declarado em `tokens.css`, inclusive com sintaxe de fallback. Três testes de regressão foram adicionados a `scripts/test_check_design_system.py`. Os demais achados seguem em aberto.
+**Atualização em 25/11/2026:** AUD-04 e AUD-14 foram corrigidos junto com a US-123. O checkout passou a usar `--bg-input`, e `scripts/check_design_system.py` passou a reprovar qualquer `var(--…)` não declarado em `tokens.css`, inclusive com sintaxe de fallback. Três testes de regressão foram adicionados a `scripts/test_check_design_system.py`.
+
+AUD-01 e AUD-02 foram corrigidos junto com a US-120. A tela de pedido passou a variar o título por estado (carregando, erro, registrado, acompanhamento, finalizado e cancelado), exibir timeline pública derivada do status sem inventar etapas, bloco de contato a partir de `GET /store` e aviso de registro mesmo sem link do WhatsApp. O erro `NOT_FOUND` ganhou mensagem genérica em `checkoutApiMessage`. As demais histórias seguem em aberto.
 
 ### 5.1 Detalhamento dos achados de severidade Alta
 
-**AUD-01 e AUD-02 — tela de pedido.** O `<h1>` é estático e aparece mesmo quando `ErrorState` é renderizado. A rota serve simultaneamente como confirmação e acompanhamento, mas não apresenta a timeline prevista no §5.7 nem o contato da loja para o caso de o link do WhatsApp não estar mais na sessão. O bloco de handoff traz o aviso “Seu pedido já está salvo” apenas quando `handoffUrl` existe. Correção: título por estado, timeline com os eventos disponíveis na resposta pública, bloco de contato e aviso explícito de registro em todos os caminhos de sucesso.
+**AUD-01 e AUD-02 — tela de pedido (corrigidos).** O `<h1>` era estático e aparecia mesmo quando `ErrorState` era renderizado. A rota serve simultaneamente como confirmação e acompanhamento, mas não apresentava a timeline prevista no §5.7 nem o contato da loja para o caso de o link do WhatsApp não estar mais na sessão; o aviso “Seu pedido já está salvo” só aparecia quando `handoffUrl` existia. A correção tornou o título dependente do estado, criou `OrderStatusTimeline` com a sequência de entrega/retirada a partir do status público, adicionou o bloco de contato com `GET /store` e moveu o aviso de registro para o resumo, visível em qualquer sucesso. A timeline não expõe `statusHistory` administrativo nem inventa horários para etapas intermediárias; para cancelamento e status fora da sequência, mostra apenas o estado atual.
 
 **AUD-03 — dashboard.** O protótipo Admin 01 traz “Controle Master da Loja” com botão ABERTO/FECHADO, “Produtos Disponíveis X / total”, “Bairros Ativos”, “Tempo Médio Delivery” e “Pedidos Recentes”. A versão implementada mantém status somente leitura, substitui “pedidos recentes” pelo total da fila e mostra apenas contagem de produtos ativos. Correção: expor a ação de kill switch (com auditoria, reaproveitando `PATCH /admin/store`), agregar contagem por status, disponíveis/total, prazo de entrega e lista de pedidos recentes com link para o detalhe.
 
@@ -151,6 +153,8 @@ Antes de marcar qualquer história como concluída:
 3. Para mudanças de UI: print ou evidência equivalente em 375 px e 1280 px, verificando foco visível, alvos de 44 px e ausência de scroll horizontal.
 4. Contrato de API alterado? Atualizar `06-contrato-api.md` na mesma mudança.
 5. Decisão de padrão visual alterada? Atualizar `tokens.css`, `tokens.json`, `../design-system/README.md` e este documento na mesma mudança, com aprovação de design.
+
+**Evidência da US-120:** verificação em navegador headless com respostas interceptadas de `GET /api/v1/orders/{publicId}` e `GET /api/v1/store`, nos viewports de 375 px e 1280 px. Título por estado, aviso de registro, 6 etapas da timeline, contato da loja e ausência de link de handoff confirmados; `scrollWidth === clientWidth` nas duas larguras. Prints ficaram em `/tmp/opencode/order-us120-375.png` e `/tmp/opencode/order-us120-1280.png` (fora do repositório).
 
 ---
 
