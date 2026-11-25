@@ -46,4 +46,34 @@ describe('router', () => {
 
     expect(route?.path).toBe('/admin/sem-acesso')
   })
+
+  it.each([
+    ['contact', '/contato', 'Contato'],
+    ['privacy', '/privacidade', 'Privacidade'],
+    ['terms', '/termos', 'Termos de uso'],
+    ['credits', '/creditos', 'Créditos'],
+  ])('registers the lazy %s route with its own metadata', (name, path, title) => {
+    const route = router.getRoutes().find((candidate) => candidate.name === name)
+
+    expect(route?.path).toBe(path)
+    expect(typeof route?.components?.default).toBe('function')
+    expect(route?.meta.title).toBe(title)
+    expect(typeof route?.meta.description).toBe('string')
+    expect(route?.meta.description).not.toHaveLength(0)
+  })
+
+  it('marks simple institutional pages as noindex', () => {
+    const credits = router.getRoutes().find((candidate) => candidate.name === 'credits')
+
+    expect(credits?.meta.noindex).toBe(true)
+  })
+
+  it('resolves unknown URLs to the not-found view', () => {
+    const resolved = router.resolve('/endereco-inexistente')
+
+    expect(resolved.name).toBe('not-found')
+    expect(resolved.meta.title).toBe('Página não encontrada')
+    expect(resolved.meta.noindex).toBe(true)
+    expect(typeof resolved.matched[0]?.components?.default).toBe('function')
+  })
 })

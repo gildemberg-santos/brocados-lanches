@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /carrinho
+Disallow: /checkout
+Disallow: /pedido
+
+# Sitemap: pendente de domínio definido (D-015).

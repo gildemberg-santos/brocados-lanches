@@ -43,6 +43,44 @@ const publicRoutes: RouteRecordRaw[] = [
     props: true,
     meta: { title: 'Acompanhar pedido', noindex: true },
   },
+  {
+    path: '/contato',
+    name: 'contact',
+    component: () => import('../views/ContactView.vue'),
+    meta: {
+      title: 'Contato',
+      description: 'Canais de contato, endereço e horários publicados pela Brocados Lanches.',
+    },
+  },
+  {
+    path: '/privacidade',
+    name: 'privacy',
+    component: () => import('../views/PrivacyView.vue'),
+    meta: {
+      title: 'Privacidade',
+      description: 'Informações de privacidade da Brocados Lanches, sujeitas a aprovação.',
+    },
+  },
+  {
+    path: '/termos',
+    name: 'terms',
+    component: () => import('../views/TermsView.vue'),
+    meta: {
+      title: 'Termos de uso',
+      description: 'Informações sobre o uso do site da Brocados Lanches, sujeitas a aprovação.',
+    },
+  },
+  {
+    path: '/creditos',
+    name: 'credits',
+    component: () => import('../views/CreditsView.vue'),
+    // Página institucional simples e ainda pendente de confirmação (P-020).
+    meta: {
+      title: 'Créditos',
+      description: 'Créditos e informações institucionais da Brocados Lanches.',
+      noindex: true,
+    },
+  },
 ]
 
 const adminRoutes: RouteRecordRaw = {
@@ -139,6 +177,17 @@ const router = createRouter({
       meta: { title: 'Acessar painel', noindex: true },
     },
     adminRoutes,
+    // Catch-all por último: qualquer URL desconhecida cai na página 404.
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFoundView.vue'),
+      meta: {
+        title: 'Página não encontrada',
+        description: 'Página não encontrada.',
+        noindex: true,
+      },
+    },
   ],
 })
 

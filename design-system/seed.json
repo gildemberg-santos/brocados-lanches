@@ -52,7 +52,7 @@
       "name": "Combo 3 hambúrguer",
       "price": "49.99",
       "desc": "3 hambúrguer frescurinha artesanal ( carne artesanal, molho chedda, queijo cheddar e maionese temperada)",
-      "image": "/products/combo-3-hamburguer.png",
+      "image": "/products/combo-3-hamburguer.webp",
       "imageAlt": "Combo 3 hambúrguer",
       "available": true,
       "featured": true
@@ -63,7 +63,7 @@
       "name": "Combo 2 hambúrguer",
       "price": "54.99",
       "desc": "2 hambúrguer frescurinha + 1porção de batata P 120g+ 1refrigerante de 1L",
-      "image": "/products/combo-2-hamburguer.png",
+      "image": "/products/combo-2-hamburguer.webp",
       "imageAlt": "Combo 2 hambúrguer",
       "available": true,
       "featured": false
@@ -74,7 +74,7 @@
       "name": "COMBO 5 hambúrguer",
       "price": "89.99",
       "desc": "5 hambúrguer artesanal + 1 guaraná de 1L",
-      "image": "/products/combo-5-hamburguer.png",
+      "image": "/products/combo-5-hamburguer.webp",
       "imageAlt": "COMBO 5 hambúrguer",
       "available": true,
       "featured": false
@@ -85,7 +85,7 @@
       "name": "Combo 10 hambúrguers",
       "price": "199.99",
       "desc": "10 hambúrguer artesanal BACON CHEDDA 🥓",
-      "image": "/products/combo-10-hamburguers.png",
+      "image": "/products/combo-10-hamburguers.webp",
       "imageAlt": "Combo 10 hambúrguers",
       "available": true,
       "featured": false
@@ -96,7 +96,7 @@
       "name": "BURGER FRESCURINHA",
       "price": "18.00",
       "desc": "Pão brioche + carne artesanal 120g + cheddar cremoso + maionese temperada. 🤤",
-      "image": "/products/burger-frescurinha.jpeg",
+      "image": "/products/burger-frescurinha.webp",
       "imageAlt": "BURGER FRESCURINHA",
       "available": true,
       "featured": true
@@ -107,7 +107,7 @@
       "name": "BURGER SALAD",
       "price": "19.00",
       "desc": "Pão brioche + carne artesanal 120g + Queijo coalho + Alface + tomate +maionese temperada. 🤤",
-      "image": "/products/burger-salad.png",
+      "image": "/products/burger-salad.webp",
       "imageAlt": "BURGER SALAD",
       "available": true,
       "featured": false
@@ -118,7 +118,7 @@
       "name": "BACON CHEDDAR",
       "price": "22.00",
       "desc": "Pão brioche + carne artesanal 120g + cheddar cremoso + Bacon +maionese temperada. 🤤",
-      "image": "/products/bacon-cheddar.jpeg",
+      "image": "/products/bacon-cheddar.webp",
       "imageAlt": "BACON CHEDDAR",
       "available": true,
       "featured": false
@@ -129,7 +129,7 @@
       "name": "CALABRESO",
       "price": "22.00",
       "desc": "Pão brioche + carne artesanal 120g + Queijo coalho + Alface + tomate + calabresa + maionese temperada. 🤤",
-      "image": "/products/calabreso.jpeg",
+      "image": "/products/calabreso.webp",
       "imageAlt": "CALABRESO",
       "available": true,
       "featured": false
@@ -140,7 +140,7 @@
       "name": "NORDESTINO",
       "price": "24.90",
       "desc": "Pão brioche, blend de hambúrguer artesanal 110g , carne do sol , 1 fatia de queijo coalho e cream cheese",
-      "image": "/products/nordestino.png",
+      "image": "/products/nordestino.webp",
       "imageAlt": "NORDESTINO",
       "available": true,
       "featured": false
@@ -151,7 +151,7 @@
       "name": "X-TUDO (O FIM DA DIETA)",
       "price": "28.00",
       "desc": "1 blenda de 120g+ 1ovo+ calabresa + Bacon + Queijo + Presunto + Alface + Tomate + molho chedda + Milho e batata palha",
-      "image": "/products/x-tudo-o-fim-da-dieta.jpeg",
+      "image": "/products/x-tudo-o-fim-da-dieta.webp",
       "imageAlt": "X-TUDO (O FIM DA DIETA)",
       "available": false,
       "featured": false
@@ -162,7 +162,7 @@
       "name": "DUPLO CHEDDAR",
       "price": "26.00",
       "desc": "Pão brioche, dois blend de hambúrguer artesanal 120g , 2 fatia de queijo cheddar e molho cheddar.",
-      "image": "/products/duplo-cheddar.jpeg",
+      "image": "/products/duplo-cheddar.webp",
       "imageAlt": "DUPLO CHEDDAR",
       "available": true,
       "featured": false
@@ -173,7 +173,7 @@
       "name": "Crocante",
       "price": "20.00",
       "desc": "carne artesanal, queijo cheddar, molho cheddar, maionese temperada e Doritos.",
-      "image": "/products/crocante.jpeg",
+      "image": "/products/crocante.webp",
       "imageAlt": "Crocante",
       "available": false,
       "featured": false
@@ -184,7 +184,7 @@
       "name": "ONION BACON",
       "price": "26.90",
       "desc": "Carne artesanal, bacon, cheddar, queijo e maionese temperada + anel de cebola",
-      "image": "/products/onion-bacon.png",
+      "image": "/products/onion-bacon.webp",
       "imageAlt": "ONION BACON",
       "available": true,
       "featured": false
@@ -195,7 +195,7 @@
       "name": "Big salad",
       "price": "26.00",
       "desc": "2 carnes artesanal + salada + queijo cheddar + maionese temperada",
-      "image": "/products/big-salad.jpeg",
+      "image": "/products/big-salad.webp",
       "imageAlt": "Big salad",
       "available": true,
       "featured": false
@@ -206,7 +206,7 @@
       "name": "Tropical bacon 🥓 🍍🐝",
       "price": "28.90",
       "desc": "Carne artesanal, bacon, queijo coalho, abacaxi , mel , maionese temperada e salada",
-      "image": "/products/tropical-bacon.jpeg",
+      "image": "/products/tropical-bacon.webp",
       "imageAlt": "Tropical bacon 🥓 🍍🐝",
       "available": false,
       "featured": false
@@ -217,7 +217,7 @@
       "name": "Burger MEXICANO",
       "price": "25.00",
       "desc": "Carne artesanal, queijo coalho, bacon e geleia de pimenta 🌶️",
-      "image": "/products/burger-mexicano.jpeg",
+      "image": "/products/burger-mexicano.webp",
       "imageAlt": "Burger MEXICANO",
       "available": true,
       "featured": false
@@ -228,7 +228,7 @@
       "name": "Duplo chedda bacon",
       "price": "28.00",
       "desc": "2 carnes artesanal, queijo chedda e bacon crocante",
-      "image": "/products/duplo-chedda-bacon.png",
+      "image": "/products/duplo-chedda-bacon.webp",
       "imageAlt": "Duplo chedda bacon",
       "available": true,
       "featured": false
@@ -239,7 +239,7 @@
       "name": "Triplo bacon 🥓",
       "price": "34.99",
       "desc": "3 carnes de 120g + queijo chedda + Bacon 🥓",
-      "image": "/products/triplo-bacon.png",
+      "image": "/products/triplo-bacon.webp",
       "imageAlt": "Triplo bacon 🥓",
       "available": true,
       "featured": false
@@ -250,7 +250,7 @@
       "name": "Broca doce🍫",
       "price": "15.99",
       "desc": "Pão artesanal + creme de avelan + bolinha preta e branca",
-      "image": "/products/broca-doce.jpeg",
+      "image": "/products/broca-doce.webp",
       "imageAlt": "Broca doce🍫",
       "available": false,
       "featured": false
@@ -261,7 +261,7 @@
       "name": "Big calabreso",
       "price": "32.00",
       "desc": "2 carnes artesanal de 120g cada + 2 ovos + calabresa + queijo chedda +maionese temperada + alface e tomate",
-      "image": "/products/big-calabreso.png",
+      "image": "/products/big-calabreso.webp",
       "imageAlt": "Big calabreso",
       "available": true,
       "featured": false
@@ -272,7 +272,7 @@
       "name": "Crispy burger 🧅",
       "price": "24.99",
       "desc": "1 carne artesanal de 120g \nQueijo cheddar \nQueijo coalho \nMel \nCebola crispy",
-      "image": "/products/crispy-burger.jpeg",
+      "image": "/products/crispy-burger.webp",
       "imageAlt": "Crispy burger 🧅",
       "available": true,
       "featured": false
@@ -283,7 +283,7 @@
       "name": "Hambúrguer de frango",
       "price": "23.00",
       "desc": "Hambúrguer de frango , duas fatias de queijo cheddar, salada e maionese temperada",
-      "image": "/products/hamburguer-de-frango.png",
+      "image": "/products/hamburguer-de-frango.webp",
       "imageAlt": "Hambúrguer de frango",
       "available": true,
       "featured": false
@@ -294,7 +294,7 @@
       "name": "Batata P",
       "price": "10.00",
       "desc": "Porção de batata 150gramas",
-      "image": "/products/batata-p.jpeg",
+      "image": "/products/batata-p.webp",
       "imageAlt": "Batata P",
       "available": true,
       "featured": false
@@ -305,7 +305,7 @@
       "name": "Batata G",
       "price": "15.00",
       "desc": "Batata frita 300 gramas",
-      "image": "/products/batata-g.jpeg",
+      "image": "/products/batata-g.webp",
       "imageAlt": "Batata G",
       "available": true,
       "featured": true
@@ -316,7 +316,7 @@
       "name": "Batata com cheddar",
       "price": "18.00",
       "desc": "300g de batata + cheddar",
-      "image": "/products/batata-com-cheddar.jpeg",
+      "image": "/products/batata-com-cheddar.webp",
       "imageAlt": "Batata com cheddar",
       "available": true,
       "featured": false
@@ -327,7 +327,7 @@
       "name": "Batata com cheddar E calabresa",
       "price": "20.00",
       "desc": "300g de batata + cheddar + calabresa",
-      "image": "/products/batata-com-cheddar-e-calabresa.jpeg",
+      "image": "/products/batata-com-cheddar-e-calabresa.webp",
       "imageAlt": "Batata com cheddar E calabresa",
       "available": true,
       "featured": false
@@ -338,7 +338,7 @@
       "name": "Batata com cheddar e Bacon",
       "price": "20.00",
       "desc": "300g de batata + cheddar + bacon",
-      "image": "/products/batata-com-cheddar-e-bacon.jpeg",
+      "image": "/products/batata-com-cheddar-e-bacon.webp",
       "imageAlt": "Batata com cheddar e Bacon",
       "available": false,
       "featured": false
@@ -349,7 +349,7 @@
       "name": "Batata tudão",
       "price": "29.99",
       "desc": "350g de batata + cheddar + bacon + calabresa",
-      "image": "/products/batata-tudao.jpeg",
+      "image": "/products/batata-tudao.webp",
       "imageAlt": "Batata tudão",
       "available": false,
       "featured": false
@@ -360,7 +360,7 @@
       "name": "Anel de cebola com geleia de pimenta",
       "price": "18.00",
       "desc": "10 und de cebola com geleia de pimenta por cima 🌶️",
-      "image": "/products/anel-de-cebola-com-geleia-de-pimenta.jpeg",
+      "image": "/products/anel-de-cebola-com-geleia-de-pimenta.webp",
       "imageAlt": "Anel de cebola com geleia de pimenta",
       "available": true,
       "featured": false
@@ -371,7 +371,7 @@
       "name": "Anel de cebola",
       "price": "16.00",
       "desc": "10 und de anel de cebola",
-      "image": "/products/anel-de-cebola.jpeg",
+      "image": "/products/anel-de-cebola.webp",
       "imageAlt": "Anel de cebola",
       "available": true,
       "featured": false
@@ -382,7 +382,7 @@
       "name": "Coca  lata",
       "price": "6.00",
       "desc": "Coca lata 350ml",
-      "image": "/products/coca-lata.jpg",
+      "image": "/products/coca-lata.webp",
       "imageAlt": "Coca  lata",
       "available": true,
       "featured": false
@@ -393,7 +393,7 @@
       "name": "Coca cola 1L",
       "price": "11.00",
       "desc": "Coca de 1L",
-      "image": "/products/coca-cola-1l.jpeg",
+      "image": "/products/coca-cola-1l.webp",
       "imageAlt": "Coca cola 1L",
       "available": false,
       "featured": false
@@ -404,7 +404,7 @@
       "name": "Guaraná 1L",
       "price": "9.00",
       "desc": "Guaraná de 1L",
-      "image": "/products/guarana-1l.jpeg",
+      "image": "/products/guarana-1l.webp",
       "imageAlt": "Guaraná 1L",
       "available": true,
       "featured": false
@@ -415,7 +415,7 @@
       "name": "Fanta lata",
       "price": "6.00",
       "desc": "Fanta laranja 350ml",
-      "image": "/products/fanta-lata.jpeg",
+      "image": "/products/fanta-lata.webp",
       "imageAlt": "Fanta lata",
       "available": false,
       "featured": false
@@ -426,7 +426,7 @@
       "name": "Coca zero 1,5L",
       "price": "13.00",
       "desc": "Coca cola zero 1,5L",
-      "image": "/products/coca-zero-1-5l.jpeg",
+      "image": "/products/coca-zero-1-5l.webp",
       "imageAlt": "Coca zero 1,5L",
       "available": false,
       "featured": false
@@ -437,7 +437,7 @@
       "name": "Pastel de chocolate",
       "price": "8.00",
       "desc": "Pastel tamanho padrão com cobertura de chocolate",
-      "image": "/products/pastel-de-chocolate.png",
+      "image": "/products/pastel-de-chocolate.webp",
       "imageAlt": "Pastel de chocolate",
       "available": true,
       "featured": false
@@ -448,7 +448,7 @@
       "name": "Pastel de doce de leite",
       "price": "8.00",
       "desc": "Pastel tamanho padrão com recheio de doce de leite",
-      "image": "/products/pastel-de-doce-de-leite.png",
+      "image": "/products/pastel-de-doce-de-leite.webp",
       "imageAlt": "Pastel de doce de leite",
       "available": true,
       "featured": false

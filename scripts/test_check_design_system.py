@@ -155,6 +155,69 @@ class CheckDesignSystemTest(unittest.TestCase):
 
         self.assertTrue(any("tokens.css" in error for error in errors))
 
+    def write_visual_assets(self, image_name: str = "produto.webp") -> None:
+        self.write(
+            "frontend/src/styles/main.css",
+            """
+@font-face {
+  font-family: 'Bebas Neue';
+  font-display: swap;
+  src: url('/fonts/bebas-neue-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+}
+""",
+        )
+        for filename in (
+            "bebas-neue-latin.woff2",
+            "LICENSE-BebasNeue.txt",
+            "inter-latin.woff2",
+            "LICENSE-Inter.txt",
+        ):
+            self.write(f"frontend/public/fonts/{filename}", "conteúdo")
+        self.write("frontend/public/robots.txt", "User-agent: *\nAllow: /\n")
+        self.write(
+            "design-system/seed.json",
+            json.dumps({"products": [{"image": f"/products/{image_name}"}]}),
+        )
+        self.write(f"frontend/public/products/{image_name}", "imagem")
+        if image_name.endswith(".webp"):
+            self.write(
+                f"frontend/public/products/{image_name[:-5]}.avif",
+                "imagem",
+            )
+
+    def test_accepts_self_hosted_fonts_and_optimized_images(self) -> None:
+        self.write_visual_assets()
+
+        self.assertEqual(check_design_system.collect_errors(self.root), [])
+
+    def test_detects_missing_font_asset(self) -> None:
+        self.write_visual_assets()
+        (self.root / "frontend/public/fonts/inter-latin.woff2").unlink()
+
+        errors = check_design_system.collect_errors(self.root)
+
+        self.assertTrue(any("fonte Inter ausente" in error for error in errors))
+
+    def test_detects_missing_avif_variant(self) -> None:
+        self.write_visual_assets()
+        (self.root / "frontend/public/products/produto.avif").unlink()
+
+        errors = check_design_system.collect_errors(self.root)
+
+        self.assertTrue(any("produto.avif" in error for error in errors))
+
+    def test_detects_image_without_webp(self) -> None:
+        self.write_visual_assets("produto.png")
+
+        errors = check_design_system.collect_errors(self.root)
+
+        self.assertTrue(any("deveria usar WebP" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

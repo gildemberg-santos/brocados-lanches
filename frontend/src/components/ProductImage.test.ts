@@ -67,4 +67,39 @@ describe('ProductImage', () => {
     expect(wrapper.find('img').exists()).toBe(false)
     expect(wrapper.get('[role="img"]').attributes('aria-label')).toBe('Brocado Cheddar')
   })
+
+  it('oferece AVIF e mantém WebP como fallback', () => {
+    const wrapper = mount(ProductImage, {
+      props: {
+        src: '/products/burger.webp',
+        alt: 'Brocado Cheddar',
+        width: 480,
+        height: 360,
+      },
+    })
+
+    expect(wrapper.get('source[srcset="/products/burger.avif"]').attributes('type')).toBe(
+      'image/avif',
+    )
+    expect(wrapper.get('img').attributes('src')).toBe('/products/burger.webp')
+    expect(wrapper.findAll('source[type="image/webp"]')).toHaveLength(0)
+  })
+
+  it('gera variantes otimizadas a partir de JPEG', () => {
+    const wrapper = mount(ProductImage, {
+      props: {
+        src: '/products/burger.jpeg',
+        alt: 'Brocado Cheddar',
+        width: 480,
+        height: 360,
+      },
+    })
+
+    expect(wrapper.get('source[type="image/avif"]').attributes('srcset')).toBe(
+      '/products/burger.avif',
+    )
+    expect(wrapper.get('source[type="image/webp"]').attributes('srcset')).toBe(
+      '/products/burger.webp',
+    )
+  })
 })

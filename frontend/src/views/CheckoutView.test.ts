@@ -165,6 +165,59 @@ describe('CheckoutView', () => {
     expect(mockedCreateOrder).not.toHaveBeenCalled()
   })
 
+  it('associa as seções aos títulos existentes', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    const sections = wrapper.findAll('section[aria-labelledby]')
+    expect(sections.length).toBeGreaterThan(0)
+    for (const section of sections) {
+      const titleId = section.attributes('aria-labelledby')
+      expect(titleId).toBeTruthy()
+      expect(wrapper.find(`#${titleId}`).exists()).toBe(true)
+    }
+    expect(wrapper.find('#customer-title').exists()).toBe(true)
+    expect(wrapper.find('#payment-title').exists()).toBe(true)
+  })
+
+  it('associa cada erro de campo ao input correspondente', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await wrapper.get('input[name="city"]').setValue('')
+    await wrapper.get('input[name="state"]').setValue('')
+    await wrapper.get('textarea[name="note"]').setValue('x'.repeat(281))
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const fields: ReadonlyArray<readonly [name: string, id: string]> = [
+      ['zoneId', 'checkout-zoneId'],
+      ['street', 'checkout-street'],
+      ['number', 'checkout-number'],
+      ['district', 'checkout-district'],
+      ['zipCode', 'checkout-zipCode'],
+      ['city', 'checkout-city'],
+      ['state', 'checkout-state'],
+      ['customerName', 'checkout-customerName'],
+      ['phone', 'checkout-phone'],
+      ['changeFor', 'checkout-changeFor'],
+      ['note', 'checkout-note'],
+    ]
+
+    for (const [name, id] of fields) {
+      const input = wrapper.get(`[name="${name}"]`)
+      const error = wrapper.get(`#${id}-error`)
+
+      expect(input.attributes('id')).toBe(id)
+      expect(input.attributes('aria-describedby')).toBe(`${id}-error`)
+      expect(input.attributes('aria-invalid')).toBe('true')
+      expect(error.text()).not.toBe('')
+    }
+
+    for (const error of wrapper.findAll('small.field-error')) {
+      const errorId = error.attributes('id')
+      expect(errorId).toBeTruthy()
+      expect(wrapper.get(`[aria-describedby="${errorId}"]`).attributes('aria-invalid')).toBe('true')
+    }
+  })
+
   it('clears the cart and navigates after the order is created', async () => {
     const { wrapper, cart, router } = await mountCheckout({ seed: true })
     await fillForm(wrapper)

@@ -16,6 +16,20 @@ const props = withDefaults(
 
 const failed = ref(false)
 
+const sources = computed(() => {
+  const match = /^(.*)\.(webp|jpe?g|png)$/i.exec(props.src.trim())
+  if (!match) {
+    return { avif: '', webp: '' }
+  }
+
+  const base = match[1]
+  const extension = match[2].toLowerCase()
+  return {
+    avif: `${base}.avif`,
+    webp: extension === 'webp' ? '' : `${base}.webp`,
+  }
+})
+
 const initial = computed(() => {
   const trimmed = props.alt.trim()
   return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : 'B'
@@ -31,16 +45,19 @@ watch(
 
 <template>
   <span class="product-image">
-    <img
-      v-if="src.length > 0 && !failed"
-      class="product-image__asset"
-      :src="src"
-      :alt="alt"
-      :width="width"
-      :height="height"
-      :loading="eager ? 'eager' : 'lazy'"
-      @error="failed = true"
-    />
+    <picture v-if="src.length > 0 && !failed">
+      <source v-if="sources.avif.length > 0" :srcset="sources.avif" type="image/avif" />
+      <source v-if="sources.webp.length > 0" :srcset="sources.webp" type="image/webp" />
+      <img
+        class="product-image__asset"
+        :src="src"
+        :alt="alt"
+        :width="width"
+        :height="height"
+        :loading="eager ? 'eager' : 'lazy'"
+        @error="failed = true"
+      />
+    </picture>
     <span v-else class="product-image__fallback" role="img" :aria-label="alt">
       <span class="product-image__initial" aria-hidden="true">{{ initial }}</span>
       <span class="product-image__caption" aria-hidden="true">Sem foto</span>

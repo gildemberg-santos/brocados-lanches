@@ -50,4 +50,15 @@ describe('metadados por rota', () => {
     expect(document.head.querySelectorAll('meta[name="robots"]')).toHaveLength(1)
     expect(document.head.querySelectorAll('meta[name="description"]')).toHaveLength(1)
   })
+
+  it('preserva a descrição própria de rotas institucionais', () => {
+    const description = 'Canais de contato, endereço e horários publicados pela Brocados Lanches.'
+
+    applyRouteMeta(route({}))
+    applyRouteMeta(route({ title: 'Contato', description, noindex: false }))
+
+    expect(document.title).toBe('Contato · Brocados Lanches')
+    expect(metaContent('description')).toBe(description)
+    expect(metaContent('robots')).toBe('index, follow')
+  })
 })

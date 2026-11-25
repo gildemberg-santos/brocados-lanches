@@ -11,8 +11,10 @@ import PriceText from '../components/PriceText.vue'
 import ProductCardCompact from '../components/ProductCardCompact.vue'
 import ProductImage from '../components/ProductImage.vue'
 import { useMenuStore } from '../stores/menu'
+import { useStoreStatusStore } from '../stores/storeStatus'
 
 const menu = useMenuStore()
+const statusStore = useStoreStatusStore()
 const router = useRouter()
 
 const heroProduct = computed(
@@ -20,6 +22,42 @@ const heroProduct = computed(
 )
 
 const isLoading = computed(() => menu.state === 'loading' || menu.state === 'idle')
+
+const currentStatus = computed(() => (statusStore.state === 'success' ? statusStore.status : null))
+const statusLabel = computed(() => {
+  if (currentStatus.value?.status === 'open') {
+    return 'Loja aberta'
+  }
+  if (currentStatus.value?.status === 'closed') {
+    return 'Loja fechada'
+  }
+  return ''
+})
+const hasStatus = computed(() => statusLabel.value.length > 0)
+const deliveryTime = computed(() => currentStatus.value?.deliveryTime.trim() ?? '')
+const whatsappUrl = computed(() => {
+  const digits = (currentStatus.value?.whatsapp ?? '').replace(/\D/g, '')
+  return digits ? `https://wa.me/${digits}` : ''
+})
+const instagram = computed(() => currentStatus.value?.instagram.trim() ?? '')
+const address = computed(() => currentStatus.value?.address.trim() ?? '')
+const hasContacts = computed(
+  () => whatsappUrl.value.length > 0 || instagram.value.length > 0 || address.value.length > 0,
+)
+const nextOpening = computed(() => {
+  if (currentStatus.value?.status !== 'closed' || !currentStatus.value.nextOpeningAt) {
+    return ''
+  }
+  const date = new Date(currentStatus.value.nextOpeningAt)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Fortaleza',
+  }).format(date)
+})
 
 function openCategory(slug: string): void {
   void router.push({ name: 'menu', query: { categoria: slug } })
@@ -29,8 +67,13 @@ function retry(): void {
   void menu.loadMenu(true)
 }
 
+function retryStatus(): void {
+  void statusStore.refresh()
+}
+
 onMounted(() => {
   void menu.ensureLoaded()
+  void statusStore.load()
 })
 </script>
 
@@ -66,6 +109,42 @@ onMounted(() => {
           <PriceText :value-cents="heroProduct.priceCents" />
         </span>
       </RouterLink>
+    </section>
+
+    <section
+      class="home-status"
+      data-testid="store-status-banner"
+      aria-labelledby="home-status-title"
+    >
+      <template v-if="statusStore.state === 'idle' || statusStore.state === 'loading'">
+        <h2 id="home-status-title" class="home-status__title">Consultando status da loja...</h2>
+      </template>
+
+      <template v-else-if="hasStatus">
+        <h2
+          id="home-status-title"
+          class="home-status__title"
+          :class="currentStatus?.status === 'open' ? 'is-open' : 'is-closed'"
+        >
+          {{ statusLabel }}
+        </h2>
+        <p v-if="deliveryTime" class="home-status__line">Entrega: {{ deliveryTime }}</p>
+        <p v-if="nextOpening" class="home-status__line">Próxima abertura: {{ nextOpening }}</p>
+        <ul v-if="hasContacts" class="home-status__contacts">
+          <li v-if="whatsappUrl">
+            <a :href="whatsappUrl" target="_blank" rel="noopener noreferrer">
+              WhatsApp: {{ currentStatus?.whatsapp }}
+            </a>
+          </li>
+          <li v-if="instagram">Instagram: {{ instagram }}</li>
+          <li v-if="address">Endereço: {{ address }}</li>
+        </ul>
+      </template>
+
+      <template v-else>
+        <h2 id="home-status-title" class="home-status__title">Status da loja indisponível.</h2>
+        <BaseButton variant="secondary" @click="retryStatus">Tentar novamente</BaseButton>
+      </template>
     </section>
 
     <LoadingSkeleton v-if="isLoading" label="Carregando cardápio" />
@@ -227,6 +306,51 @@ onMounted(() => {
 .home-hero__spotlight strong {
   font-size: var(--font-size-h1);
   line-height: 1.2;
+}
+
+.home-status {
+  display: grid;
+  gap: 8px;
+  padding: 16px 20px;
+  border: 1px solid var(--bg-border);
+  border-radius: 18px;
+  background: var(--bg-surface);
+}
+
+.home-status__title {
+  margin: 0;
+  font-size: var(--font-size-h2);
+  line-height: 1.3;
+}
+
+.home-status__title.is-open {
+  color: var(--status-open);
+}
+
+.home-status__title.is-closed {
+  color: var(--text-main);
+}
+
+.home-status__line {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+
+.home-status__contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0;
+  color: var(--text-sub);
+  list-style: none;
+  line-height: 1.5;
+}
+
+.home-status__contacts a {
+  color: var(--brand-neon);
+  font-weight: 700;
 }
 
 .home-section {

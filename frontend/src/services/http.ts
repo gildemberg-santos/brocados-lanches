@@ -1,4 +1,18 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const DEFAULT_HTTP_TIMEOUT_MS = 10_000
+const TIMEOUT_MESSAGE = 'A conexão demorou muito. Verifique sua conexão e tente novamente.'
+
+function resolveHttpTimeoutMs(): number {
+  const configured: unknown = import.meta.env.VITE_HTTP_TIMEOUT_MS
+  const value =
+    typeof configured === 'string' || typeof configured === 'number'
+      ? Number(configured)
+      : Number.NaN
+
+  return Number.isFinite(value) && value > 0 ? value : DEFAULT_HTTP_TIMEOUT_MS
+}
+
+const HTTP_TIMEOUT_MS = resolveHttpTimeoutMs()
 
 export interface ApiErrorDetail {
   field?: string
@@ -33,32 +47,42 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Limita o tempo total da requisição (incluindo a leitura do corpo) e converte
+ * abortes por timeout em um erro amigável, sem expor detalhes da falha.
+ */
+async function withTimeout<T>(request: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS)
+
+  try {
+    return await request(controller.signal)
+  } catch (error: unknown) {
+    if (controller.signal.aborted) {
+      throw new ApiError(0, 'TIMEOUT', TIMEOUT_MESSAGE)
+    }
+    throw error
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export async function get<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      Accept: 'application/json',
-    },
-    credentials: 'include',
-  })
+  return withTimeout(async (signal) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        Accept: 'application/json',
+      },
+      credentials: 'include',
+      signal,
+    })
 
-  if (!response.ok) {
-    let payload: ApiErrorPayload = {}
-
-    try {
-      payload = (await response.json()) as ApiErrorPayload
-    } catch {
-      payload = {}
+    if (!response.ok) {
+      throw await parseError(response)
     }
 
-    throw new ApiError(
-      response.status,
-      payload.error?.code ?? 'HTTP_ERROR',
-      payload.error?.message ?? 'Não foi possível concluir a requisição.',
-      payload.error?.details ?? [],
-    )
-  }
-
-  return (await response.json()) as T
+    return (await response.json()) as T
+  })
 }
 
 export async function getData<T>(path: string): Promise<T> {
@@ -97,18 +121,21 @@ export async function post<T>(
     headers['Idempotency-Key'] = options.idempotencyKey
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers,
-    credentials: 'include',
-    body: JSON.stringify(value),
+  return withTimeout(async (signal) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify(value),
+      signal,
+    })
+
+    if (!response.ok) {
+      throw await parseError(response)
+    }
+
+    return (await response.json()) as T
   })
-
-  if (!response.ok) {
-    throw await parseError(response)
-  }
-
-  return (await response.json()) as T
 }
 
 export async function postData<T>(
@@ -122,35 +149,41 @@ export async function postData<T>(
 
 /** POST sem corpo, para endpoints que respondem 204 (ex.: logout). */
 export async function postEmpty(path: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-    },
-    credentials: 'include',
-  })
+  return withTimeout(async (signal) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+      },
+      credentials: 'include',
+      signal,
+    })
 
-  if (!response.ok) {
-    throw await parseError(response)
-  }
+    if (!response.ok) {
+      throw await parseError(response)
+    }
+  })
 }
 
 export async function patch<T>(path: string, value: unknown): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'PATCH',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify(value),
+  return withTimeout(async (signal) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(value),
+      signal,
+    })
+
+    if (!response.ok) {
+      throw await parseError(response)
+    }
+
+    return (await response.json()) as T
   })
-
-  if (!response.ok) {
-    throw await parseError(response)
-  }
-
-  return (await response.json()) as T
 }
 
 export async function patchData<T>(path: string, value: unknown): Promise<T> {

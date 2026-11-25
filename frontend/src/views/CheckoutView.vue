@@ -199,13 +199,21 @@ onUnmounted(() => {
           <h2 id="address-title">2. Entrega</h2>
           <label class="field">
             <span>Zona de entrega</span>
-            <select v-model="form.zoneId" name="zoneId">
+            <select
+              v-model="form.zoneId"
+              id="checkout-zoneId"
+              name="zoneId"
+              :aria-invalid="errors.zoneId ? 'true' : undefined"
+              :aria-describedby="errors.zoneId ? 'checkout-zoneId-error' : undefined"
+            >
               <option value="">Selecione o bairro</option>
               <option v-for="zone in zones.zones" :key="zone.id" :value="zone.id">
                 {{ zone.name }} — {{ formatCents(zone.feeCents) }}
               </option>
             </select>
-            <small v-if="errors.zoneId" class="field-error">{{ errors.zoneId }}</small>
+            <small v-if="errors.zoneId" id="checkout-zoneId-error" class="field-error">
+              {{ errors.zoneId }}
+            </small>
           </label>
 
           <div class="field-grid">
@@ -213,16 +221,30 @@ onUnmounted(() => {
               <span>Rua</span>
               <input
                 v-model="form.street"
+                id="checkout-street"
                 name="street"
                 type="text"
                 autocomplete="street-address"
+                :aria-invalid="errors.street ? 'true' : undefined"
+                :aria-describedby="errors.street ? 'checkout-street-error' : undefined"
               />
-              <small v-if="errors.street" class="field-error">{{ errors.street }}</small>
+              <small v-if="errors.street" id="checkout-street-error" class="field-error">
+                {{ errors.street }}
+              </small>
             </label>
             <label class="field">
               <span>Número</span>
-              <input v-model="form.number" name="number" type="text" />
-              <small v-if="errors.number" class="field-error">{{ errors.number }}</small>
+              <input
+                v-model="form.number"
+                id="checkout-number"
+                name="number"
+                type="text"
+                :aria-invalid="errors.number ? 'true' : undefined"
+                :aria-describedby="errors.number ? 'checkout-number-error' : undefined"
+              />
+              <small v-if="errors.number" id="checkout-number-error" class="field-error">
+                {{ errors.number }}
+              </small>
             </label>
             <label class="field">
               <span>Complemento</span>
@@ -230,56 +252,104 @@ onUnmounted(() => {
             </label>
             <label class="field field--wide">
               <span>Bairro</span>
-              <input v-model="form.district" name="district" type="text" />
-              <small v-if="errors.district" class="field-error">{{ errors.district }}</small>
+              <input
+                v-model="form.district"
+                id="checkout-district"
+                name="district"
+                type="text"
+                :aria-invalid="errors.district ? 'true' : undefined"
+                :aria-describedby="errors.district ? 'checkout-district-error' : undefined"
+              />
+              <small v-if="errors.district" id="checkout-district-error" class="field-error">
+                {{ errors.district }}
+              </small>
             </label>
             <label class="field">
               <span>CEP</span>
-              <input v-model="form.zipCode" name="zipCode" type="text" inputmode="numeric" />
-              <small v-if="errors.zipCode" class="field-error">{{ errors.zipCode }}</small>
+              <input
+                v-model="form.zipCode"
+                id="checkout-zipCode"
+                name="zipCode"
+                type="text"
+                inputmode="numeric"
+                :aria-invalid="errors.zipCode ? 'true' : undefined"
+                :aria-describedby="errors.zipCode ? 'checkout-zipCode-error' : undefined"
+              />
+              <small v-if="errors.zipCode" id="checkout-zipCode-error" class="field-error">
+                {{ errors.zipCode }}
+              </small>
             </label>
             <label class="field">
               <span>Cidade</span>
-              <input v-model="form.city" name="city" type="text" />
-              <small v-if="errors.city" class="field-error">{{ errors.city }}</small>
+              <input
+                v-model="form.city"
+                id="checkout-city"
+                name="city"
+                type="text"
+                :aria-invalid="errors.city ? 'true' : undefined"
+                :aria-describedby="errors.city ? 'checkout-city-error' : undefined"
+              />
+              <small v-if="errors.city" id="checkout-city-error" class="field-error">
+                {{ errors.city }}
+              </small>
             </label>
             <label class="field">
               <span>Estado</span>
-              <input v-model="form.state" name="state" type="text" maxlength="2" />
-              <small v-if="errors.state" class="field-error">{{ errors.state }}</small>
+              <input
+                v-model="form.state"
+                id="checkout-state"
+                name="state"
+                type="text"
+                maxlength="2"
+                :aria-invalid="errors.state ? 'true' : undefined"
+                :aria-describedby="errors.state ? 'checkout-state-error' : undefined"
+              />
+              <small v-if="errors.state" id="checkout-state-error" class="field-error">
+                {{ errors.state }}
+              </small>
             </label>
           </div>
         </section>
 
         <section class="checkout-section" aria-labelledby="customer-title">
-          <h2>{{ form.fulfillment === 'delivery' ? '3' : '2' }}. Seus dados</h2>
+          <h2 id="customer-title">{{ form.fulfillment === 'delivery' ? '3' : '2' }}. Seus dados</h2>
           <label class="field">
             <span>Nome completo</span>
             <input
               v-model="form.customerName"
+              id="checkout-customerName"
               name="customerName"
               type="text"
               autocomplete="name"
+              :aria-invalid="errors.customerName ? 'true' : undefined"
+              :aria-describedby="errors.customerName ? 'checkout-customerName-error' : undefined"
             />
-            <small v-if="errors.customerName" class="field-error">{{ errors.customerName }}</small>
+            <small v-if="errors.customerName" id="checkout-customerName-error" class="field-error">
+              {{ errors.customerName }}
+            </small>
           </label>
           <label class="field">
             <span>Telefone</span>
             <input
               :value="form.phone"
+              id="checkout-phone"
               name="phone"
               type="tel"
               inputmode="tel"
               autocomplete="tel"
               placeholder="(85) 99999-9999"
+              :aria-invalid="errors.phone ? 'true' : undefined"
+              :aria-describedby="errors.phone ? 'checkout-phone-error' : undefined"
               @input="form.phone = formatPhone(($event.target as HTMLInputElement).value)"
             />
-            <small v-if="errors.phone" class="field-error">{{ errors.phone }}</small>
+            <small v-if="errors.phone" id="checkout-phone-error" class="field-error">
+              {{ errors.phone }}
+            </small>
           </label>
         </section>
 
         <section class="checkout-section" aria-labelledby="payment-title">
-          <h2>{{ form.fulfillment === 'delivery' ? '4' : '3' }}. Pagamento</h2>
+          <h2 id="payment-title">{{ form.fulfillment === 'delivery' ? '4' : '3' }}. Pagamento</h2>
           <div class="choice-group">
             <label class="choice">
               <input v-model="form.paymentMethod" name="paymentMethod" type="radio" value="cash" />
@@ -301,17 +371,32 @@ onUnmounted(() => {
             <span>Troco para</span>
             <input
               v-model="form.changeFor"
+              id="checkout-changeFor"
               name="changeFor"
               type="text"
               inputmode="numeric"
               placeholder="100,00"
+              :aria-invalid="errors.changeFor ? 'true' : undefined"
+              :aria-describedby="errors.changeFor ? 'checkout-changeFor-error' : undefined"
             />
-            <small v-if="errors.changeFor" class="field-error">{{ errors.changeFor }}</small>
+            <small v-if="errors.changeFor" id="checkout-changeFor-error" class="field-error">
+              {{ errors.changeFor }}
+            </small>
           </label>
           <label class="field">
             <span>Observação (opcional)</span>
-            <textarea v-model="form.note" name="note" rows="3" maxlength="280"></textarea>
-            <small v-if="errors.note" class="field-error">{{ errors.note }}</small>
+            <textarea
+              v-model="form.note"
+              id="checkout-note"
+              name="note"
+              rows="3"
+              maxlength="280"
+              :aria-invalid="errors.note ? 'true' : undefined"
+              :aria-describedby="errors.note ? 'checkout-note-error' : undefined"
+            ></textarea>
+            <small v-if="errors.note" id="checkout-note-error" class="field-error">
+              {{ errors.note }}
+            </small>
           </label>
         </section>
 

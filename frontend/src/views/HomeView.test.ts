@@ -5,14 +5,20 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchMenu } from '../services/menu'
+import { fetchStoreStatus } from '../services/store'
 import { makeCategory, makeMenu, makeProduct } from '../test/fixtures/catalog'
+import type { PublicStoreStatus } from '../types/store'
 import HomeView from './HomeView.vue'
 
 vi.mock('../services/menu', () => ({
   fetchMenu: vi.fn(),
 }))
+vi.mock('../services/store', () => ({
+  fetchStoreStatus: vi.fn(),
+}))
 
 const mockedFetchMenu = vi.mocked(fetchMenu)
+const mockedFetchStoreStatus = vi.mocked(fetchStoreStatus)
 
 const StubView = defineComponent({
   name: 'StubView',
@@ -42,6 +48,20 @@ async function mountHome() {
   })
 
   return { wrapper, router }
+}
+
+const openStatus: PublicStoreStatus = {
+  name: 'Brocados Lanches',
+  status: 'open',
+  isOpenManual: true,
+  timezone: 'America/Fortaleza',
+  deliveryTime: '30-90 min',
+  whatsapp: '+5585999999999',
+  instagram: '@brocados',
+  address: 'Rua de Teste, 10',
+  openingHours: [],
+  nextOpeningAt: null,
+  updatedAt: '2026-11-22T12:00:00Z',
 }
 
 const successMenu = makeMenu({
@@ -80,14 +100,15 @@ const successMenu = makeMenu({
 describe('HomeView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockedFetchMenu.mockResolvedValue(successMenu)
+    mockedFetchStoreStatus.mockResolvedValue(openStatus)
   })
 
   it('shows loading before rendering categories and featured products', async () => {
-    mockedFetchMenu.mockResolvedValue(successMenu)
-
     const { wrapper } = await mountHome()
 
     expect(wrapper.text()).toContain('Carregando cardápio')
+    expect(wrapper.text()).toContain('Consultando status da loja...')
 
     await flushPromises()
 
@@ -98,9 +119,97 @@ describe('HomeView', () => {
     expect(wrapper.find('a[href="/produto/brocado-cheddar"]').exists()).toBe(true)
   })
 
-  it('navigates to the menu with the selected category', async () => {
-    mockedFetchMenu.mockResolvedValue(successMenu)
+  it('shows the effective store status, delivery time and contacts from the API', async () => {
+    const { wrapper } = await mountHome()
+    await flushPromises()
 
+    const banner = wrapper.get('[data-testid="store-status-banner"]')
+
+    expect(banner.text()).toContain('Loja aberta')
+    expect(banner.text()).toContain('Entrega: 30-90 min')
+    expect(banner.get('a').attributes('href')).toBe('https://wa.me/5585999999999')
+    expect(banner.text()).toContain('+5585999999999')
+    expect(banner.text()).toContain('@brocados')
+    expect(banner.text()).toContain('Rua de Teste, 10')
+    expect(banner.text()).not.toContain('Próxima abertura')
+  })
+
+  it('formats the next opening in America/Fortaleza when the store is closed', async () => {
+    mockedFetchStoreStatus.mockResolvedValue({
+      ...openStatus,
+      status: 'closed',
+      nextOpeningAt: '2026-11-23T02:00:00Z',
+    })
+
+    const { wrapper } = await mountHome()
+    await flushPromises()
+
+    const banner = wrapper.get('[data-testid="store-status-banner"]')
+    const formatted = new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      timeZone: 'America/Fortaleza',
+    }).format(new Date('2026-11-23T02:00:00Z'))
+
+    expect(banner.text()).toContain('Loja fechada')
+    expect(banner.text()).toContain(`Próxima abertura: ${formatted}`)
+    expect(banner.text()).not.toContain('2026-11-23T02:00:00Z')
+  })
+
+  it('shows a neutral message with retry when the status fails without breaking the menu', async () => {
+    mockedFetchStoreStatus.mockRejectedValueOnce(new Error('mongo down'))
+
+    const { wrapper } = await mountHome()
+    await flushPromises()
+
+    let banner = wrapper.get('[data-testid="store-status-banner"]')
+    expect(banner.text()).toContain('Status da loja indisponível.')
+    expect(banner.text()).not.toContain('mongo')
+    expect(wrapper.text()).toContain('Hambúrgueres')
+
+    await banner.get('button').trigger('click')
+    await flushPromises()
+
+    expect(mockedFetchStoreStatus).toHaveBeenCalledTimes(2)
+    banner = wrapper.get('[data-testid="store-status-banner"]')
+    expect(banner.text()).toContain('Loja aberta')
+  })
+
+  it('shows a neutral state when the API returns no status', async () => {
+    mockedFetchStoreStatus.mockResolvedValue(null as unknown as PublicStoreStatus)
+
+    const { wrapper } = await mountHome()
+    await flushPromises()
+
+    const banner = wrapper.get('[data-testid="store-status-banner"]')
+    expect(banner.text()).toContain('Status da loja indisponível.')
+    expect(banner.text()).toContain('Tentar novamente')
+    expect(banner.text()).not.toContain('Loja aberta')
+  })
+
+  it('omits empty contacts instead of inventing values', async () => {
+    mockedFetchStoreStatus.mockResolvedValue({
+      ...openStatus,
+      deliveryTime: '',
+      whatsapp: '',
+      instagram: '',
+      address: '',
+      nextOpeningAt: null,
+    })
+
+    const { wrapper } = await mountHome()
+    await flushPromises()
+
+    const banner = wrapper.get('[data-testid="store-status-banner"]')
+    expect(banner.text()).toContain('Loja aberta')
+    expect(banner.text()).not.toContain('Entrega:')
+    expect(banner.text()).not.toContain('WhatsApp')
+    expect(banner.text()).not.toContain('Instagram')
+    expect(banner.text()).not.toContain('Endereço')
+    expect(banner.text()).not.toContain('Próxima abertura')
+  })
+
+  it('navigates to the menu with the selected category', async () => {
     const { wrapper, router } = await mountHome()
     await flushPromises()
 

@@ -30,6 +30,7 @@ describe('serviço de autenticação administrativa', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/auth/me', {
       headers: { Accept: 'application/json' },
       credentials: 'include',
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -46,6 +47,7 @@ describe('serviço de autenticação administrativa', () => {
       },
       credentials: 'include',
       body: JSON.stringify({ email: 'dono@example.com', password: 'senha-forte-123' }),
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -59,6 +61,7 @@ describe('serviço de autenticação administrativa', () => {
       method: 'POST',
       headers: { Accept: 'application/json' },
       credentials: 'include',
+      signal: expect.any(AbortSignal),
     })
   })
 

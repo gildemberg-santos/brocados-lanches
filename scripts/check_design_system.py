@@ -46,6 +46,11 @@ FONT_TOKENS = {
     "--font-display": ("typography", "families", "display"),
     "--font-sans": ("typography", "families", "sans"),
 }
+FONT_ASSETS = {
+    "Bebas Neue": ("bebas-neue-latin.woff2", "LICENSE-BebasNeue.txt"),
+    "Inter": ("inter-latin.woff2", "LICENSE-Inter.txt"),
+}
+SEED_PATH = Path("design-system/seed.json")
 SIZE_TOKENS = {
     "--font-size-display": ("typography", "scale", "display", "size"),
     "--line-height-display": ("typography", "scale", "display", "lineHeight"),
@@ -212,9 +217,57 @@ def scan_frontend(root: Path) -> list[str]:
     return errors
 
 
+def validate_assets(root: Path) -> list[str]:
+    """Valida fontes self-hosted, robots e variantes WebP/AVIF do catálogo."""
+    errors: list[str] = []
+    public = root / "frontend" / "public"
+    if not public.is_dir():
+        return errors
+
+    css_path = root / "frontend" / "src" / "styles" / "main.css"
+    css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+    for family, (font_file, license_file) in FONT_ASSETS.items():
+        font_path = public / "fonts" / font_file
+        license_path = public / "fonts" / license_file
+        if not font_path.is_file() or font_path.stat().st_size == 0:
+            errors.append(f"{font_path.relative_to(root)}: fonte {family} ausente")
+        if not license_path.is_file() or license_path.stat().st_size == 0:
+            errors.append(f"{license_path.relative_to(root)}: licença de {family} ausente")
+        if font_file not in css:
+            errors.append(f"{css_path.relative_to(root)}: @font-face ausente para {family}")
+    if css.count("font-display: swap") < len(FONT_ASSETS):
+        errors.append(f"{css_path.relative_to(root)}: font-display: swap ausente")
+
+    if not (public / "robots.txt").is_file():
+        errors.append("frontend/public/robots.txt: arquivo ausente")
+
+    seed_path = root / SEED_PATH
+    if seed_path.exists():
+        try:
+            seed = json.loads(seed_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            seed = {}
+        products = seed.get("products", []) if isinstance(seed, dict) else []
+        for product in products:
+            image = product.get("image") if isinstance(product, dict) else None
+            if not isinstance(image, str) or image == "":
+                continue
+            if not image.lower().endswith(".webp"):
+                errors.append(f"{SEED_PATH}: {image} deveria usar WebP")
+                continue
+            webp = public / image.lstrip("/")
+            avif = webp.with_suffix(".avif")
+            if not webp.is_file() or webp.stat().st_size == 0:
+                errors.append(f"{webp.relative_to(root)}: variante WebP ausente")
+            if not avif.is_file() or avif.stat().st_size == 0:
+                errors.append(f"{avif.relative_to(root)}: variante AVIF ausente")
+
+    return errors
+
+
 def collect_errors(root: Path = ROOT) -> list[str]:
     """Retorna inconsistências de token e violações visuais no frontend."""
-    return validate_tokens(root) + scan_frontend(root)
+    return validate_tokens(root) + scan_frontend(root) + validate_assets(root)
 
 
 def main() -> int:

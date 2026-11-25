@@ -1,13 +1,39 @@
 <script setup lang="ts">
+import { computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useCartStore } from '../stores/cart'
+import { useHealthStore } from '../stores/health'
+
+const HEALTH_CHECK_INTERVAL_MS = 30_000
 
 const cart = useCartStore()
+const health = useHealthStore()
+const isOffline = computed(() => health.state === 'offline')
+let healthTimer: ReturnType<typeof setInterval> | null = null
+
+function refreshHealth(): void {
+  void health.check()
+}
+
+onMounted(() => {
+  refreshHealth()
+  healthTimer = setInterval(refreshHealth, HEALTH_CHECK_INTERVAL_MS)
+})
+
+onUnmounted(() => {
+  if (healthTimer !== null) {
+    clearInterval(healthTimer)
+    healthTimer = null
+  }
+})
 </script>
 
 <template>
   <header class="site-header">
+    <p v-if="isOffline" class="site-header__offline" role="status">
+      Conexão perdida. Verifique sua conexão e tente novamente em instantes.
+    </p>
     <div class="site-header__inner">
       <RouterLink class="site-header__brand" to="/" aria-label="Brocados Lanches, início">
         <span class="site-header__brand-name">BROCADOS</span>
@@ -39,6 +65,16 @@ const cart = useCartStore()
   z-index: 40;
   border-bottom: 1px solid var(--bg-border);
   background: var(--bg-primary);
+}
+
+.site-header__offline {
+  margin: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--bg-border);
+  background: var(--bg-surface);
+  color: var(--status-error);
+  font-size: var(--font-size-caption);
+  text-align: center;
 }
 
 .site-header__inner {

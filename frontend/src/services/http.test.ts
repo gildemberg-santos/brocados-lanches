@@ -29,6 +29,7 @@ function invalidJsonResponse(status = 500): MockResponse {
 describe('http', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 
   it('returns JSON on success', async () => {
@@ -41,6 +42,7 @@ describe('http', () => {
         Accept: 'application/json',
       },
       credentials: 'include',
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -127,6 +129,7 @@ describe('http', () => {
       },
       credentials: 'include',
       body: JSON.stringify({ items: [] }),
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -158,6 +161,7 @@ describe('http', () => {
         Accept: 'application/json',
       },
       credentials: 'include',
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -190,6 +194,7 @@ describe('http', () => {
       },
       credentials: 'include',
       body: JSON.stringify({ status: 'confirmed' }),
+      signal: expect.any(AbortSignal),
     })
   })
 
@@ -208,5 +213,40 @@ describe('http', () => {
       status: 409,
       code: 'CONFLICT',
     })
+  })
+
+  it('aborta a requisição por timeout e devolve uma mensagem amigável', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'))
+          })
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const pending = get('/readyz')
+    vi.advanceTimersByTime(10_000)
+
+    await expect(pending).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 0,
+      code: 'TIMEOUT',
+      message: 'A conexão demorou muito. Verifique sua conexão e tente novamente.',
+    })
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('limpa o timer quando a requisição termina com sucesso', async () => {
+    vi.useFakeTimers()
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ status: 'ok' })))
+
+    await expect(get('/readyz')).resolves.toEqual({ status: 'ok' })
+
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

@@ -1,12 +1,17 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { fetchHealth } from '../services/health'
 import { useCartStore } from '../stores/cart'
 import { makeCatalogProduct } from '../test/fixtures/catalog'
 import SiteHeader from './SiteHeader.vue'
+
+vi.mock('../services/health', () => ({ fetchHealth: vi.fn() }))
+
+const mockedFetchHealth = vi.mocked(fetchHealth)
 
 const StubView = defineComponent({
   name: 'StubView',
@@ -38,6 +43,12 @@ async function mountHeader(pinia = createPinia()) {
 describe('SiteHeader', () => {
   beforeEach(() => {
     localStorage.clear()
+    vi.clearAllMocks()
+    mockedFetchHealth.mockResolvedValue({ status: 'ok', checks: { mongo: 'ok' } })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('links the brand to the home page', async () => {
@@ -67,5 +78,46 @@ describe('SiteHeader', () => {
     expect(wrapper.get('.site-header__link--cart').attributes('aria-label')).toBe(
       'Carrinho, 2 itens',
     )
+  })
+
+  it('não exibe aviso quando a API responde', async () => {
+    const wrapper = await mountHeader()
+    await flushPromises()
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+  })
+
+  it('mostra aviso acessível sem bloquear o carrinho quando a conexão cai', async () => {
+    mockedFetchHealth.mockRejectedValue(new Error('falha de rede'))
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    useCartStore().add(makeCatalogProduct({ id: 'product-1' }), {}, [], '', 2)
+
+    const wrapper = await mountHeader(pinia)
+    await flushPromises()
+
+    expect(wrapper.get('[role="status"]').text()).toBe(
+      'Conexão perdida. Verifique sua conexão e tente novamente em instantes.',
+    )
+    const cartLink = wrapper.get('.site-header__link--cart')
+    expect(cartLink.attributes('href')).toBe('/carrinho')
+    expect(cartLink.attributes('aria-label')).toBe('Carrinho, 2 itens')
+    expect(cartLink.attributes('aria-disabled')).toBeUndefined()
+  })
+
+  it('monitora a saúde da API e encerra o monitoramento ao desmontar', async () => {
+    vi.useFakeTimers()
+
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const wrapper = await mountHeader(pinia)
+
+    expect(mockedFetchHealth).toHaveBeenCalledTimes(1)
+    vi.advanceTimersByTime(30_000)
+    expect(mockedFetchHealth).toHaveBeenCalledTimes(2)
+
+    wrapper.unmount()
+    vi.advanceTimersByTime(30_000)
+    expect(mockedFetchHealth).toHaveBeenCalledTimes(2)
   })
 })
