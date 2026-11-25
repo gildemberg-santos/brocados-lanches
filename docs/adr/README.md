@@ -1,6 +1,6 @@
 # ADR — Architecture Decision Records
 
-**Atualizado em:** 18/11/2026
+**Atualizado em:** 25/11/2026
 
 Este diretório registra decisões arquiteturais relevantes da Brocados Lanches.
 
@@ -13,7 +13,7 @@ Este diretório registra decisões arquiteturais relevantes da Brocados Lanches.
 | [0003](0003-dinheiro-e-fuso.md) | Dinheiro em centavos e fuso da operação | Aceita |
 | [0004](0004-autenticacao-admin.md) | Sessão em cookie e papéis | Aceita |
 | [0005](0005-design-system-e-ui.md) | Design system como fonte visual | Aceita |
-| [0006](0006-cotacao-server-side.md) | Cotação server-side antes do pedido | Aceita no planejamento |
+| [0006](0006-cotacao-server-side.md) | Cotação server-side antes do pedido | Aceita e implementada |
 
 ## Formato
 

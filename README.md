@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fase 1 — CI, seed e harness E2E entregues; Fase 2 com catálogo navegável, personalização, carrinho, cotação server-side, checkout, pedido persistido e handoff WhatsApp entregues; painel administrativo com catálogo, loja, status efetivo, pedidos, usuários, auditoria e conta entregue. Faltam hardening, E2E ampliado e infra de lançamento.  
+**Status:** Fases 1 a 4 entregues no código: CI, seed, E2E do fluxo principal, catálogo, personalização, carrinho, cotação server-side, checkout, pedido persistido, handoff WhatsApp e painel com catálogo, loja, pedidos, usuários e auditoria. O Épico 8 entregou páginas institucionais/legais provisórias, SEO básico (JSON-LD e `robots.txt`), fontes self-hosted, imagens WebP/AVIF, status da loja na home e correções de acessibilidade no checkout. Faltam textos legais aprovados, domínio para sitemap/canonical, cenários críticos de E2E e infra de lançamento; catálogo e taxas dependem de validação do cliente.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -198,13 +198,13 @@ make up-offline
 
 Ele compila o frontend no host (`make build-web`) e monta a imagem web com `frontend/Dockerfile.runtime` e `compose.offline.yaml`, sem instalar pacotes npm dentro do Docker.
 
-### Deploy no Render
+### Proposta de deploy no Render (pendente de decisão)
 
-O deploy usa **um único container** (estratégia do `restaurante-canto-verde`): o `Dockerfile` raiz compila a API Go (`backend/vendor`), compila a SPA Vue e monta um runtime com nginx + Go. O nginx escuta `PORT` do Render, serve `frontend/dist`, faz proxy de `/api/`, `/healthz` e `/readyz` para a API local em `API_PORT=3000` e preserva `X-Forwarded-Proto` para o CSRF.
+A proposta de deploy usa **um único container** (estratégia do `restaurante-canto-verde`): o `Dockerfile` raiz compila a API Go (`backend/vendor`), compila a SPA Vue e monta um runtime com nginx + Go. O nginx escuta `PORT` do Render, serve `frontend/dist`, faz proxy de `/api/`, `/healthz` e `/readyz` para a API local em `API_PORT=3000` e preserva `X-Forwarded-Proto` para o CSRF.
 
 O `render.yaml` define um único web service `brocados-lanches` com `dockerfilePath: ./Dockerfile`, health check `/healthz` e plano `free` (cold start após inatividade).
 
-Para aplicar, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados` e `API_PORT=3000`; ajuste `MONGO_DB` se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais.
+Se a proposta for aprovada, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados` e `API_PORT=3000`; ajuste `MONGO_DB` se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais.
 
 O MongoDB Atlas precisa aceitar a conexão do Render (allowlist `0.0.0.0/0` se não houver IP fixo, ou PrivateLink). Após o primeiro deploy e a criação do `owner`, remova `ADMIN_BOOTSTRAP_*` do Render.
 
@@ -255,7 +255,7 @@ make seed-check   # valida o JSON sem conectar no MongoDB
 ```
 
 - Reais são convertidos para centavos em Go, sem ponto flutuante (`49.99` → `4999`).
-- As imagens originais (800 px, PNG/JPEG) ficam em `frontend/public/products/`, com nomes derivados do slug do produto; devem ser convertidas para WebP/AVIF antes de uso em produção.
+- As imagens originais (800 px, PNG/JPEG) e as variantes geradas WebP/AVIF ficam em `frontend/public/products/`, com nomes derivados do slug do produto. `ProductImage` usa `<picture>` com AVIF/WebP e mantém o arquivo original como fallback; o validador de design system exige as três versões para cada imagem do seed.
 - Cada documento recebe `seed.fictitious: true` e `seed.source: "design-system/seed.json"`. O marcador identifica documento criado pelo seed de desenvolvimento; não afirma que todos os campos sejam inventados.
 - Para popular a home, três produtos disponíveis do catálogo são marcados como `featured`: Combo 3 hambúrguer, BURGER FRESCURINHA e Batata G. A escolha é apenas uma amostra de desenvolvimento, não um ranking real de pedidos.
 - O comando recusa `APP_ENV=production`, o banco `brocados` e nomes sem sufixo `_dev` ou `_test`.
@@ -334,12 +334,14 @@ O protótipo **não** entrega:
 - SEO, acessibilidade auditada ou política de privacidade;
 - Tailwind compilado: o protótipo usa CDN e precisa de internet.
 
-O esqueleto **ainda não** entrega:
+O esqueleto **entrega** rate limits do contrato, concorrência/idempotência com teste, E2E do fluxo de compra e do acesso por papel (ver `.github/workflows/ci.yml`). Ainda **não** entrega:
 
-- rate limit de criação de pedido e hardening de concorrência idempotente;
-- E2E completo do fluxo de compra e do acesso por papel;
+- textos definitivos de privacidade, termos e créditos aprovados pelo cliente/jurídico;
+- domínio para `sitemap.xml` e URL canônica (o `robots.txt` e o JSON-LD já existem);
+- contadores de rate limit compartilhados entre réplicas e atomicidade garantida em MongoDB standalone;
+- cenários críticos de E2E (loja fechada, falha de handoff, sessão expirada etc.);
 - telas de relatórios e impressão/KDS;
-- deploy de produção.
+- deploy de produção, backup e monitoramento.
 
 Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. O site público de referência está analisado em `docs/12-referencia-ola-click.md`.
 
@@ -348,10 +350,10 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 ## 7. Próximos passos
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
-2. Cobrir no E2E o fluxo completo cardápio → personalização → carrinho → checkout → confirmação (Épicos 3 e 4).
-3. Cobrir no E2E o acesso por papel às rotas protegidas com `operator` (Épico 6).
-4. Cobrir rate limit de pedido, concorrência idempotente e lacunas de E2E (Épicos 3, 4 e 6).
-5. Fechar acessibilidade, SEO, testes, deploy, backup e go-live (Épicos 8 a 10).
+2. Aprovar os textos institucionais/legais e definir domínio para sitemap/canonical, além de executar auditoria de acessibilidade com axe (Épico 8).
+3. Ampliar o E2E para os cenários críticos de erro e idempotência (Épicos 3, 4 e 9).
+4. Endurecer rate limit distribuído e atomicidade em MongoDB standalone (Épicos 9 e 10).
+5. Decidir hospedagem, configurar deploy, backup, monitoramento e go-live (Épico 10).
 
 ---
 

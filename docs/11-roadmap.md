@@ -2,7 +2,7 @@
 
 **Versão:** 1.1  
 **Atualizado em:** 23/11/2026  
-**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020 a US-025 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060 a US-066 e US-070 a US-073 concluídas (API e painel), incluindo catálogo, loja, status efetivo, usuários, auditoria e conta. Rate limits do contrato, testes de concorrência/PII/WhatsApp, metadados por rota e o E2E completo estão implementados. Faltam executar o E2E com MongoDB, JSON-LD/sitemap, conteúdo aprovado e infra de lançamento.
+**Status:** Fase 1 com CI, seed e E2E entregues; preview por PR pendente. Fase 2 com US-020 a US-025 concluídas; Fase 3 com US-030 a US-034 concluídas; Fase 4 com US-060 a US-066 e US-070 a US-073 concluídas (API e painel), incluindo catálogo, loja, status efetivo, usuários, auditoria e conta. Rate limits do contrato, testes de concorrência/PII/WhatsApp, metadados por rota e o E2E completo estão implementados. A Fase 5 entregou rotas institucionais/legais provisórias, JSON-LD/`robots.txt`, fontes self-hosted, WebP/AVIF, status da loja na home e ajustes de acessibilidade. Faltam executar o E2E com MongoDB, sitemap/canonical, textos aprovados, auditoria axe e infra de lançamento.
 
 **Relacionados:** `03-prd.md`, `08-backlog.md`, `10-operacao-e-lancamento.md`, `13-decisoes-e-pendencias.md`.
 
@@ -164,6 +164,8 @@
 - backup/restore;
 - monitoramento/alertas;
 - go-live.
+
+**Status em 25/11/2026:** páginas institucionais/legais com conteúdo provisório, JSON-LD, `robots.txt`, fontes self-hosted, WebP/AVIF, status da loja, dashboard com indicadores reais, timeout HTTP e aviso de conexão entregues com testes. Faltam textos aprovados, axe, sitemap/canonical e validação em staging.
 
 **Saída:** M5. Checklist de `10-operacao-e-lancamento.md` assinado.
 

@@ -226,7 +226,7 @@ Regras:
 - `pickup` ignora `zoneId` e retorna taxa zero.
 - `unitPriceCents` é o preço base do produto; `optionsPriceCents` soma opções e adicionais; `lineTotalCents = (unitPriceCents + optionsPriceCents) * quantity`.
 - Pode retornar `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE` ou `VALIDATION_ERROR`.
-- Rate limit previsto: 30/min por IP. O middleware ainda não está ativo no esqueleto e será ligado quando o endpoint for exposto publicamente.
+- Rate limit ativo: 30/min por IP; detalhes em `§15 Rate limits`.
 - O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou. O cálculo está centralizado em `domain.BuildQuote` e é reutilizado pelo `POST /orders`.
 
 ---
@@ -389,7 +389,7 @@ Não retorna:
 
 Após recarregar a confirmação, o cliente vê número, status, itens e total pelo `publicId`. A URL completa do WhatsApp não é devolvida pelo acompanhamento: ela fica apenas na resposta de criação e, para permitir o reenvio na mesma sessão, no `sessionStorage` do navegador sob a chave `brocados:handoff:{publicId}`. Ela não é gravada no servidor nem enviada em logs.
 
-`404 NOT_FOUND` para ID inválido ou inexistente. Rate limit: 60/min por IP (previsto; ainda não ativo no esqueleto).
+`404 NOT_FOUND` para ID inválido ou inexistente. Rate limit ativo: 60/min por IP; detalhes em `§15 Rate limits`.
 
 ---
 

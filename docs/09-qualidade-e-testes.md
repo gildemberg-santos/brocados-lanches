@@ -67,7 +67,8 @@ make test-e2e          # Playwright com API isolada em brocados_test
 - `make seed` e `make seed-reset` recusam `APP_ENV=production`, o banco `brocados` e nomes sem sufixo `_dev` ou `_test`.
 - `make test-e2e` exige MongoDB acessível em `localhost:27017` (ou `MONGO_URI` definido) e sobe a API na porta 8080 com `brocados_test`.
 - O E2E não faz parte de `make test`; o gate de commit continua rápido e sem navegador.
-- O smoke atual cobre home, health, readiness, alvo de toque em 375 px e navegação da home para o cardápio.
+- Os testes E2E cobrem smoke (home, health, readiness, alvo de toque em 375 px e navegação para o cardápio), fluxo completo de compra em desktop/mobile e acesso por papel no painel.
+- Evidência de 25/11/2026: `make test-e2e` executado com MongoDB local e `brocados_test` — 16 testes aprovados (8 desktop e 8 mobile). Ainda faltam cenários críticos de falha (loja fechada, handoff, sessão expirada).
 - O job Backend do CI sobe MongoDB 8 e define `MONGO_TEST_URI`; localmente, sem essa variável, os testes de integração são pulados.
 
 ---
@@ -490,9 +491,12 @@ Falha em gate bloqueia merge/lançamento; não usar `--no-verify` nem desativar 
 
 ## 15. Pendências
 
-- Definir ferramenta de CI.
-- Definir testcontainers ou Mongo efêmero no CI.
-- Definir se Playwright roda em container.
+Resolvido: CI no GitHub Actions (D-016), job de backend com MongoDB 8 como service e `MONGO_TEST_URI`, job de E2E com Chromium instalado pelo Playwright, ambas em `.github/workflows/ci.yml`.
+
+Pendências:
+
+- Adotar testcontainers para executar testes de repositório localmente sem depender de Mongo externo; hoje `MONGO_TEST_URI` ausente faz os testes de integração pularem.
 - Definir ferramenta de load test.
 - Definir se haverá teste de contrato OpenAPI.
-- Definir responsável por teste manual de acessibilidade.
+- Definir responsável por teste manual de acessibilidade e executar axe nas telas críticas.
+- Completar os cenários críticos de E2E (loja fechada, esgotado, zona inativa, retirada, troco, idempotência, transição inválida, sessão expirada, falha de handoff e retry).

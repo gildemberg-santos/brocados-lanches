@@ -503,11 +503,11 @@ Internet → TLS → Nginx → SPA + /api → Go API → MongoDB
 - Shutdown gracioso.
 - Backup diário e restauração testada.
 
-Hospedagem e provedor de CI ainda estão em aberto; ver `13-decisoes-e-pendencias.md`.
+O provedor de CI está definido: GitHub Actions (D-016). Hospedagem, domínio e MongoDB de produção seguem como decisão pendente (D-015); o cenário abaixo é uma proposta mapeada, não uma decisão aprovada. Ver `13-decisoes-e-pendencias.md`.
 
-### 4.1 Render (container único)
+### 4.1 Proposta de deploy no Render (container único)
 
-O deploy segue a estratégia do `restaurante-canto-verde`: **um único container** no Render. O `Dockerfile` raiz faz build do backend Go com `backend/vendor` e do frontend Vue, depois monta um runtime com nginx + Go. O entrypoint renderiza o template do nginx, sobe a API em `127.0.0.1:${API_PORT}` e mantém o nginx em foreground escutando `${PORT}`.
+A proposta de deploy segue a estratégia do `restaurante-canto-verde`: **um único container** no Render. O `Dockerfile` raiz faz build do backend Go com `backend/vendor` e do frontend Vue, depois monta um runtime com nginx + Go. O entrypoint renderiza o template do nginx, sobe a API em `127.0.0.1:${API_PORT}` e mantém o nginx em foreground escutando `${PORT}`.
 
 O `render.yaml` define um único web service `brocados-lanches` (`dockerfilePath: ./Dockerfile`, `healthCheckPath: /healthz`, `plan: free`). O nginx serve a SPA, faz proxy de `/api/`, `/healthz` e `/readyz` para a API local e preserva `X-Forwarded-Proto` para o CSRF aceitar login HTTPS.
 

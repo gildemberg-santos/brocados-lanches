@@ -1,7 +1,7 @@
 # Decisões e Pendências — Brocados Lanches
 
 **Versão:** 1.1  
-**Atualizado em:** 22/11/2026  
+**Atualizado em:** 25/11/2026  
 **Status:** registro vivo.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `08-backlog.md`, `adr/`.
 
@@ -35,8 +35,8 @@
 | D-011 | 18/11/2026 | Retirada zera taxa e não exige endereço/zona | Decidido | Regra de negócio | `03-prd.md` |
 | D-012 | 18/11/2026 | Carrinho persiste apenas IDs, quantidades e escolhas; nunca preço confiável | Decidido | Evita fraude e dado obsoleto | `03-prd.md`, `07-design-system-e-experiencia.md` |
 | D-013 | 18/11/2026 | V1 em português; código/API em inglês | Decidido | Consistência | `../AGENTS.md` |
-| D-014 | 18/11/2026 | Não usar CDN, Google Fonts ou analytics sem consentimento em produção | Decidido | Segurança, privacidade e performance | `../AGENTS.md`, `10-operacao-e-lancamento.md` |
-| D-015 | 18/11/2026 | Hospedagem, domínio, MongoDB gerenciado e retenção final ainda não decididos | Pendente | Bloqueia deploy/go-live | Este documento |
+| D-014 | 18/11/2026 | Não usar CDN, Google Fonts ou analytics sem consentimento em produção | Decidido e implementado (fontes) | Segurança, privacidade e performance | `../AGENTS.md`, `10-operacao-e-lancamento.md`, `07-design-system-e-experiencia.md` §2.2 |
+| D-015 | 18/11/2026 | Hospedagem, domínio, MongoDB gerenciado e retenção final ainda não decididos; Render + Atlas estão mapeados apenas como proposta em `../README.md` e `04-arquitetura.md` | Pendente | Bloqueia deploy/go-live | Este documento |
 | D-016 | 20/11/2026 | CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E | Decidido | Pipeline versionado em `.github/workflows/ci.yml`; PR bloqueado por falha | `.github/workflows/ci.yml` |
 | D-017 | 22/11/2026 | Total do item no detalhe é estimado a partir dos preços do catálogo | Decidido | A cotação e o pedido recalculam no servidor; nenhum valor do cliente é confiável | `08-backlog.md`, `09-qualidade-e-testes.md`, `AGENTS.md` §8.2 |
 | D-018 | 22/11/2026 | No carrinho, a taxa estimada é a menor taxa ativa até a escolha da zona no checkout | Decidido | Evita taxa inventada e deixa claro que o total definitivo é server-side | `07-design-system-e-experiencia.md` §5.4, `08-backlog.md` §7 |
@@ -46,7 +46,9 @@
 | D-022 | 22/11/2026 | A fila admin mascara nome/telefone; o detalhe completo exige sessão; transição usa CAS no status e auditoria sem PII | Decidido e implementado | Operação segura com rastro, sem vazar dados na listagem | `06-contrato-api.md` §12, `05-modelo-de-dados.md` §3.6, `08-backlog.md` §11 |
 | D-023 | 23/11/2026 | No painel, preço/taxa são digitados em reais e convertidos para centavos no cliente antes do envio; slug, horários e WhatsApp são validados no cliente, mas o servidor continua autoritativo | Decidido e implementado | Evita `float` e PATCH vazio; mantém a API como fonte da verdade | `../AGENTS.md` §7.5 e §8.2, `08-backlog.md` §10 |
 | D-024 | 23/11/2026 | Rate limits em janela fixa de 1 minuto, em memória por instância; telefone e sessão entram como hash; `X-Request-Id` correlaciona logs com `Retry-After: 60` em `429` | Decidido e implementado | Atende ao contrato sem depender de nova infraestrutura; contadores precisam ser compartilhados se houver múltiplas réplicas | `06-contrato-api.md` §15, `backend/internal/httpapi/ratelimit.go` |
-| D-025 | 23/11/2026 | Metadados por rota implementados diretamente no router, sem adicionar `@unhead/vue`; JSON-LD, sitemap e canonical ficam para depois de domínio e conteúdo aprovado | Decidido e implementado | Evita dependência estrutural e dado de negócio inventado | `08-backlog.md` §12, `frontend/src/router/meta.ts` |
+| D-025 | 23/11/2026 | Metadados por rota implementados diretamente no router, sem adicionar `@unhead/vue`; JSON-LD e `robots.txt` entregues, sitemap e canonical seguem pendentes até domínio definido (D-015) e conteúdo aprovado | Decidido e implementado parcialmente | Evita dependência estrutural e dado de negócio inventado sem abandonar o requisito de SEO do `../AGENTS.md` | `08-backlog.md` §12, `frontend/src/router/meta.ts`, `frontend/src/features/seo/structuredData.ts` |
+| D-026 | 25/11/2026 | Dados estruturados são gerados somente com `GET /store` e `GET /menu`, sem URL absoluta inventada; o `robots.txt` usa caminhos relativos e bloqueia rotas privadas | Decidido e implementado | SEO útil sem depender de domínio, telefone ou conteúdo não aprovado | `08-backlog.md` §12, `frontend/public/robots.txt` |
+| D-027 | 25/11/2026 | Cliente HTTP usa `AbortController` com timeout configurável (`VITE_HTTP_TIMEOUT_MS`, padrão 10 s) e o cabeçalho sinaliza conexão perdida sem PII; textos legais/institucionais ficam provisórios até aprovação | Decidido e implementado | Resiliência em rede instável sem inventar dado de negócio nem texto legal | `frontend/src/services/http.ts`, `frontend/src/components/SiteHeader.vue`, `08-backlog.md` §12 |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -162,4 +164,6 @@ Elas entram em P2 ou no roadmap seguinte.
 | 22/11/2026 | US-070 a US-072 (painel) concluídas: fila com filtros/paginação, detalhe e ações de status; E2E cobre pedido → fila → transição |
 | 23/11/2026 | US-062 a US-065 (painel) concluídas: CRUD de produtos, categorias, adicionais e zonas, e configuração da loja com kill switch e horários; D-023 registrado |
 | 23/11/2026 | US-025, US-066 e US-073 concluídas: `GET /store` com status efetivo/`nextOpeningAt`, gestão de usuários e auditoria somente leitura no painel, com testes e proteção do último owner |
-| 23/11/2026 | D-024 e D-025 registrados: rate limits do contrato, scrub de PII em logs, testes de concorrência/WhatsApp, metadados por rota e E2E completo do fluxo de compra; execução do E2E e itens de conteúdo/infra continuam pendentes |
+| 23/11/2026 | D-024 e D-025 registrados: rate limits do contrato, scrub de PII em logs, testes de concorrência/WhatsApp, metadados por rota e E2E completo do fluxo de compra; job de E2E versionado no CI; evidência de execução local, cenários críticos e itens de conteúdo/infra continuam pendentes |
+| 25/11/2026 | Épico 8 parcial: rotas institucionais/legais e 404 com rodapé, JSON-LD/`robots.txt`, fontes self-hosted, WebP/AVIF, status da loja na home, dashboard com indicadores reais, timeout do cliente HTTP e aviso de conexão; D-014, D-025 atualizados e D-026/D-027 registrados. Textos aprovados, axe, sitemap/canonical e deploy seguem pendentes |
+| 25/11/2026 | Gate completo executado: `make test` (407 testes frontend, backend com `-race`, validadores), `make lint`, `make fmt-check`, `make build` e `make test-e2e` (16 testes desktop/mobile) aprovados |

@@ -1,8 +1,8 @@
 # Documentação — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
-**Status:** planejamento documental da V1 concluído; decisões de negócio e implementação pendentes.  
+**Versão:** 1.1  
+**Atualizado em:** 25/11/2026  
+**Status:** documentação da V1 concluída; fases 1 a 4 entregues no código, Épico 8 parcialmente entregue, épicos 9 e 10 e decisões de negócio em aberto.  
 **Entrada recomendada:** este arquivo.
 
 ---
@@ -63,8 +63,8 @@ Dentro de `docs/`, a precedência é:
 | `05-modelo-de-dados.md` | Backend, dados | Coleções, campos, índices, invariantes e retenção | Concluído |
 | `06-contrato-api.md` | Backend, frontend, QA | Endpoints, envelopes, erros, idempotência e transições | Concluído |
 | `07-design-system-e-experiencia.md` | Design, frontend, produto | Tokens, componentes, telas, estados e acessibilidade | Concluído |
-| `08-backlog.md` | Produto, engenharia, QA | Épicos, histórias, tarefas, dependências e aceite | Concluído |
-| `09-qualidade-e-testes.md` | Engenharia, QA | Estratégia, matriz de testes, gates e cenários críticos | Concluído |
+| `08-backlog.md` | Produto, engenharia, QA | Épicos, histórias, tarefas, dependências e aceite | Vivo — épicos 8 a 10 em aberto |
+| `09-qualidade-e-testes.md` | Engenharia, QA | Estratégia, matriz de testes, gates e cenários críticos | Vivo — cenários de erro, a11y e carga pendentes |
 | `10-operacao-e-lancamento.md` | Engenharia, operação | Ambientes, deploy, backup, monitoramento, LGPD e go-live | Concluído |
 | `11-roadmap.md` | Gestão, engenharia | Fases, marcos, caminho crítico e riscos | Concluído |
 | `12-referencia-ola-click.md` | Produto, design, conteúdo | Análise do site público e matriz de paridade | Concluído |
@@ -158,4 +158,4 @@ Prioridades:
 
 ## 8. Próximo passo
 
-O trabalho começa pelo **Épico 0 — Descoberta e conteúdo** em `08-backlog.md`. Nenhuma implementação de catálogo real deve começar antes da validação de cardápio, taxas, horários, contatos, pagamentos e textos legais.
+As próximas entregas de código estão em **Épico 8 — Conteúdo, SEO, acessibilidade e LGPD** e **Épico 10 — Deploy e go-live**, em `08-backlog.md`. O **Épico 0 — Descoberta e conteúdo** continua bloqueando catálogo real, taxas, horários, contatos, pagamentos e textos legais: o seed é fictício e não deve ir para produção sem validação do cliente.

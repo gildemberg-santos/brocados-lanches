@@ -1,8 +1,8 @@
 # Backlog — Brocados Lanches V1
 
 **Versão:** 1.1  
-**Atualizado em:** 23/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel).  
+**Atualizado em:** 25/11/2026  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes).  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`.
 
 ---
@@ -144,7 +144,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-012 | Fixtures e seed de desenvolvimento | P0 | M | `brocados_dev` e `brocados_test` separados; reset idempotente; dados fictícios marcados |
 | US-013 | Harness E2E | P1 | M | Playwright sobe ambiente isolado e executa um smoke de cardápio |
 
-**Status em 22/11/2026:** US-010 e US-012 concluídos. US-013 com harness pronto e smoke da home + navegação para o cardápio em desktop/mobile. US-011 já está entregue no esqueleto (request ID, logs JSON e health checks); falta um teste dedicado de correlação e mascaramento de PII.
+**Status em 25/11/2026:** US-010 e US-012 concluídos. US-013 com harness pronto e smoke da home + navegação para o cardápio em desktop/mobile, além do fluxo de compra e do acesso por papel. US-011 entregue no esqueleto (request ID, logs JSON e health checks), com teste de correlação e mascaramento de PII em `backend/internal/httpapi/router_test.go`. Falta apenas preview por PR.
 
 **Tarefas:**
 
@@ -259,12 +259,12 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Tarefas técnicas:**
 
-- [ ] Definir resposta pública mínima.
-- [ ] Ocultar telefone, endereço, observação e `_id`.
-- [ ] Implementar rate limit.
-- [ ] Criar `OrderStatusTimeline`.
+- [x] Definir resposta pública mínima (US-050).
+- [x] Ocultar telefone, endereço, observação e `_id` (US-050).
+- [x] Implementar rate limit de 60/min por IP (US-050).
+- [x] Atualizar contrato.
+- [ ] Criar `OrderStatusTimeline` como componente dedicado (US-051).
 - [ ] Testar ID inválido, ID inexistente e status final.
-- [ ] Atualizar contrato.
 
 ---
 
@@ -334,22 +334,25 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-080 | Páginas institucionais e legais | P1 | M | E0 | Contato, privacidade e termos publicados com links |
-| US-081 | SEO e dados estruturados | P1 | M | US-023 | Parcial: título/descrição/robots por rota e testes entregues; faltam JSON-LD, sitemap e domínio para canonical |
-| US-082 | Acessibilidade | P1 | G | US-023, US-033, US-061 | Teclado, foco, rótulos, contraste, 44 px e reduced motion |
-| US-083 | Imagens e performance | P1 | M | US-023 | WebP/AVIF, dimensões, lazy, fontes self-hosted |
+| US-080 | Páginas institucionais e legais | P1 | M | E0 | Parcial: `/contato`, `/privacidade`, `/termos`, `/creditos`, 404 e rodapé entregues; contato usa apenas `GET /store`, textos provisórios aguardam aprovação |
+| US-081 | SEO e dados estruturados | P1 | M | US-023 | Parcial: título/descrição/robots por rota, JSON-LD `Restaurant`/`Menu`/`Product` e `robots.txt` entregues; faltam sitemap e canonical (domínio pendente) |
+| US-082 | Acessibilidade | P1 | G | US-023, US-033, US-061 | Parcial: rótulos/`aria-describedby` no checkout, alvos de 44 px no rodapé, aviso de conexão e foco preservados; auditoria axe pendente |
+| US-083 | Imagens e performance | P1 | M | US-023 | Concluída no seed: WebP/AVIF, dimensões, lazy, fontes self-hosted e validação no design-check; fotos definitivas dependem do cliente |
 | US-084 | Consentimento e analytics | P2 | M | US-080 | Sem PII; opt-in; eventos documentados |
+
+**Status em 25/11/2026:** o cliente HTTP central aplica timeout configurável (`VITE_HTTP_TIMEOUT_MS`, padrão 10 s) e o cabeçalho exibe aviso de conexão perdida sem PII; a home mostra status efetivo, prazo e contato a partir de `GET /store`; o dashboard do painel usa indicadores reais com estado neutro quando a fonte falha.
 
 **Tarefas técnicas:**
 
-- [ ] Criar páginas e conteúdo aprovado.
+- [x] Criar rotas e páginas institucionais/legais com conteúdo provisório (textos finais dependem de aprovação).
 - [x] Implementar metadados por rota sem dependência adicional (`src/router/meta.ts`).
-- [ ] Gerar JSON-LD `Restaurant`, `Menu` e `Product` com dados aprovados.
-- [ ] Gerar sitemap/robots com domínio definido.
+- [x] Gerar JSON-LD `Restaurant`, `Menu` e `Product` com dados de `GET /store` e `GET /menu`.
+- [x] Publicar `robots.txt` protegendo admin, carrinho, checkout e acompanhamento.
+- [ ] Gerar sitemap e URL canônica com domínio definido.
 - [ ] Rodar axe nas telas críticas.
-- [ ] Corrigir foco, rótulos e alvos de toque.
-- [ ] Self-host de fontes.
-- [ ] Otimizar imagens e cache.
+- [x] Corrigir rótulos e associações de erro no checkout e alvos de toque no rodapé.
+- [x] Self-host de fontes com licenças e `font-display: swap`.
+- [x] Gerar variantes WebP/AVIF das imagens do seed e validar no `make design-check`.
 - [ ] Revisar retenção e canal do titular.
 
 ---

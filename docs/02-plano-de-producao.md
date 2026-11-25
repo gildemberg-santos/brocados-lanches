@@ -54,7 +54,7 @@ Sem essas respostas, o plano abaixo é uma referência — não um compromisso d
 - caminho offline (`frontend/Dockerfile.runtime`) para ambientes sem acesso npm dentro do Docker;
 - dependências Go vendorizadas para build Docker offline.
 
-**Pendente na Fase 1:** provedor de CI, deploy de preview, modelo de dados inicial e definição de hospedagem.
+**Na Fase 1:** provedor de CI, modelo de dados inicial, seed e testes entregues. Continuam pendentes o deploy de preview e a definição de hospedagem; o plano executável atual está em `11-roadmap.md` e `08-backlog.md`.
 
 **Saída:** aplicação vazia no ar em ambiente de preview, com tema aplicado.
 

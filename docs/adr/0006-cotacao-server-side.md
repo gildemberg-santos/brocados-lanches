@@ -1,6 +1,6 @@
 # ADR 0006 — Cotação server-side antes do pedido
 
-- **Status:** aceita no planejamento
+- **Status:** aceita e implementada
 - **Data:** 18/11/2026
 - **Decisores:** produto e engenharia
 - **Relacionados:** `../03-prd.md`, `../04-arquitetura.md`, `../06-contrato-api.md`

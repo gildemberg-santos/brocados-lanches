@@ -81,7 +81,7 @@ Regras:
 - Inter para todos os controles e textos longos.
 - Preço sempre com peso e cor de destaque.
 - Não usar tamanhos abaixo de 12 px em conteúdo essencial.
-- Em produção, self-host das fontes com `font-display: swap`; sem Google Fonts.
+- Fontes self-hosted em `frontend/public/fonts/` com `font-display: swap` e licenças SIL OFL; sem Google Fonts.
 
 ### 2.3 Breakpoints
 
@@ -484,7 +484,7 @@ Regras:
 
 ## 11. Imagens e mídia
 
-- WebP/AVIF em produção.
+- WebP/AVIF em produção: o seed usa `.webp` e `ProductImage` oferece AVIF/WebP via `<picture>`, com o arquivo original como fallback.
 - `width` e `height` para evitar layout shift.
 - `loading="lazy"` fora da primeira dobra.
 - `alt` descritivo; não usar “imagem de produto”.
