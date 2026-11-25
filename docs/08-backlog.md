@@ -222,7 +222,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Objetivo:** criar o pedido persistido, idempotente e com handoff recuperável.
 
-**Status em 22/11/2026:** US-040 concluída (`POST /orders` recalcula o total com `domain.BuildQuote`, persiste snapshot com número via contador atômico, `publicId` opaco, índices únicos e `201` com `Location`), US-041 concluída (chave de 16 a 128 caracteres, `requestHash` canônico, replay `200` com `Idempotent-Replayed` e conflito `409`), US-042 concluída (link `wa.me` gerado após a persistência, com reenvio na mesma sessão), US-043 concluída (`/pedido/:publicId` mostra número/status/totais e limpa o carrinho somente após sucesso). US-044 ainda depende de teste E2E de rede.
+**Status em 25/11/2026:** US-040 concluída (`POST /orders` recalcula o total com `domain.BuildQuote`, persiste snapshot com número via contador atômico, `publicId` opaco, índices únicos e `201` com `Location`), US-041 concluída (chave de 16 a 128 caracteres, `requestHash` canônico, replay `200` com `Idempotent-Replayed` e conflito `409`), US-042 concluída (link `wa.me` gerado após a persistência, com reenvio na mesma sessão), US-043 concluída (`/pedido/:publicId` mostra número/status/totais e limpa o carrinho somente após sucesso). US-044 parcial: o E2E confirma que o link de handoff continua disponível após recarregar; falta injetar falha de envio/retry.
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -242,8 +242,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Retornar `200` no replay idempotente.
 - [x] Montar `whatsappUrl` sem logar.
 - [x] Criar tela de confirmação e botão de reenvio.
-- [ ] Testar falha de Mongo, falha de link e duplo clique.
-- [ ] Testar concorrência com a mesma chave.
+- [ ] Testar falha de Mongo, falha de link e duplo clique (injeção de falha de handoff ainda pendente no E2E).
+- [x] Testar concorrência com a mesma chave (repository + E2E de replay e conflito).
 
 ---
 
@@ -300,7 +300,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Implementar `GET/POST/PATCH /admin/users` com autorização owner, auditoria e proteção do último owner (US-066).
 - [x] Criar telas admin de usuários e conta (US-066).
 - [x] Testar acesso anônimo e papel errado no guard e no E2E (US-061).
-- [ ] Testar sessão expirada no fluxo completo.
+- [x] Testar sessão encerrada por logout no E2E; expiração ociosa/absoluta permanece coberta por teste de unidade.
 
 ---
 
@@ -365,18 +365,19 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 |---|---|---|---|---|---|
 | US-090 | Testes de backend | P0 | G | E2–E7 | Service, handler e repository com Mongo real; `-race` |
 | US-091 | Testes de frontend | P0 | G | E2–E7 | Stores, componentes e services; Vitest |
-| US-092 | E2E crítico | P0 | G | US-040, US-072 | Fluxo completo implementado em `e2e/checkout.spec.ts` para desktop e mobile; execução depende de MongoDB local |
+| US-092 | E2E crítico | P0 | G | US-040, US-072 | Fluxo completo em `e2e/checkout.spec.ts` e cenários de falha em `e2e/failure-scenarios.spec.ts`; execução depende de MongoDB local |
 | US-093 | Segurança e privacidade | P0 | M | US-060, US-040 | Concluída: rate limits do contrato, CSRF, auth, enumeração e scrub de PII em logs; testes cobrem correlação e mascaramento |
 | US-094 | Performance e carga | P1 | M | E2–E7 | Orçamentos de `03-prd.md` medidos; gargalos corrigidos |
 
 **Tarefas técnicas:**
 
-- [ ] Criar matriz de testes de `09-qualidade-e-testes.md`.
+- [x] Criar matriz de testes de `09-qualidade-e-testes.md`.
 - [ ] Configurar testcontainers.
-- [ ] Configurar Playwright.
+- [x] Configurar Playwright.
 - [x] Cobrir concorrência de idempotência, falha de persistência, handoff indisponível, sessão expirada e PII em logs.
 - [x] Revisar logs e mascaramento.
-- [ ] Testar todos os cenários críticos de `09-qualidade-e-testes.md` (E2E completo aguarda MongoDB).
+- [x] Cobrir no E2E loja fechada, esgotado, zona inativa, retirada, troco, idempotência, transição inválida e sessão encerrada.
+- [ ] Injetar falha de handoff/retry e testar troco inválido e duplo clique no E2E.
 - [ ] Rodar teste de carga básico.
 - [ ] Registrar evidências no PR.
 

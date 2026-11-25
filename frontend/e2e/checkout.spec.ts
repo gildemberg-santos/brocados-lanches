@@ -112,6 +112,11 @@ test.describe('fluxo completo de pedido pela interface', () => {
     expect(publicId).not.toBe('')
     await expectNoHorizontalScroll(page)
 
+    // O handoff fica na sessão: se a aba recarregar, o link continua disponível.
+    await page.reload()
+    await expect(page.getByRole('link', { name: 'Abrir WhatsApp' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Copiar link' })).toBeVisible()
+
     const orderNumber = await assertOrderPersisted(
       request,
       publicId,

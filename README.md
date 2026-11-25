@@ -1,6 +1,6 @@
 # Brocados Lanches — Projeto
 
-**Status:** Fases 1 a 4 entregues no código: CI, seed, E2E do fluxo principal, catálogo, personalização, carrinho, cotação server-side, checkout, pedido persistido, handoff WhatsApp e painel com catálogo, loja, pedidos, usuários e auditoria. O Épico 8 entregou páginas institucionais/legais provisórias, SEO básico (JSON-LD e `robots.txt`), fontes self-hosted, imagens WebP/AVIF, status da loja na home e correções de acessibilidade no checkout. Faltam textos legais aprovados, domínio para sitemap/canonical, cenários críticos de E2E e infra de lançamento; catálogo e taxas dependem de validação do cliente.  
+**Status:** Fases 1 a 4 entregues no código: CI, seed, E2E do fluxo principal e de cenários críticos de falha, catálogo, personalização, carrinho, cotação server-side, checkout, pedido persistido, handoff WhatsApp e painel com catálogo, loja, pedidos, usuários e auditoria. O Épico 8 entregou páginas institucionais/legais provisórias, SEO básico (JSON-LD e `robots.txt`), fontes self-hosted, imagens WebP/AVIF, status da loja na home e correções de acessibilidade no checkout. Faltam textos legais aprovados, domínio para sitemap/canonical, injeção de falha de handoff no E2E e infra de lançamento; catálogo e taxas dependem de validação do cliente.  
 **Data de entrada:** 18/11/2026  
 **Origem:** `~/Downloads/brocados_lanches_design_system_responsive_prototype_studio.html`  
 **Classificação:** material de cliente — uso interno.
@@ -68,7 +68,7 @@ O esqueleto da Fase 1 já inclui:
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
 - testes de frontend com Vitest + Vue Test Utils;
 - seed de desenvolvimento e teste a partir de `design-system/seed.json`, com valores em centavos e marcação de dado fictício;
-- harness E2E com Playwright: smoke da home, navegação para o cardápio, acesso anônimo/credenciais inválidas ao painel e pedido → fila → detalhe → mudança de status em desktop e mobile, com API isolada em `brocados_test`, seed fictício aplicado pelo `make test-e2e` e um worker por vez (o login admin rotaciona as sessões do usuário);
+- harness E2E com Playwright: smoke da home, navegação para o cardápio, acesso anônimo/credenciais inválidas ao painel, pedido → fila → detalhe → mudança de status e cenários críticos de falha (loja fechada, esgotado, zona inativa, retirada, troco, idempotência, transição inválida e logout) em desktop e mobile, com API isolada em `brocados_test`, seed fictício aplicado pelo `make test-e2e` e um worker por vez (cenários que criam pedido rodam só no desktop para respeitar o rate limit de IP compartilhado);
 - CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E;
 - Dockerfiles de API e web, Nginx same-origin e `compose.yaml` com MongoDB;
 - validação de documentação e design system no gate de commit.
@@ -341,7 +341,7 @@ O esqueleto **entrega** rate limits do contrato, concorrência/idempotência com
 - textos definitivos de privacidade, termos e créditos aprovados pelo cliente/jurídico;
 - domínio para `sitemap.xml` e URL canônica (o `robots.txt` e o JSON-LD já existem);
 - contadores de rate limit compartilhados entre réplicas e atomicidade garantida em MongoDB standalone;
-- cenários críticos de E2E (loja fechada, falha de handoff, sessão expirada etc.);
+- injeção de falha de handoff/retry no E2E, troco inválido e duplo clique no envio;
 - telas de relatórios e impressão/KDS;
 - deploy de produção, backup e monitoramento.
 
@@ -353,7 +353,7 @@ Esses pontos estão priorizados em `docs/08-backlog.md` e `docs/11-roadmap.md`. 
 
 1. Fechar o Épico 0: confirmar catálogo, taxas, horários, contatos, pagamentos, fotos e textos legais.
 2. Aprovar os textos institucionais/legais e definir domínio para sitemap/canonical, além de executar auditoria de acessibilidade com axe (Épico 8).
-3. Ampliar o E2E para os cenários críticos de erro e idempotência (Épicos 3, 4 e 9).
+3. Injetar falha de handoff/retry e cobrir troco inválido e duplo clique no E2E (Épicos 4 e 9).
 4. Endurecer rate limit distribuído e atomicidade em MongoDB standalone (Épicos 9 e 10).
 5. Decidir hospedagem, configurar deploy, backup, monitoramento e go-live (Épico 10).
 

@@ -189,6 +189,27 @@ func TestValidateRejectsInvalidSeed(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsInvalidStoreSettings(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*Data)
+	}{
+		{name: "whatsapp com máscara", mutate: func(data *Data) { data.Store.WhatsApp = "(85) 99999-9999" }},
+		{name: "sem deliveryTime", mutate: func(data *Data) { data.Store.DeliveryTime = "" }},
+		{name: "sem endereço", mutate: func(data *Data) { data.Store.Address = "" }},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			data := fakeData()
+			test.mutate(&data)
+			if err := data.Validate(); err == nil {
+				t.Fatal("Validate() error = nil, want error")
+			}
+		})
+	}
+}
+
 func TestBuildIsDeterministic(t *testing.T) {
 	data := fakeData()
 
@@ -340,7 +361,7 @@ func fakeData() Data {
 			Name:         "Brocados Lanches",
 			IsOpen:       true,
 			DeliveryTime: "35-50 min",
-			WhatsApp:     "(85) 99999-9999",
+			WhatsApp:     "+5585999999999",
 			Instagram:    "@brocadoslanches",
 			Address:      "Av. Principal, 1200 - Centro, Aquiraz - CE",
 		},

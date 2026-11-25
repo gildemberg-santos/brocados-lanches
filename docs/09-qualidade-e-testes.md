@@ -48,6 +48,7 @@
 Regras:
 
 - Seed de desenvolvimento é marcado como tal; categorias, produtos e imagens vêm do catálogo público de referência, enquanto loja, zonas e pedidos são fictícios.
+- `seed.Build` valida a configuração da loja com as mesmas regras da API (inclusive `whatsapp` em E.164), para que um `PATCH /admin/store` parcial nunca seja bloqueado por dado inválido do próprio seed.
 - Teste de integração usa Mongo real e descartável; o teste atual pula se `MONGO_TEST_URI` não estiver definido.
 - Não usar telefone, endereço ou nome reais em fixture.
 - Relógio é injetável (`platform/clock`) para testar horário da loja.
@@ -67,8 +68,8 @@ make test-e2e          # Playwright com API isolada em brocados_test
 - `make seed` e `make seed-reset` recusam `APP_ENV=production`, o banco `brocados` e nomes sem sufixo `_dev` ou `_test`.
 - `make test-e2e` exige MongoDB acessível em `localhost:27017` (ou `MONGO_URI` definido) e sobe a API na porta 8080 com `brocados_test`.
 - O E2E não faz parte de `make test`; o gate de commit continua rápido e sem navegador.
-- Os testes E2E cobrem smoke (home, health, readiness, alvo de toque em 375 px e navegação para o cardápio), fluxo completo de compra em desktop/mobile e acesso por papel no painel.
-- Evidência de 25/11/2026: `make test-e2e` executado com MongoDB local e `brocados_test` — 16 testes aprovados (8 desktop e 8 mobile). Ainda faltam cenários críticos de falha (loja fechada, handoff, sessão expirada).
+- Os testes E2E cobrem smoke (home, health, readiness, alvo de toque em 375 px e navegação para o cardápio), fluxo completo de compra em desktop/mobile, acesso por papel no painel e cenários críticos de falha (loja fechada pelo kill switch, produto esgotado, zona inativa, retirada, troco, idempotência, transição inválida e sessão encerrada).
+- Evidência de 25/11/2026: `make test-e2e` executado com MongoDB local e `brocados_test` — 28 testes, 26 aprovados e 2 pulados no mobile. Os testes que criam pedido rodam apenas no desktop porque os dois projetos compartilham o limite de 10 pedidos/min por IP da API. Ainda falta injetar falha de handoff/retry no E2E.
 - O job Backend do CI sobe MongoDB 8 e define `MONGO_TEST_URI`; localmente, sem essa variável, os testes de integração são pulados.
 
 ---
@@ -338,14 +339,15 @@ pnpm lint
 
 ### 8.2 Variações
 
-- Retirada.
-- Loja fechada.
-- Produto esgotado.
-- Zona inativa.
-- Troco inválido.
-- Duplo clique no envio.
-- Sessão expirada no admin.
-- Transição inválida.
+- Retirada — coberta em `failure-scenarios.spec.ts`.
+- Loja fechada — coberta pelo kill switch, com cotação, UI do checkout e restauração do estado.
+- Produto esgotado — coberto.
+- Zona inativa — coberto.
+- Troco — coberto no pedido; troco inválido ainda pendente.
+- Idempotência — replay com a mesma chave e conflito com corpo diferente cobertos.
+- Duplo clique no envio — pendente.
+- Sessão encerrada no admin — coberta por logout; expiração ociosa/absoluta permanece em teste de unidade.
+- Transição inválida — coberta.
 - Mobile 375 px e desktop 1280 px.
 
 ### 8.3 Regras
@@ -353,13 +355,15 @@ pnpm lint
 - Playwright sobe ambiente isolado com banco de teste.
 - Sem dependência de produção.
 - Evidência: vídeo/trace no CI em caso de falha.
-- Teste não depende de ordem; cada um prepara seu estado.
+- Testes independentes preparam seu estado; os que alteram configuração da loja usam `describe.serial`, operador dedicado e restauração no `afterAll`.
+- Cenários que criam pedido rodam apenas no projeto desktop para não esgotar o limite de 10 pedidos/min por IP compartilhado entre desktop e mobile.
 
 ### 8.4 Cobertura implementada
 
 - Smoke da home, navegação para o cardápio e health/readiness pelo proxy.
 - Acesso anônimo a rota protegida redirecionado para `/admin/login` com `redirect`, e credenciais inválidas exibindo mensagem genérica (US-061).
-- Pedido ponta a ponta: cardápio → personalização → carrinho → checkout → confirmação → fila → detalhe → `Confirmar pedido`, em desktop e mobile (US-040 a US-043, US-070 a US-072).
+- Pedido ponta a ponta: cardápio → personalização → carrinho → checkout → confirmação → fila → detalhe → `Confirmar pedido`, em desktop e mobile (US-040 a US-043, US-070 a US-072); o link de handoff continua disponível após recarregar a confirmação.
+- Cenários de falha em `e2e/failure-scenarios.spec.ts`: `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE`, retirada com taxa zero, troco congelado, idempotência, `409` em transição inválida e `UNAUTHORIZED` após logout.
 - CRUD de catálogo e configuração da loja cobertos por Vitest; E2E dessas telas ainda pendente.
 
 ---
@@ -474,9 +478,10 @@ O backend usa `golangci-lint` v2 quando instalado; sem ele, `make lint` faz apen
 | US-023 | Home/cardápio no Vitest + smoke E2E de navegação |
 | US-024 | Opções e adicionais no service + componente `OptionGroup` |
 | US-032 | Cotação no service + handler + store |
-| US-040 | Criação de pedido no service + handler + repository |
-| US-041 | Concorrência de idempotência no repository |
-| US-042 | Geração de URL + falha de handoff no frontend |
+| US-040 | Criação de pedido no service + handler + repository + E2E de retirada/troco |
+| US-041 | Concorrência de idempotência no repository + E2E de replay/conflito |
+| US-042 | Geração de URL + falha de handoff no frontend + link disponível após recarregar no E2E |
+| US-061 | Login no E2E: redirecionamento, mensagem genérica e logout |
 | US-050 | Handler público sem PII |
 | US-060 | Auth handler + cookie + rate limit |
 | US-062 | `AdminProductForm` + `AdminProductsView` no Vitest; service/store do catálogo |
@@ -485,7 +490,7 @@ O backend usa `golangci-lint` v2 quando instalado; sem ele, `make lint` faz apen
 | US-065 | `AdminStoreView` no Vitest; validação de horários/E.164 + API |
 | US-070 | Filtros/paginação no service + repository + handler; PII mascarada |
 | US-071 | Detalhe no repository + handler com snapshot completo |
-| US-072 | Matriz de status no domínio + CAS/auditoria no repository + handler |
+| US-072 | Matriz de status no domínio + CAS/auditoria no repository + handler + E2E de transição inválida |
 | US-082 | axe + teste de teclado |
 | US-093 | Revisão de log + testes de segurança |
 
@@ -501,4 +506,5 @@ Pendências:
 - Definir ferramenta de load test.
 - Definir se haverá teste de contrato OpenAPI.
 - Definir responsável por teste manual de acessibilidade e executar axe nas telas críticas.
-- Completar os cenários críticos de E2E (loja fechada, esgotado, zona inativa, retirada, troco, idempotência, transição inválida, sessão expirada, falha de handoff e retry).
+- Injetar falha de handoff e retry no E2E; hoje a disponibilidade do link após recarregar é verificada, mas a falha de envio não é simulada.
+- Completar os cenários de troco inválido e duplo clique no envio no E2E.

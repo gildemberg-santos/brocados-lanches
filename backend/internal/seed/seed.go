@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/brocados-lanches/api/internal/domain"
 )
 
 // Data representa o conteúdo lido de design-system/seed.json.
@@ -136,8 +138,17 @@ func Load(path string) (data Data, err error) {
 func (d Data) Validate() error {
 	var problems []error
 
-	if strings.TrimSpace(d.Store.Name) == "" {
-		problems = append(problems, errors.New("store name is required"))
+	// O seed precisa ser aceito pela mesma validação da API: um whatsapp com
+	// máscara, por exemplo, impede qualquer PATCH parcial em /admin/store.
+	store := domain.StoreSettings{
+		Name:         d.Store.Name,
+		DeliveryTime: d.Store.DeliveryTime,
+		WhatsApp:     d.Store.WhatsApp,
+		Instagram:    d.Store.Instagram,
+		Address:      d.Store.Address,
+	}
+	if err := store.Validate(); err != nil {
+		problems = append(problems, fmt.Errorf("store: %w", err))
 	}
 	if len(d.Categories) == 0 {
 		problems = append(problems, errors.New("at least one category is required"))

@@ -2,7 +2,7 @@
   "_meta": {
     "fonte": "brocados-lanches-design-system-v2.5.html",
     "extraido_em": "2026-11-18",
-    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders e precisam de confirmação.",
+    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders fictícios, em formato E.164, e precisam de confirmação.",
     "catalogo_original": {
       "url": "https://cardpiobrocadoslanchess.ola.click/products",
       "extraido_em": "2026-11-23",
@@ -14,7 +14,7 @@
     "name": "Brocados Lanches",
     "isOpen": true,
     "deliveryTime": "35-50 min",
-    "whatsapp": "(85) 99999-9999",
+    "whatsapp": "+5585999999999",
     "instagram": "@brocadoslanches",
     "address": "Av. Principal, 1200 - Centro, Aquiraz - CE"
   },
