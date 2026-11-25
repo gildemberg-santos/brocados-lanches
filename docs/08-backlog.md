@@ -336,7 +336,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
-| US-080 | Páginas institucionais e legais | P1 | M | E0 | Parcial: `/contato`, `/privacidade`, `/termos`, `/creditos`, 404 e rodapé entregues; contato usa apenas `GET /store`; privacidade e termos detalhados em 25/11/2026 a partir de modelos externos adaptados ao fluxo real, mantidos como rascunho até aprovação; créditos preenchidos com dados do currículo do autor (D-032) |
+| US-080 | Páginas institucionais e legais | P1 | M | E0 | Parcial: `/contato`, `/privacidade`, `/termos`, `/creditos`, 404 e rodapé entregues; contato usa apenas `GET /store`; privacidade e termos detalhados em 25/11/2026 a partir de modelos externos adaptados ao fluxo real e publicados em 25/11/2026 (D-033), com canal do titular em `/contato`; créditos preenchidos com dados do currículo do autor (D-032) e publicados sem `noindex` (D-033) |
 | US-081 | SEO e dados estruturados | P1 | M | US-023 | Parcial: título/descrição/robots por rota, JSON-LD `Restaurant`/`Menu`/`Product` e `robots.txt` entregues; faltam sitemap e canonical (domínio pendente) |
 | US-082 | Acessibilidade | P1 | G | US-023, US-033, US-061 | Parcial: rótulos/`aria-describedby` no checkout, alvos de 44 px no rodapé, aviso de conexão e foco preservados; auditoria axe pendente |
 | US-083 | Imagens e performance | P1 | M | US-023 | Concluída no seed: WebP/AVIF, dimensões, lazy, fontes self-hosted e validação no design-check; fotos definitivas dependem do cliente |
@@ -355,7 +355,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Corrigir rótulos e associações de erro no checkout e alvos de toque no rodapé.
 - [x] Self-host de fontes com licenças e `font-display: swap`.
 - [x] Gerar variantes WebP/AVIF das imagens do seed e validar no `make design-check`.
-- [ ] Revisar retenção e canal do titular.
+- [x] Retenção documentada e canal do titular publicado em `/contato` em 25/11/2026 (D-033).
 
 ---
 
@@ -437,7 +437,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-123 | Gate de tokens inexistente | P1 | P | US-010 | `scripts/check_design_system.py` falha quando o frontend usa `var(--token)` não declarado; teste unitário cobre token válido e inválido; `make design-check` continua passando |
 | US-124 | Acessibilidade dos formulários admin e do shell | P1 | M | US-061, US-062, US-065, US-066 | Concluída em 25/11/2026: erros associados por `aria-describedby`/`aria-invalid`, landmark `<main>` único, skip-link funcional, foco visível e alvos de 44 px preservados; testes de DOM |
 | US-125 | Status fechado e carrinho persistente | P2 | M | US-023, US-065 | Concluída em 25/11/2026: “Loja fechada” em cor neutra no painel, barra fixa de carrinho no mobile com contagem e subtotal, aviso de que o pedido não pode ser concluído na home; prints em 375/1280 px |
-| US-126 | Conteúdo e decisões pendentes de design | P2 | P | US-080, E0 | Concluída em 25/11/2026: páginas legais com data de rascunho e publicação pendente de E0; emojis removidos do seed; drawer completo no painel mobile após decisão registrada; tokens mantidos; testes de conteúdo, seed e drawer |
+| US-126 | Conteúdo e decisões pendentes de design | P2 | P | US-080, E0 | Concluída em 25/11/2026: páginas legais com data de rascunho e publicação pendente de E0, posteriormente publicadas em 25/11/2026 (D-033); emojis removidos do seed; drawer completo no painel mobile após decisão registrada; tokens mantidos; testes de conteúdo, seed e drawer |
 
 **Tarefas técnicas:**
 
@@ -452,13 +452,13 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] AUD-11: remover o `<main id="conteudo">` duplicado do shell ou das views, mantendo um único destino do skip-link.
 - [x] AUD-06: trocar `--status-error` por cor neutra no badge “Loja fechada”.
 - [x] AUD-08/AUD-09: barra fixa de carrinho no mobile e aviso de loja fechada na home.
-- [x] AUD-10: privacidade e termos passaram a exibir data de rascunho (25/11/2026) e a indicar que a publicação ainda depende de `E0`; a data de publicação efetiva segue sujeita a `E0`.
+- [x] AUD-10: privacidade e termos passaram a exibir data de rascunho (25/11/2026) e, após confirmação em 25/11/2026, a versão vigente com data de publicação e canal do titular em `/contato` (D-033).
 - [x] AUD-12: emojis removidos dos nomes de categoria em `design-system/seed.json` após decisão de design (D-030); teste impede o retorno.
 - [x] AUD-13: bottom nav de quatro atalhos substituído por drawer completo com todos os itens por papel, após decisão registrada em `13-decisoes-e-pendencias.md` (D-029).
 
 **Ordem sugerida:** US-123 → US-120 → US-121 → US-122 → US-124 → US-125 → US-126. Nenhuma história entra em andamento sem teste automatizado previsto na Definition of Done da seção 1.5.
 
-**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`. US-120 concluída — título por estado, aviso de registro, `OrderStatusTimeline` com teste dedicado, contato da loja e mensagem genérica para `NOT_FOUND`; `OrderView.test.ts` cobre sucesso, recarga, finalização, carregamento, erro e 404. US-121 concluída — kill switch com confirmação, indicadores vindos da API, contagem por status e pedidos recentes sem PII; `AdminDashboardView.test.ts` cobre sucesso, alternância, status fechado, falha de fontes e contadores zerados, com prints em 375/1280 px. US-122 concluída — etapa final “Revisão e envio” com total cotado e botão dentro dela, numeração ajustada na retirada; `CheckoutView.test.ts` cobre sucesso, cotação falha e retirada, com prints em 375/1280 px. US-124 concluída — erros de campo associados nos quatro formulários administrativos, `<main>` duplicado removido do shell administrativo e alvos do skip-link tornados focáveis em todas as rotas; testes de DOM cobrem as associações e a estrutura. US-125 concluída — status fechado do painel em cor neutra, `CartSummaryBar` com contagem e subtotal na home mobile e aviso de indisponibilidade quando a loja está fechada; testes de DOM cobrem os três comportamentos. US-126 concluída — data de rascunho nas páginas legais, emojis removidos do seed, drawer completo no painel mobile com foco e fechamento acessíveis e decisões registradas em `13-decisoes-e-pendencias.md` (D-029 a D-031). A data de publicação efetiva dos textos legais e o canal do titular continuam dependentes de `E0`. Épico 12 encerrado.
+**Status em 25/11/2026:** US-123 concluída — validador de tokens inexistente com 3 testes novos (19 testes no total) e `--bg-base` substituído por `--bg-input`. US-120 concluída — título por estado, aviso de registro, `OrderStatusTimeline` com teste dedicado, contato da loja e mensagem genérica para `NOT_FOUND`; `OrderView.test.ts` cobre sucesso, recarga, finalização, carregamento, erro e 404. US-121 concluída — kill switch com confirmação, indicadores vindos da API, contagem por status e pedidos recentes sem PII; `AdminDashboardView.test.ts` cobre sucesso, alternância, status fechado, falha de fontes e contadores zerados, com prints em 375/1280 px. US-122 concluída — etapa final “Revisão e envio” com total cotado e botão dentro dela, numeração ajustada na retirada; `CheckoutView.test.ts` cobre sucesso, cotação falha e retirada, com prints em 375/1280 px. US-124 concluída — erros de campo associados nos quatro formulários administrativos, `<main>` duplicado removido do shell administrativo e alvos do skip-link tornados focáveis em todas as rotas; testes de DOM cobrem as associações e a estrutura. US-125 concluída — status fechado do painel em cor neutra, `CartSummaryBar` com contagem e subtotal na home mobile e aviso de indisponibilidade quando a loja está fechada; testes de DOM cobrem os três comportamentos. US-126 concluída — data de rascunho nas páginas legais, emojis removidos do seed, drawer completo no painel mobile com foco e fechamento acessíveis e decisões registradas em `13-decisoes-e-pendencias.md` (D-029 a D-031). Privacidade, termos e créditos publicados em 25/11/2026 (D-033), com canal do titular em `/contato` e `noindex` removido dos créditos. Épico 12 encerrado.
 
 ---
 
@@ -495,7 +495,6 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | Catálogo não validado | US-001, US-020–US-024 | Fechar com cliente |
 | Taxas/horários não validados | US-002, US-032, US-033 | Fechar com cliente |
 | Hospedagem/domínio indefinidos | US-100–US-104 | Decidir |
-| Texto legal indefinido | US-080, US-126 | Jurídico/cliente |
 | Fotos/logo indefinidos | US-004, US-083 | Cliente |
 | CI provider indefinido | US-010 | Decidir |
 | WhatsApp/API indefinido | US-042 | Decidir |

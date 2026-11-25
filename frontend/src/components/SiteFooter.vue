@@ -8,7 +8,7 @@ import { RouterLink } from 'vue-router'
       <RouterLink class="site-footer__link" to="/contato">Contato</RouterLink>
       <RouterLink class="site-footer__link" to="/privacidade">Privacidade</RouterLink>
       <RouterLink class="site-footer__link" to="/termos">Termos</RouterLink>
-      <!-- Créditos seguem em avaliação (P-020); a página sinaliza a pendência. -->
+      <!-- Créditos publicados em 25/11/2026 (D-032/D-033). -->
       <RouterLink class="site-footer__link" to="/creditos">Créditos</RouterLink>
     </nav>
   </footer>

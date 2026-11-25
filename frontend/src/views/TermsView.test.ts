@@ -23,14 +23,16 @@ async function mountTerms() {
 }
 
 describe('TermsView', () => {
-  it('states that the definitive terms still need approval', async () => {
+  it('presents the approved terms as the current version', async () => {
     const wrapper = await mountTerms()
+    const text = wrapper.text()
 
     expect(wrapper.get('h1').text()).toBe('Termos de uso')
-    expect(wrapper.get('[role="note"]').text()).toContain('Texto sujeito a aprovação')
-    expect(wrapper.text()).toContain('Não substituem um termo aprovado')
-    expect(wrapper.get('.info-page__date').text()).toContain('Rascunho preparado em 25/11/2026')
-    expect(wrapper.get('.info-page__date').text()).toContain('Publicação: pendente de E0')
+    expect(wrapper.get('[role="note"]').text()).toContain('Versão vigente')
+    expect(wrapper.get('.info-page__date').text()).toBe('Publicados em 25/11/2026.')
+    expect(text).not.toContain('Rascunho')
+    expect(text).not.toContain('pendente de E0')
+    expect(text).not.toContain('sujeito a aprovação')
   })
 
   it('keeps the rules factual and never invents business data', async () => {

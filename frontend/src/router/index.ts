@@ -58,7 +58,7 @@ const publicRoutes: RouteRecordRaw[] = [
     component: () => import('../views/PrivacyView.vue'),
     meta: {
       title: 'Privacidade',
-      description: 'Informações de privacidade da Brocados Lanches, sujeitas a aprovação.',
+      description: 'Política de privacidade da Brocados Lanches, publicada em 25/11/2026.',
     },
   },
   {
@@ -67,18 +67,17 @@ const publicRoutes: RouteRecordRaw[] = [
     component: () => import('../views/TermsView.vue'),
     meta: {
       title: 'Termos de uso',
-      description: 'Informações sobre o uso do site da Brocados Lanches, sujeitas a aprovação.',
+      description: 'Regras de uso do site da Brocados Lanches, publicadas em 25/11/2026.',
     },
   },
   {
     path: '/creditos',
     name: 'credits',
     component: () => import('../views/CreditsView.vue'),
-    // Página institucional com créditos de desenvolvimento; mídia da loja segue pendente (P-020).
+    // Página institucional publicada em 25/11/2026; mídia da loja segue pendente (D-033).
     meta: {
       title: 'Créditos',
       description: 'Créditos de desenvolvimento e informações institucionais da Brocados Lanches.',
-      noindex: true,
     },
   },
 ]

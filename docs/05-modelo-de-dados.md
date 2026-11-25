@@ -466,7 +466,7 @@ Toda transição inválida retorna `409 CONFLICT`.
 | Logs | 30 dias | Expirar |
 | Analytics | Conforme consentimento | Sem PII |
 
-A política final precisa de validação jurídica. O canal do titular e o procedimento de exclusão/anonimização estão em `10-operacao-e-lancamento.md`.
+A política foi publicada em 25/11/2026 com o canal do titular em `/contato`. O procedimento de exclusão/anonimização está em `10-operacao-e-lancamento.md`.
 
 Dados pessoais:
 

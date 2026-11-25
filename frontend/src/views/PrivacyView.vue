@@ -6,13 +6,10 @@ import { RouterLink } from 'vue-router'
   <main id="conteudo" tabindex="-1" class="page-shell info-page">
     <h1>Privacidade</h1>
 
-    <aside class="info-page__notice" role="note" aria-label="Situação do texto">
-      <strong>Texto sujeito a aprovação.</strong>
-      Esta é uma página informativa provisória: a política de privacidade definitiva depende de
-      aprovação do cliente e do jurídico. Não a apresente como texto vigente.
-      <span class="info-page__date"
-        >Rascunho preparado em 25/11/2026. Publicação: pendente de E0.</span
-      >
+    <aside class="info-page__notice" role="note" aria-label="Versão da política">
+      <strong>Versão vigente.</strong>
+      Esta política descreve o tratamento de dados realizado pela Brocados Lanches.
+      <span class="info-page__date">Publicada em 25/11/2026.</span>
     </aside>
 
     <section aria-labelledby="privacy-controller-title">
@@ -23,8 +20,8 @@ import { RouterLink } from 'vue-router'
         terceiros que você abre por conta própria, como o WhatsApp.
       </p>
       <p>
-        A identificação empresarial completa da loja e o canal definitivo do titular serão
-        informados na versão publicada, após aprovação.
+        Os canais de atendimento da loja, usados também para solicitações de dados, estão na
+        <RouterLink to="/contato">página de contato</RouterLink>.
       </p>
     </section>
 
@@ -135,8 +132,7 @@ import { RouterLink } from 'vue-router'
         consentimento quando aplicável.
       </p>
       <p>
-        O pedido deve ser feito pelo canal oficial do titular, que será publicado junto com a versão
-        definitiva desta política. Até lá, use os canais já publicados pela loja na
+        O pedido deve ser feito pelos canais já publicados pela loja na
         <RouterLink to="/contato">página de contato</RouterLink>. As solicitações são respondidas
         nos prazos da LGPD (Lei nº 13.709/2018).
       </p>
@@ -155,8 +151,8 @@ import { RouterLink } from 'vue-router'
     <section aria-labelledby="privacy-changes-title">
       <h2 id="privacy-changes-title">8. Alterações desta política</h2>
       <p>
-        Esta página está em rascunho, com a data indicada no aviso do topo. A versão vigente será
-        publicada após aprovação; mudanças relevantes serão comunicadas pelos canais da loja.
+        Esta é a versão vigente, publicada em 25/11/2026. Mudanças relevantes serão comunicadas
+        pelos canais da loja nesta página.
       </p>
     </section>
   </main>

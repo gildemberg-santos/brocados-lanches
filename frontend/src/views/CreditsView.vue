@@ -6,15 +6,6 @@ import { RouterLink } from 'vue-router'
   <main id="conteudo" tabindex="-1" class="page-shell info-page">
     <h1>Créditos</h1>
 
-    <aside class="info-page__notice" role="note" aria-label="Situação do texto">
-      <p>
-        <strong>Página institucional em avaliação.</strong>
-        Os créditos de desenvolvimento abaixo usam dados do currículo fornecido pelo autor.
-        Logotipo, fotografias e textos definitivos da loja ainda dependem de validação; nenhum
-        crédito sobre esses itens é afirmado antes dessa confirmação.
-      </p>
-    </aside>
-
     <section class="credit-hero" aria-labelledby="credits-author-title">
       <h2 id="credits-author-title">Gildemberg Santos</h2>
       <p>
@@ -83,9 +74,8 @@ import { RouterLink } from 'vue-router'
         <RouterLink to="/contato">página de contato</RouterLink>.
       </p>
       <p>
-        Logotipo, fotografias e textos definitivos aguardam validação; as imagens usadas no
-        desenvolvimento são ilustrativas. Esta página está marcada como <code>noindex</code> nos
-        metadados da rota.
+        As imagens de produto usadas no desenvolvimento são ilustrativas e ainda aguardam validação
+        da loja. Os textos desta página foram publicados em 25/11/2026.
       </p>
     </section>
 
@@ -109,17 +99,6 @@ import { RouterLink } from 'vue-router'
   font-family: var(--font-display);
   font-size: clamp(var(--font-size-h1), 7vw, var(--font-size-display));
   line-height: var(--line-height-display);
-}
-
-.info-page__notice {
-  padding: 16px;
-  border: 1px solid var(--bg-border);
-  border-radius: 16px;
-  background: var(--bg-surface);
-}
-
-.info-page__notice strong {
-  color: var(--brand-primary);
 }
 
 .info-page section,
@@ -237,10 +216,5 @@ import { RouterLink } from 'vue-router'
   border: 1px solid var(--bg-border);
   background: var(--bg-surface);
   color: var(--text-main);
-}
-
-.info-page code {
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
 }
 </style>

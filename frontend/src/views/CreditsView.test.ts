@@ -28,8 +28,9 @@ describe('CreditsView', () => {
     const text = wrapper.text()
 
     expect(wrapper.get('h1').text()).toBe('Créditos')
-    expect(wrapper.get('[role="note"] p').text()).toContain('Página institucional em avaliação')
-    expect(wrapper.get('[role="note"] p').text()).toContain('currículo fornecido pelo autor')
+    expect(wrapper.find('[role="note"]').exists()).toBe(false)
+    expect(text).not.toContain('em avaliação')
+    expect(text).not.toContain('textos definitivos aguardam validação')
     expect(text).toContain('Gildemberg Santos')
     expect(text).toContain('Desenvolvedor de software com mais de uma década de experiência')
     expect(text).toContain('Leadster')
@@ -58,7 +59,7 @@ describe('CreditsView', () => {
     expect(text).not.toContain('@')
   })
 
-  it('describes the real implementation and keeps store media pending', async () => {
+  it('describes the real implementation, publication date and pending store media', async () => {
     const wrapper = await mountCredits()
     const text = wrapper.text()
 
@@ -66,8 +67,9 @@ describe('CreditsView', () => {
     expect(text).toContain('Vue 3 + Vite + TypeScript')
     expect(text).toContain('MongoDB')
     expect(text).toContain('Bacharelado em Ciência da Computação')
-    expect(text).toContain('imagens usadas no desenvolvimento são ilustrativas')
-    expect(text).toContain('noindex')
+    expect(text).toContain('imagens de produto usadas no desenvolvimento são ilustrativas')
+    expect(text).toContain('publicados em 25/11/2026')
+    expect(text).not.toContain('noindex')
     expect(wrapper.find('a[href="/contato"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/cardapio"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/"]').exists()).toBe(true)

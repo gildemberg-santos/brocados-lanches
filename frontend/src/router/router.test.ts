@@ -62,10 +62,12 @@ describe('router', () => {
     expect(route?.meta.description).not.toHaveLength(0)
   })
 
-  it('marks simple institutional pages as noindex', () => {
-    const credits = router.getRoutes().find((candidate) => candidate.name === 'credits')
+  it('keeps published institutional pages indexable', () => {
+    for (const name of ['privacy', 'terms', 'credits']) {
+      const route = router.getRoutes().find((candidate) => candidate.name === name)
 
-    expect(credits?.meta.noindex).toBe(true)
+      expect(route?.meta.noindex).not.toBe(true)
+    }
   })
 
   it('resolves unknown URLs to the not-found view', () => {

@@ -6,13 +6,10 @@ import { RouterLink } from 'vue-router'
   <main id="conteudo" tabindex="-1" class="page-shell info-page">
     <h1>Termos de uso</h1>
 
-    <aside class="info-page__notice" role="note" aria-label="Situação do texto">
-      <strong>Texto sujeito a aprovação.</strong>
-      Estes termos são informativos e provisórios: o texto definitivo depende de aprovação do
-      cliente e do jurídico. Não substituem um termo aprovado.
-      <span class="info-page__date"
-        >Rascunho preparado em 25/11/2026. Publicação: pendente de E0.</span
-      >
+    <aside class="info-page__notice" role="note" aria-label="Versão dos termos">
+      <strong>Versão vigente.</strong>
+      Estes termos descrevem as regras de uso deste site.
+      <span class="info-page__date">Publicados em 25/11/2026.</span>
     </aside>
 
     <section aria-labelledby="terms-service-title">
@@ -145,8 +142,8 @@ import { RouterLink } from 'vue-router'
     <section aria-labelledby="terms-changes-title">
       <h2 id="terms-changes-title">10. Alterações, contato e legislação</h2>
       <p>
-        A data no aviso do topo indica a versão deste rascunho. A versão vigente será publicada após
-        aprovação, e mudanças relevantes passam a valer depois de publicadas neste site.
+        A data no aviso do topo indica a versão vigente destes termos, publicada em 25/11/2026.
+        Mudanças relevantes passam a valer depois de publicadas neste site.
       </p>
       <p>
         Para dúvidas sobre pedido, entrega ou pagamento, use os canais já publicados pela loja na

@@ -325,7 +325,7 @@ Não coletar CPF, e-mail de cliente ou dados de cartão.
 - informação sobre compartilhamento;
 - revogação de consentimento, quando aplicável.
 
-Canal do titular precisa ser publicado na política de privacidade.
+Canal do titular publicado na política de privacidade em 25/11/2026: os canais já existentes em `/contato`.
 
 ### 10.4 Retenção e anonimização
 
@@ -406,8 +406,8 @@ Canal do titular precisa ser publicado na política de privacidade.
 - [ ] Zonas, taxas, prazo e horários validados.
 - [ ] WhatsApp, endereço, Instagram e pagamentos validados.
 - [ ] Fotos, logo, alergênicos e textos aprovados.
-- [ ] Política de privacidade e termos publicados.
-- [ ] Página de contato e canal do titular.
+- [x] Política de privacidade e termos publicados em 25/11/2026.
+- [x] Página de contato e canal do titular publicado em `/contato`.
 
 ### 12.2 Técnico
 
@@ -464,7 +464,7 @@ Canal do titular precisa ser publicado na política de privacidade.
 - MongoDB gerenciado ou container.
 - Ferramenta de métricas/alertas.
 - Política de retenção aprovada.
-- Canal do titular.
+- ~~Canal do titular.~~ Resolvido em 25/11/2026: canais publicados em `/contato` (D-033).
 - Domínio e DNS.
 - Estratégia de backup/point-in-time.
 - Responsável de plantão.

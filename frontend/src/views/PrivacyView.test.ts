@@ -22,14 +22,16 @@ async function mountPrivacy() {
 }
 
 describe('PrivacyView', () => {
-  it('states that the definitive text still needs approval', async () => {
+  it('presents the approved text as the current version', async () => {
     const wrapper = await mountPrivacy()
+    const text = wrapper.text()
 
     expect(wrapper.get('h1').text()).toBe('Privacidade')
-    expect(wrapper.get('[role="note"]').text()).toContain('Texto sujeito a aprovação')
-    expect(wrapper.text()).toContain('aprovação do cliente e do jurídico')
-    expect(wrapper.get('.info-page__date').text()).toContain('Rascunho preparado em 25/11/2026')
-    expect(wrapper.get('.info-page__date').text()).toContain('Publicação: pendente de E0')
+    expect(wrapper.get('[role="note"]').text()).toContain('Versão vigente')
+    expect(wrapper.get('.info-page__date').text()).toBe('Publicada em 25/11/2026.')
+    expect(text).not.toContain('Rascunho')
+    expect(text).not.toContain('pendente de E0')
+    expect(text).not.toContain('sujeito a aprovação')
   })
 
   it('describes only documented data and does not invent legal details', async () => {
