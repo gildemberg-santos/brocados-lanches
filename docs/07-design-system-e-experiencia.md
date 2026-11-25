@@ -167,7 +167,7 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 
 | Componente | Uso |
 |---|---|
-| `AdminShell` | Sidebar desktop, bottom nav mobile, header — **implementado em US-061** |
+| `AdminShell` | Sidebar desktop, drawer mobile com todos os itens permitidos pelo papel e header — **implementado em US-061, navegação mobile revisada na US-126** |
 | `AdminPageHeader` | Título, ação primária, breadcrumb |
 | `DataTable` | Produtos, pedidos, usuários, auditoria; paginação (ainda não abstraído) |
 | `TableEmpty` | Estado vazio com CTA |
@@ -544,12 +544,12 @@ Regras:
 
 ## 14. Decisões abertas
 
-1. Aprovar tokens de espaçamento, raio, sombra, movimento e z-index.
-2. Definir warning/info ou manter apenas aberto/erro.
-3. Definir uso de emoji na interface; proposta: não usar como ícone.
+1. Aprovar tokens de espaçamento, raio, sombra, movimento e z-index. Em 25/11/2026 foi decidido manter os valores atuais; padronizar exige aprovação e atualização conjunta de `tokens.css` e `tokens.json`.
+2. Definir warning/info ou manter apenas aberto/erro. Mantido apenas aberto/erro; “Loja fechada” usa cor neutra desde a US-125.
+3. Uso de emoji na interface decidido em 25/11/2026: não usar como ícone. Os emojis dos nomes de categoria do seed foram removidos na US-126.
 4. Definir se a página de créditos permanece na V1.
 5. Definir fotos, logo e direitos de uso.
-6. Definir se o admin mobile usa bottom nav ou drawer.
-7. Definir se o carrinho desktop é sidebar fixa ou drawer.
+6. Navegação mobile do painel decidida em 25/11/2026: drawer completo, com todos os itens permitidos pelo papel, aberto pelo botão “Menu” no header e fechável por Escape, pelo botão “Fechar” ou pelo fundo. Implementado na US-126.
+7. Definir se o carrinho desktop é sidebar fixa ou drawer. A barra fixa no mobile foi entregue na US-125; a versão desktop segue em aberto.
 
 A auditoria de 25/11/2026 comparou a implementação com estas decisões e registrou os desvios e as tarefas de correção em `14-auditoria-design-system.md`.

@@ -106,7 +106,7 @@ AUD-07 foi corrigido junto com a US-122. O checkout passou a ter “Revisão e e
 
 AUD-05 e AUD-11 foram corrigidos junto com a US-124. Os formulários `AdminCatalogForm`, `AdminProductForm`, `AdminStoreView` e `AdminUserForm` passaram a marcar o controle inválido com `aria-invalid="true"` e a apontar, por `aria-describedby`, para a mensagem correspondente. O shell administrativo deixou de repetir `<main id="conteudo">`: as views admin mantêm um único `<main>`, e o shell oferece um contêiner focável com `tabindex="-1"` como destino do skip-link. Todos os alvos `#conteudo` das rotas públicas também receberam `tabindex="-1"`, e o link oculto foi reposicionado para o eixo horizontal a fim de permanecer na ordem de tabulação.
 
-AUD-06, AUD-08 e AUD-09 foram corrigidos junto com a US-125. O painel passou a usar `--text-sub` para “Loja fechada”, sem cor de erro. A home exibe uma barra fixa no mobile quando há itens no carrinho, com contagem e subtotal derivados do catálogo, além de um aviso em superfície neutra de que o pedido não pode ser concluído com a loja fechada; o CTA do cardápio continua disponível. Somente as pendências da US-126 seguem em aberto.
+AUD-06, AUD-08 e AUD-09 foram corrigidos junto com a US-125. O painel passou a usar `--text-sub` para “Loja fechada”, sem cor de erro. A home exibe uma barra fixa no mobile quando há itens no carrinho, com contagem e subtotal derivados do catálogo, além de um aviso em superfície neutra de que o pedido não pode ser concluído com a loja fechada; o CTA do cardápio continua disponível. A US-126 foi concluída em seguida, com as decisões de design registradas.
 
 ### 5.1 Detalhamento dos achados de severidade Alta
 
@@ -126,7 +126,9 @@ AUD-06, AUD-08 e AUD-09 foram corrigidos junto com a US-125. O painel passou a u
 
 **Evidência da US-125:** verificação em navegador headless com `GET /api/v1/store` interceptado como fechado e dois itens no carrinho, nos viewports de 375 px e 1280 px. A barra de carrinho fica visível em 375 px (“Ver carrinho (2)”, subtotal R$ 99,98 e altura mínima de 56 px) e oculta em 1280 px; o aviso de loja fechada aparece com texto nos dois tamanhos, e `scrollWidth === clientWidth` em ambos. Prints em `/tmp/opencode/home-us125-375.png` e `/tmp/opencode/home-us125-1280.png` (fora do repositório).
 
-**Atualização da US-126 em 25/11/2026:** AUD-10 e AUD-12 foram tratados na parte que não depende de aprovação. Privacidade e termos exibem “Rascunho preparado em 25/11/2026. Publicação: pendente de E0”, sem apresentar texto provisório como vigente; `design-system/seed.json` passou a declarar que os emojis nos nomes de categoria vêm do protótipo e são apenas ilustração de desenvolvimento, não padrão de interface. Testes de DOM cobrem a data nas duas páginas. AUD-13 (bottom nav do painel) permanece em aberto: a decisão entre bottom nav completo e drawer ainda não foi registrada em `13-decisoes-e-pendencias.md`, então a navegação não foi alterada. A data de publicação efetiva e a remoção dos emojis dependem de `E0` e de design, respectivamente. Não há evidência visual nova porque a US-126 não alterou layout.
+**Atualização da US-126 em 25/11/2026:** os três achados foram tratados após registro das decisões em `13-decisoes-e-pendencias.md` (D-029 a D-031). AUD-10: privacidade e termos exibem “Rascunho preparado em 25/11/2026. Publicação: pendente de E0”, sem apresentar texto provisório como vigente; a data de publicação efetiva e o canal do titular seguem dependentes de `E0`. AUD-12: os emojis foram removidos dos nomes de categoria do seed, mantendo os slugs, e um teste em `backend/internal/seed/seed_test.go` impede o retorno. AUD-13: o bottom nav de quatro atalhos foi substituído por um drawer completo com todos os itens permitidos pelo papel; o botão “Menu” abre o drawer e move o foco para “Fechar”, Escape e o fundo fecham, e o foco retorna ao botão de origem. Testes de DOM cobrem abertura, fechamento, retorno de foco e trapped focus.
+
+**Evidência da US-126:** verificação em navegador headless nos viewports de 375 px e 1280 px após login administrativo. Em 375 px o drawer fica visível com 10 links, o botão “Menu” e o drawer visíveis, a sidebar oculta, o foco no botão “Fechar”, altura mínima de 44 px nos alvos e `scrollWidth === clientWidth` (375). Em 1280 px a sidebar permanece visível e o menu/drawer ficam ocultos, sem scroll horizontal (1280). Prints em `/tmp/opencode/admin-drawer-us126-375.png` e `/tmp/opencode/admin-drawer-us126-1280.png` (fora do repositório). O `401` no console é a consulta preventiva do guard de autenticação antes do login.
 
 ---
 
@@ -160,7 +162,7 @@ As histórias abaixo foram adicionadas ao Épico 12 de `08-backlog.md`. Status i
 | US-125 | P2 | M | AUD-06, AUD-08, AUD-09 | Status fechado neutro, carrinho fixo no mobile e aviso na home |
 | US-126 | P2 | P | AUD-10, AUD-12, AUD-13 | Conteúdo legal datado, emojis do seed e decisões abertas de navegação |
 
-Ordem sugerida: US-123 primeiro (fortalece o gate antes de mexer em UI), depois US-120/US-121/US-122, e por fim US-124/US-125/US-126. US-126 depende de decisão de design/cliente nas partes que envolvem emoji, navegação mobile e conteúdo legal; a data de publicação das páginas legais depende de `E0`.
+Ordem sugerida: US-123 primeiro (fortalece o gate antes de mexer em UI), depois US-120/US-121/US-122, e por fim US-124/US-125/US-126. As decisões de design sobre emoji, navegação mobile e tokens foram registradas em `13-decisoes-e-pendencias.md` (D-029 a D-031) e implementadas na US-126; apenas a data de publicação e o canal do titular das páginas legais permanecem dependentes de `E0`.
 
 ---
 

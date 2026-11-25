@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"unicode"
 )
 
 func TestCentsFromReais(t *testing.T) {
@@ -299,6 +300,27 @@ func TestLoadRepositorySeedFile(t *testing.T) {
 	wantFeatured := []string{"combo-3-hamburguer", "burger-frescurinha", "batata-g"}
 	if !reflect.DeepEqual(featured, wantFeatured) {
 		t.Fatalf("featured products = %v, want %v", featured, wantFeatured)
+	}
+}
+
+func TestSeedCategoryNamesHaveNoEmoji(t *testing.T) {
+	path := filepath.Join("..", "..", "..", "design-system", "seed.json")
+	data, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if len(data.Categories) == 0 {
+		t.Fatal("o seed não trouxe categorias para verificar")
+	}
+
+	for _, category := range data.Categories {
+		for _, character := range category.Name {
+			if unicode.IsLetter(character) || unicode.IsDigit(character) || unicode.IsSpace(character) {
+				continue
+			}
+			t.Errorf("categoria %q contém caractere não textual %q", category.Name, character)
+		}
 	}
 }
 

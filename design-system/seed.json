@@ -2,7 +2,7 @@
   "_meta": {
     "fonte": "brocados-lanches-design-system-v2.5.html",
     "extraido_em": "2026-11-18",
-    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders fictícios, em formato E.164, e precisam de confirmação. Os emojis em nomes de categoria vêm do protótipo e são apenas ilustração de dados de desenvolvimento; não são padrão de interface e devem ser removidos ou aprovados antes de produção.",
+    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders fictícios, em formato E.164, e precisam de confirmação. Os emojis presentes nos nomes de categoria do protótipo foram removidos em 25/11/2026 (US-126): não são padrão de interface e não devem ser reintroduzidos sem aprovação de design.",
     "catalogo_original": {
       "url": "https://cardpiobrocadoslanchess.ola.click/products",
       "extraido_em": "2026-11-23",
@@ -21,12 +21,12 @@
   "categories": [
     {
       "id": "cat_1",
-      "name": "PROMOÇÃO 🔥",
+      "name": "PROMOÇÃO",
       "active": true
     },
     {
       "id": "cat_2",
-      "name": "Hambúrguer artesanal 🍔",
+      "name": "Hambúrguer artesanal",
       "active": true
     },
     {
@@ -36,7 +36,7 @@
     },
     {
       "id": "cat_4",
-      "name": "BEBIDAS 🥤",
+      "name": "BEBIDAS",
       "active": true
     },
     {

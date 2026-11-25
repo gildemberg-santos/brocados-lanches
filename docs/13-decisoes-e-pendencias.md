@@ -50,6 +50,9 @@
 | D-026 | 25/11/2026 | Dados estruturados são gerados somente com `GET /store` e `GET /menu`, sem URL absoluta inventada; o `robots.txt` usa caminhos relativos e bloqueia rotas privadas | Decidido e implementado | SEO útil sem depender de domínio, telefone ou conteúdo não aprovado | `08-backlog.md` §12, `frontend/public/robots.txt` |
 | D-027 | 25/11/2026 | Cliente HTTP usa `AbortController` com timeout configurável (`VITE_HTTP_TIMEOUT_MS`, padrão 10 s) e o cabeçalho sinaliza conexão perdida sem PII; textos legais/institucionais ficam provisórios até aprovação | Decidido e implementado | Resiliência em rede instável sem inventar dado de negócio nem texto legal | `frontend/src/services/http.ts`, `frontend/src/components/SiteHeader.vue`, `08-backlog.md` §12 |
 | D-028 | 25/11/2026 | O seed valida a configuração da loja com `domain.StoreSettings.Validate` e usa WhatsApp fictício em E.164; os cenários E2E de falha usam operador dedicado e só criam pedidos no projeto desktop | Decidido e implementado | Um PATCH parcial de `/admin/store` nunca é rejeitado por dado inválido do próprio seed, e os testes não esgotam os rate limits por IP/e-mail | `backend/internal/seed/seed.go`, `frontend/e2e/failure-scenarios.spec.ts`, `09-qualidade-e-testes.md` §8 |
+| D-029 | 25/11/2026 | A navegação mobile do painel usa drawer completo com todos os itens permitidos pelo papel, aberto pelo botão “Menu”, com foco movido para o botão “Fechar”, fechamento por Escape/fundo e trapped focus; a sidebar desktop permanece | Decidido e implementado | Aprovação de design substitui o bottom nav de quatro atalhos; nenhum item administrativo fica inacessível no mobile | `07-design-system-e-experiencia.md` §4.3 e §14, `frontend/src/components/admin/AdminShell.vue` |
+| D-030 | 25/11/2026 | Emojis não são usados como ícone nem em nomes de categoria do seed de desenvolvimento; os presentes no protótipo foram removidos e um teste impede o retorno | Decidido e implementado | Dados fictícios não reforçam um padrão visual não aprovado; slugs das categorias permanecem inalterados | `design-system/seed.json`, `backend/internal/seed/seed_test.go`, `07-design-system-e-experiencia.md` §14 |
+| D-031 | 25/11/2026 | Tokens de espaçamento, raio, sombra, movimento e z-index permanecem com os valores atuais; textos legais seguem como rascunho datado até `E0` aprovar publicação e canal do titular | Decidido | Evita mudança de padrão visual sem aprovação e não inventa conteúdo jurídico; `tokens.css`/`tokens.json` seguem consistentes | `07-design-system-e-experiencia.md` §5.8 e §14, `frontend/src/views/PrivacyView.vue`, `frontend/src/views/TermsView.vue` |
 
 ### 2.1 Contrato refletido no AGENTS
 
@@ -137,15 +140,15 @@ Elas entram em P2 ou no roadmap seguinte.
 
 ### 5.1 Decisões abertas de design — auditoria de 25/11/2026
 
-Origem: `14-auditoria-design-system.md` e §14 de `07-design-system-e-experiencia.md`. Nenhuma foi decidida pela auditoria; todas precisam de aprovação de design antes de virar padrão.
+Origem: `14-auditoria-design-system.md` e §14 de `07-design-system-e-experiencia.md`. As decisões registradas em 25/11/2026 estão consolidadas em D-029 a D-031; itens ainda sem aprovação seguem marcados como pendentes.
 
 | Decisão | Situação atual | História afetada |
 |---|---|---|
-| Navegação mobile do painel: bottom nav de 4 atalhos, bottom nav completo ou drawer | Bottom nav com quatro atalhos implementado; telas secundárias dependem dos atalhos do dashboard. Nenhuma opção foi aprovada, então a interface não foi alterada na US-126 | US-126 (AUD-13, bloqueada) |
-| Carrinho no desktop: sidebar fixa ou drawer | Barra fixa entregue no mobile na US-125; versão desktop não implementada | US-125 (parcial) |
-| Emoji na interface e em nomes do seed | Emojis presentes nos dados de desenvolvimento; `seed.json` passou a declará-los como fictícios e não padrão de interface. Remoção efetiva aguarda aprovação | US-126 (AUD-12, parcial) |
-| Tokens de espaçamento, raio, sombra, movimento e z-index | Valores aplicados no CSS, sem token canônico | Mudança de padrão; exige `tokens.css`, `tokens.json` e documentação |
-| Token de aviso/info ou manter apenas aberto/erro | Somente `--status-open` e `--status-error`; “Loja fechada” usa cor neutra desde a US-125 | US-125 (resolvido sem token novo) |
+| Navegação mobile do painel: bottom nav de 4 atalhos, bottom nav completo ou drawer | Decidido em 25/11/2026 (D-029): drawer completo com todos os itens por papel; bottom nav removido | US-126 (AUD-13, concluída) |
+| Carrinho no desktop: sidebar fixa ou drawer | Barra fixa entregue no mobile na US-125; versão desktop não implementada e ainda pendente | US-125 (parcial) |
+| Emoji na interface e em nomes do seed | Decidido em 25/11/2026 (D-030): não usar como ícone; emojis removidos do seed e protegidos por teste | US-126 (AUD-12, concluída) |
+| Tokens de espaçamento, raio, sombra, movimento e z-index | Decidido em 25/11/2026 (D-031): manter valores atuais; padronização segue pendente e exige `tokens.css`, `tokens.json` e documentação | Mudança de padrão |
+| Token de aviso/info ou manter apenas aberto/erro | Mantido apenas aberto/erro; “Loja fechada” usa cor neutra desde a US-125 | US-125 (resolvido sem token novo) |
 | Data de publicação de privacidade/termos e canal do titular | Páginas exibem data de rascunho e publicação explicitamente pendente de `E0`; texto provisório não é apresentado como vigente | US-126 (AUD-10, parcial) |
 
 ---
@@ -182,3 +185,4 @@ Origem: `14-auditoria-design-system.md` e §14 de `07-design-system-e-experienci
 | 25/11/2026 | Épico 8 parcial: rotas institucionais/legais e 404 com rodapé, JSON-LD/`robots.txt`, fontes self-hosted, WebP/AVIF, status da loja na home, dashboard com indicadores reais, timeout do cliente HTTP e aviso de conexão; D-014, D-025 atualizados e D-026/D-027 registrados. Textos aprovados, axe, sitemap/canonical e deploy seguem pendentes |
 | 25/11/2026 | Gate completo executado: `make test` (407 testes frontend, backend com `-race`, validadores), `make lint`, `make fmt-check`, `make build` e `make test-e2e` aprovados; o E2E passou de 16 para 28 testes com cenários críticos de falha (26 aprovados e 2 pulados no mobile por rate limit compartilhado) |
 | 25/11/2026 | Ferramentas alinhadas: `.tool-versions` fixa Node 22.23.5 e `golangci-lint` v2.15.0 passou a rodar no `make lint`; 16 achados do lint completo corrigidos (fechamento de cursor/arquivo e código morto em testes) |
+| 25/11/2026 | Épico 12 concluído com D-029/D-030/D-031: drawer completo no painel mobile, emojis removidos do seed, tokens mantidos e textos legais mantidos como rascunho até `E0` |

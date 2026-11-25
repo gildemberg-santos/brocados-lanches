@@ -1,16 +1,72 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 
-import { adminRoleLabel, primaryAdminNav, visibleAdminNav } from '../../features/admin/auth'
+import { adminRoleLabel, visibleAdminNav } from '../../features/admin/auth'
 import { useAdminAuthStore } from '../../stores/adminAuth'
 
 const auth = useAdminAuthStore()
 const router = useRouter()
 
 const items = computed(() => visibleAdminNav(auth.role))
-const primaryItems = computed(() => primaryAdminNav(auth.role))
 const roleLabel = computed(() => adminRoleLabel(auth.role))
+const isDrawerOpen = ref(false)
+const menuButton = ref<HTMLButtonElement | null>(null)
+const drawer = ref<HTMLElement | null>(null)
+const drawerCloseButton = ref<HTMLButtonElement | null>(null)
+
+async function openDrawer(): Promise<void> {
+  isDrawerOpen.value = true
+  await nextTick()
+  drawerCloseButton.value?.focus()
+}
+
+async function closeDrawer(): Promise<void> {
+  isDrawerOpen.value = false
+  await nextTick()
+  menuButton.value?.focus()
+}
+
+function handleDrawerKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    void closeDrawer()
+    return
+  }
+
+  if (event.key !== 'Tab' || !drawer.value) {
+    return
+  }
+
+  const focusable = Array.from(
+    drawer.value.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'),
+  )
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (!first || !last) {
+    return
+  }
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+watch(isDrawerOpen, (open) => {
+  if (open) {
+    window.addEventListener('keydown', handleDrawerKeydown)
+  } else {
+    window.removeEventListener('keydown', handleDrawerKeydown)
+  }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleDrawerKeydown)
+})
 
 async function logout(): Promise<void> {
   await auth.logout()
@@ -25,6 +81,18 @@ async function logout(): Promise<void> {
         <span class="admin-shell__brand-name">BROCADOS</span>
         <span class="admin-shell__brand-tag">ADMIN</span>
       </RouterLink>
+
+      <button
+        ref="menuButton"
+        type="button"
+        class="admin-shell__menu-button"
+        aria-controls="admin-drawer"
+        :aria-expanded="isDrawerOpen"
+        data-testid="admin-menu-button"
+        @click="openDrawer"
+      >
+        Menu
+      </button>
 
       <div class="admin-shell__identity">
         <span class="admin-shell__user">{{ auth.userName || 'Operação' }}</span>
@@ -50,16 +118,44 @@ async function logout(): Promise<void> {
       </div>
     </div>
 
-    <nav class="admin-shell__mobile-nav" aria-label="Navegação principal do painel">
-      <RouterLink
-        v-for="item in primaryItems"
-        :key="item.name"
-        class="admin-shell__mobile-link"
-        :to="{ name: item.name }"
+    <template v-if="isDrawerOpen">
+      <div class="admin-shell__backdrop" data-testid="admin-drawer-backdrop" @click="closeDrawer" />
+
+      <aside
+        id="admin-drawer"
+        ref="drawer"
+        class="admin-shell__drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navegação do painel"
+        data-testid="admin-drawer"
       >
-        {{ item.label }}
-      </RouterLink>
-    </nav>
+        <div class="admin-shell__drawer-header">
+          <strong>Menu</strong>
+          <button
+            ref="drawerCloseButton"
+            type="button"
+            class="admin-shell__drawer-close"
+            data-testid="admin-drawer-close"
+            @click="closeDrawer"
+          >
+            Fechar
+          </button>
+        </div>
+
+        <nav class="admin-shell__drawer-nav" aria-label="Navegação completa do painel">
+          <RouterLink
+            v-for="item in items"
+            :key="item.name"
+            class="admin-shell__link"
+            :to="{ name: item.name }"
+            @click="closeDrawer"
+          >
+            {{ item.label }}
+          </RouterLink>
+        </nav>
+      </aside>
+    </template>
   </div>
 </template>
 
@@ -153,37 +249,84 @@ async function logout(): Promise<void> {
 .admin-shell__main {
   width: min(1120px, 100%);
   margin: 0 auto;
-  padding: 24px 16px 104px;
+  padding: 24px 16px 48px;
 }
 
-.admin-shell__mobile-nav {
+.admin-shell__menu-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 8px 14px;
+  border: 1px solid var(--bg-border);
+  border-radius: 999px;
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-shell__menu-button:hover {
+  border-color: var(--brand-primary);
+}
+
+.admin-shell__backdrop {
   position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg-primary) 80%, transparent);
+}
+
+.admin-shell__drawer {
+  position: fixed;
+  top: 0;
   right: 0;
   bottom: 0;
-  left: 0;
-  z-index: 40;
+  z-index: 51;
   display: flex;
-  overflow-x: auto;
-  border-top: 1px solid var(--bg-border);
+  width: min(320px, 85vw);
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 16px;
+  border-left: 1px solid var(--bg-border);
   background: var(--bg-surface);
 }
 
-.admin-shell__mobile-link {
-  display: grid;
-  min-width: 88px;
-  min-height: 56px;
-  flex: 1;
-  place-items: center;
-  padding: 8px;
-  color: var(--text-sub);
-  font-size: var(--font-size-caption);
-  font-weight: 700;
-  text-align: center;
-  text-decoration: none;
+.admin-shell__drawer-header {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bg-border);
+  font-family: var(--font-display);
+  font-size: var(--font-size-h2);
+  letter-spacing: 0.04em;
 }
 
-.admin-shell__mobile-link.router-link-exact-active {
-  color: var(--brand-neon);
+.admin-shell__drawer-close {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--bg-border);
+  border-radius: 999px;
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-shell__drawer-close:hover {
+  border-color: var(--brand-primary);
+}
+
+.admin-shell__drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 24px;
 }
 
 .admin-shell__link {
@@ -224,13 +367,16 @@ async function logout(): Promise<void> {
     padding: 32px 24px 80px;
   }
 
-  .admin-shell__mobile-nav {
+  .admin-shell__menu-button,
+  .admin-shell__backdrop,
+  .admin-shell__drawer {
     display: none;
   }
 }
 
 @media (max-width: 419px) {
-  .admin-shell__user {
+  .admin-shell__user,
+  .admin-shell__role {
     display: none;
   }
 }
