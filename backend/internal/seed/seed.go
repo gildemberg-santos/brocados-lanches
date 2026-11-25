@@ -110,14 +110,15 @@ type ZoneDocument struct {
 }
 
 // Load lê e valida o arquivo de seed.
-func Load(path string) (Data, error) {
+func Load(path string) (data Data, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return Data{}, fmt.Errorf("open seed file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		err = errors.Join(err, file.Close())
+	}()
 
-	var data Data
 	decoder := json.NewDecoder(file)
 	decoder.UseNumber()
 	if err := decoder.Decode(&data); err != nil {

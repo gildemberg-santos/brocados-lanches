@@ -29,7 +29,6 @@ type fakeOrderReader struct {
 	byPublicID    domain.Order
 	byPublicIDErr error
 
-	receivedKey   string
 	receivedOrder domain.Order
 
 	calls []string

@@ -232,14 +232,7 @@ func NewOrder(request OrderRequest, quote Quote, zone *OrderZone, id string, num
 	for index, line := range quote.Items {
 		options := make([]OrderItemOption, 0, len(line.Options))
 		for _, option := range line.Options {
-			options = append(options, OrderItemOption{
-				GroupID:    option.GroupID,
-				GroupName:  option.GroupName,
-				OptionID:   option.OptionID,
-				Name:       option.Name,
-				Kind:       option.Kind,
-				PriceCents: option.PriceCents,
-			})
+			options = append(options, OrderItemOption(option))
 		}
 		items = append(items, OrderItem{
 			ProductID:      line.ProductID,

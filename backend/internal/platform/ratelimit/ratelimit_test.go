@@ -22,7 +22,9 @@ func TestAllowResetsAfterWindow(t *testing.T) {
 	now := time.Date(2026, 11, 22, 12, 0, 0, 0, time.UTC)
 	limiter.now = func() time.Time { return now }
 
-	if !limiter.Allow("ip|email") || !limiter.Allow("ip|email") {
+	first := limiter.Allow("ip|email")
+	second := limiter.Allow("ip|email")
+	if !first || !second {
 		t.Fatal("first two requests should be allowed")
 	}
 	if limiter.Allow("ip|email") {

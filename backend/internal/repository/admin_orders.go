@@ -19,7 +19,7 @@ var orderSortFields = []string{"createdAt", "number", "status", "totalCents"}
 // AdminListOrders devolve uma página da fila. Filtros e ordenação são
 // construídos aqui a partir de valores já validados pelo service; o cliente
 // nunca escolhe um campo do documento para ordenar.
-func (r *OrderRepository) AdminListOrders(ctx context.Context, query domain.AdminOrderListQuery) ([]domain.Order, int64, error) {
+func (r *OrderRepository) AdminListOrders(ctx context.Context, query domain.AdminOrderListQuery) (orders []domain.Order, total int64, err error) {
 	filter := bson.D{}
 	if query.Status != "" {
 		filter = append(filter, bson.E{Key: "status", Value: query.Status})
@@ -44,7 +44,7 @@ func (r *OrderRepository) AdminListOrders(ctx context.Context, query domain.Admi
 		filter = append(filter, bson.E{Key: "$or", Value: conditions})
 	}
 
-	total, err := r.orders.CountDocuments(ctx, filter)
+	total, err = r.orders.CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count admin orders: %w", err)
 	}
@@ -71,13 +71,16 @@ func (r *OrderRepository) AdminListOrders(ctx context.Context, query domain.Admi
 	if err != nil {
 		return nil, 0, fmt.Errorf("find admin orders: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	var documents []orderDocument
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, 0, fmt.Errorf("decode admin orders: %w", err)
 	}
-	return convertDocuments(documents, orderDocument.toDomain), total, nil
+	orders = convertDocuments(documents, orderDocument.toDomain)
+	return orders, total, nil
 }
 
 // FindByID localiza um pedido pelo ID hexadecimal usado no painel.

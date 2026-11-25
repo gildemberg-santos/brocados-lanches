@@ -55,19 +55,21 @@ func NewCatalogRepository(database *mongo.Database) (*CatalogRepository, error) 
 }
 
 // ListActiveCategories devolve categorias ativas ordenadas para exibição.
-func (r *CatalogRepository) ListActiveCategories(ctx context.Context) ([]domain.Category, error) {
+func (r *CatalogRepository) ListActiveCategories(ctx context.Context) (categories []domain.Category, err error) {
 	cursor, err := r.categories.Find(ctx, activeCatalogFilter(), options.Find().SetSort(catalogSort()))
 	if err != nil {
 		return nil, fmt.Errorf("list categories: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	var documents []categoryDocument
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, fmt.Errorf("decode categories: %w", err)
 	}
 
-	categories := make([]domain.Category, len(documents))
+	categories = make([]domain.Category, len(documents))
 	for index, document := range documents {
 		categories[index] = document.toDomain()
 	}
@@ -76,19 +78,21 @@ func (r *CatalogRepository) ListActiveCategories(ctx context.Context) ([]domain.
 
 // ListActiveProducts devolve produtos ativos, inclusive indisponíveis, para que
 // a loja consiga renderizar o estado "esgotado".
-func (r *CatalogRepository) ListActiveProducts(ctx context.Context) ([]domain.Product, error) {
+func (r *CatalogRepository) ListActiveProducts(ctx context.Context) (products []domain.Product, err error) {
 	cursor, err := r.products.Find(ctx, activeCatalogFilter(), options.Find().SetSort(catalogSort()))
 	if err != nil {
 		return nil, fmt.Errorf("list products: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	var documents []productDocument
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, fmt.Errorf("decode products: %w", err)
 	}
 
-	products := make([]domain.Product, len(documents))
+	products = make([]domain.Product, len(documents))
 	for index, document := range documents {
 		products[index] = document.toDomain()
 	}
@@ -96,19 +100,21 @@ func (r *CatalogRepository) ListActiveProducts(ctx context.Context) ([]domain.Pr
 }
 
 // ListActiveAddons devolve adicionais ativos ordenados para exibição.
-func (r *CatalogRepository) ListActiveAddons(ctx context.Context) ([]domain.Addon, error) {
+func (r *CatalogRepository) ListActiveAddons(ctx context.Context) (addons []domain.Addon, err error) {
 	cursor, err := r.addons.Find(ctx, activeCatalogFilter(), options.Find().SetSort(catalogSort()))
 	if err != nil {
 		return nil, fmt.Errorf("list addons: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	var documents []addonDocument
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, fmt.Errorf("decode addons: %w", err)
 	}
 
-	addons := make([]domain.Addon, len(documents))
+	addons = make([]domain.Addon, len(documents))
 	for index, document := range documents {
 		addons[index] = document.toDomain()
 	}
@@ -116,19 +122,21 @@ func (r *CatalogRepository) ListActiveAddons(ctx context.Context) ([]domain.Addo
 }
 
 // ListActiveDeliveryZones devolve zonas ativas ordenadas para exibição.
-func (r *CatalogRepository) ListActiveDeliveryZones(ctx context.Context) ([]domain.DeliveryZone, error) {
+func (r *CatalogRepository) ListActiveDeliveryZones(ctx context.Context) (zones []domain.DeliveryZone, err error) {
 	cursor, err := r.deliveryZones.Find(ctx, activeCatalogFilter(), options.Find().SetSort(catalogSort()))
 	if err != nil {
 		return nil, fmt.Errorf("list delivery zones: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	var documents []deliveryZoneDocument
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, fmt.Errorf("decode delivery zones: %w", err)
 	}
 
-	zones := make([]domain.DeliveryZone, len(documents))
+	zones = make([]domain.DeliveryZone, len(documents))
 	for index, document := range documents {
 		zones[index] = document.toDomain()
 	}

@@ -160,6 +160,8 @@ brocados-lanches/
 | pnpm | 10.2 |
 | Docker + Compose | Docker 29 / Compose v2.20+ |
 
+Quem usa asdf pode adotar as versões fixadas em `.tool-versions` (Node 22.23.5). Para o lint completo do backend, instale o `golangci-lint` v2 (`go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0`); sem ele, `make lint` cai para `go vet`.
+
 ### Com Docker Compose
 
 ```bash

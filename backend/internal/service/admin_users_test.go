@@ -24,7 +24,6 @@ type fakeAdminUsersRepository struct {
 	listErr    error
 	auditErr   error
 	ownersErr  error
-	hashErr    error
 }
 
 func newFakeAdminUsersRepository() *fakeAdminUsersRepository {

@@ -21,7 +21,6 @@ type fakeAdminCatalogHandlerService struct {
 	product       domain.Product
 	addon         domain.Addon
 	zone          domain.DeliveryZone
-	pageMeta      adminMeta
 	actorID       string
 	entityID      string
 	categoryPatch domain.CategoryPatch

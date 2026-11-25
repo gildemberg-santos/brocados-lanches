@@ -448,6 +448,8 @@ Antes de lançamento:
 
 Falha em gate bloqueia merge/lançamento; não usar `--no-verify` nem desativar verificação.
 
+O backend usa `golangci-lint` v2 quando instalado; sem ele, `make lint` faz apenas `go vet` e pode deixar problemas passar. O frontend exige Node 22.12 ou superior (fixado em `.tool-versions` para asdf).
+
 ---
 
 ## 13. Bug, regressão e evidência

@@ -240,7 +240,7 @@ func applyDocument(
 	return int(updateResult.MatchedCount + updateResult.UpsertedCount), nil
 }
 
-func loadCategoryIDs(ctx context.Context, database *mongo.Database) (map[string]bson.ObjectID, error) {
+func loadCategoryIDs(ctx context.Context, database *mongo.Database) (rows map[string]bson.ObjectID, err error) {
 	cursor, err := database.Collection(CollectionCategories).Find(
 		ctx,
 		bson.D{},
@@ -252,9 +252,11 @@ func loadCategoryIDs(ctx context.Context, database *mongo.Database) (map[string]
 	if err != nil {
 		return nil, fmt.Errorf("load categories: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
-	rows := make(map[string]bson.ObjectID)
+	rows = make(map[string]bson.ObjectID)
 	for cursor.Next(ctx) {
 		var row struct {
 			ID   bson.ObjectID `bson:"_id"`

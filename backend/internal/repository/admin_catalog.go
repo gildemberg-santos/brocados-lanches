@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -219,7 +220,7 @@ func adminList[T any](
 	extra bson.D,
 	allowedSort []string,
 	target *[]T,
-) (int64, error) {
+) (total int64, err error) {
 	filter := bson.D{}
 	if len(extra) > 0 {
 		filter = append(filter, extra...)
@@ -236,7 +237,7 @@ func adminList[T any](
 		filter = append(filter, bson.E{Key: "$or", Value: conditions})
 	}
 
-	total, err := collection.CountDocuments(ctx, filter)
+	total, err = collection.CountDocuments(ctx, filter)
 	if err != nil {
 		return 0, fmt.Errorf("count documents: %w", err)
 	}
@@ -253,7 +254,9 @@ func adminList[T any](
 	if err != nil {
 		return 0, fmt.Errorf("find documents: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	if err := cursor.All(ctx, target); err != nil {
 		return 0, fmt.Errorf("decode documents: %w", err)

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -25,7 +26,7 @@ func (r *AdminRepository) AdminCreateUser(ctx context.Context, user domain.Admin
 }
 
 // ListAdminUsers devolve uma página de usuários do painel.
-func (r *AdminRepository) ListAdminUsers(ctx context.Context, query domain.AdminListQuery) ([]domain.AdminUser, int64, error) {
+func (r *AdminRepository) ListAdminUsers(ctx context.Context, query domain.AdminListQuery) (users []domain.AdminUser, total int64, err error) {
 	filter := bson.D{}
 	if query.Search != "" {
 		pattern := regexp.QuoteMeta(query.Search)
@@ -56,18 +57,20 @@ func (r *AdminRepository) ListAdminUsers(ctx context.Context, query domain.Admin
 	if err != nil {
 		return nil, 0, fmt.Errorf("list admin users: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	var documents []adminUserDocument
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, 0, fmt.Errorf("decode admin users: %w", err)
 	}
-	users := make([]domain.AdminUser, len(documents))
+	users = make([]domain.AdminUser, len(documents))
 	for index, document := range documents {
 		users[index] = document.toDomain().Public()
 	}
 
-	total, err := r.users.CountDocuments(ctx, filter)
+	total, err = r.users.CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count admin users: %w", err)
 	}
@@ -136,7 +139,7 @@ func (r *AdminRepository) insertAuditLog(ctx context.Context, audit domain.Audit
 }
 
 // ListAuditLogs devolve uma página de auditoria com filtros opcionais.
-func (r *AdminRepository) ListAuditLogs(ctx context.Context, query domain.AuditListQuery) ([]domain.AuditLog, int64, error) {
+func (r *AdminRepository) ListAuditLogs(ctx context.Context, query domain.AuditListQuery) (logs []domain.AuditLog, total int64, err error) {
 	filter := bson.D{}
 	if query.ActorID != "" {
 		objectID, err := bson.ObjectIDFromHex(query.ActorID)
@@ -171,13 +174,15 @@ func (r *AdminRepository) ListAuditLogs(ctx context.Context, query domain.AuditL
 	if err != nil {
 		return nil, 0, fmt.Errorf("list audit logs: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
 
 	var documents []auditLogDocument
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, 0, fmt.Errorf("decode audit logs: %w", err)
 	}
-	logs := make([]domain.AuditLog, len(documents))
+	logs = make([]domain.AuditLog, len(documents))
 	for index, document := range documents {
 		logs[index] = domain.AuditLog{
 			ID:        document.ID.Hex(),
@@ -191,7 +196,7 @@ func (r *AdminRepository) ListAuditLogs(ctx context.Context, query domain.AuditL
 		}
 	}
 
-	total, err := r.auditLogs.CountDocuments(ctx, filter)
+	total, err = r.auditLogs.CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count audit logs: %w", err)
 	}

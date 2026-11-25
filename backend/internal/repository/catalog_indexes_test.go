@@ -136,7 +136,11 @@ func listIndexes(t *testing.T, ctx context.Context, collection *mongo.Collection
 	if err != nil {
 		t.Fatalf("Indexes().List() error = %v", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			t.Errorf("close index cursor: %v", err)
+		}
+	}()
 
 	var indexes []bson.M
 	if err := cursor.All(ctx, &indexes); err != nil {
