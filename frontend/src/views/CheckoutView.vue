@@ -50,6 +50,10 @@ const isLoading = computed(
     zones.state === 'loading',
 )
 const lines = computed(() => buildCartLines(cart.items, menu.products).lines)
+const missingDeliveryZone = computed(
+  () => form.value.fulfillment === 'delivery' && form.value.zoneId === '',
+)
+const canQuote = computed(() => !cart.isEmpty && !missingDeliveryZone.value)
 const quoteTotalCents = computed(() => quote.value?.totalCents ?? null)
 const canSubmit = computed(
   () => !cart.isEmpty && !submitting.value && !quoteLoading.value && quote.value !== null,
@@ -60,8 +64,10 @@ function quoteSignature(): string {
 }
 
 async function requestQuote(): Promise<void> {
-  if (cart.isEmpty) {
+  if (!canQuote.value) {
     quote.value = null
+    quotedRequest.value = ''
+    quoteError.value = ''
     return
   }
 
@@ -84,6 +90,9 @@ async function requestQuote(): Promise<void> {
 function scheduleQuote(): void {
   if (quoteTimer !== null) {
     clearTimeout(quoteTimer)
+  }
+  if (!canQuote.value) {
+    return
   }
   quoteTimer = setTimeout(() => {
     void requestQuote()
@@ -412,6 +421,7 @@ onUnmounted(() => {
             <div>
               <dt>Total cotado</dt>
               <dd v-if="quote"><PriceText :value-cents="quote.totalCents" /></dd>
+              <dd v-else-if="missingDeliveryZone">Escolha a zona para calcular</dd>
               <dd v-else>Aguardando cotação</dd>
             </div>
           </dl>
@@ -423,7 +433,10 @@ onUnmounted(() => {
             <BaseButton type="submit" :loading="submitting" :disabled="!canSubmit">
               {{ submitting ? 'Enviando pedido…' : 'Enviar pedido' }}
             </BaseButton>
-            <p v-if="!quote && !quoteError" class="checkout-hint">
+            <p v-if="missingDeliveryZone" class="checkout-hint">
+              Escolha uma zona de entrega para calcular o total.
+            </p>
+            <p v-else-if="!quote && !quoteError" class="checkout-hint">
               Calculando o total no servidor…
             </p>
           </div>

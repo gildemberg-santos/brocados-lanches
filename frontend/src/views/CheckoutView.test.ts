@@ -104,9 +104,16 @@ async function mountCheckout(options: MountOptions = {}) {
   return { wrapper, cart, router }
 }
 
-async function fillForm(
-  wrapper: Awaited<ReturnType<typeof mountCheckout>>['wrapper'],
-): Promise<void> {
+type CheckoutWrapper = Awaited<ReturnType<typeof mountCheckout>>['wrapper']
+
+async function chooseDeliveryZone(wrapper: CheckoutWrapper): Promise<void> {
+  await wrapper.get('select[name="zoneId"]').setValue('zona-1')
+  await flushPromises()
+  vi.advanceTimersByTime(300)
+  await flushPromises()
+}
+
+async function fillForm(wrapper: CheckoutWrapper): Promise<void> {
   await wrapper.get('select[name="zoneId"]').setValue('zona-1')
   await wrapper.get('input[name="customerName"]').setValue('Maria Silva')
   await wrapper.get('input[name="phone"]').setValue('85999999999')
@@ -139,8 +146,17 @@ describe('CheckoutView', () => {
     expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
   })
 
+  it('não cota o pedido após recarregar sem zona de entrega', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Escolha uma zona de entrega para calcular o total.')
+    expect(wrapper.text()).not.toContain('Não foi possível')
+  })
+
   it('shows server totals and catalog item names', async () => {
     const { wrapper } = await mountCheckout({ seed: true })
+    await chooseDeliveryZone(wrapper)
 
     expect(wrapper.text()).toContain('23,00')
     expect(wrapper.text()).toContain('8,00')
@@ -151,6 +167,7 @@ describe('CheckoutView', () => {
 
   it('shows a quote error with retry', async () => {
     const { wrapper } = await mountCheckout({ seed: true, quoteError: true })
+    await chooseDeliveryZone(wrapper)
     const review = wrapper.get('section[aria-labelledby="review-title"]')
 
     expect(wrapper.text()).toContain('Não foi possível')
@@ -161,6 +178,7 @@ describe('CheckoutView', () => {
 
   it('mantém a revisão e o envio como última etapa com o total cotado', async () => {
     const { wrapper } = await mountCheckout({ seed: true })
+    await chooseDeliveryZone(wrapper)
     const review = wrapper.get('section[aria-labelledby="review-title"]')
 
     expect(wrapper.get('#review-title').text()).toContain('5. Revisão e envio')
@@ -209,8 +227,14 @@ describe('CheckoutView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
+    expect(wrapper.get('[name="zoneId"]').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#checkout-zoneId-error').text()).not.toBe('')
+
+    await chooseDeliveryZone(wrapper)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
     const fields: ReadonlyArray<readonly [name: string, id: string]> = [
-      ['zoneId', 'checkout-zoneId'],
       ['street', 'checkout-street'],
       ['number', 'checkout-number'],
       ['district', 'checkout-district'],

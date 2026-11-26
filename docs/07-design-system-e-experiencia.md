@@ -269,6 +269,7 @@ Regras:
 - Telefone com máscara e normalização.
 - Erros por campo, com foco no primeiro erro.
 - Total vem de `/orders/quote`; se a cotação falhar, não enviar.
+- Na entrega, a cotação só é solicitada após escolher a zona. Depois de recarregar a página, o resumo pede a zona em vez de enviar uma cotação incompleta (`422`).
 - Botão de envio desabilitado durante a requisição e enquanto a cotação não chega.
 - Se a loja fechar, mensagem clara e ação de voltar ao cardápio.
 - Se o pedido for criado (`201`), limpar carrinho e ir para confirmação; no replay idempotente (`200`), o mesmo destino é usado.
