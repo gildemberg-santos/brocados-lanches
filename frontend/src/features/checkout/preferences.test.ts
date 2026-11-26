@@ -4,7 +4,9 @@ import { initialCheckoutForm } from './checkout'
 import type { CheckoutForm } from './checkout'
 import {
   CHECKOUT_PREFERENCES_KEY,
+  applyCheckoutPreferences,
   buildCheckoutPreferences,
+  checkoutPreferencesMatchPhone,
   clearCheckoutPreferences,
   hasCheckoutPreferences,
   loadCheckoutPreferences,
@@ -105,6 +107,55 @@ describe('preferências do checkout', () => {
       zipCode: '',
       paymentMethod: 'card',
     })
+  })
+
+  it('reconhece o cliente pelo telefone com ou sem máscara', () => {
+    const preferences = buildCheckoutPreferences(filledForm())
+
+    expect(checkoutPreferencesMatchPhone(preferences, '85999999999')).toBe(true)
+    expect(checkoutPreferencesMatchPhone(preferences, '(85) 99999-9999')).toBe(true)
+    expect(checkoutPreferencesMatchPhone(preferences, '85988888888')).toBe(false)
+    expect(checkoutPreferencesMatchPhone(preferences, '')).toBe(false)
+  })
+
+  it('aplica os dados associados sem sobrescrever identidade, observação ou troco', () => {
+    const preferences = buildCheckoutPreferences(filledForm())
+    const form = {
+      ...initialCheckoutForm,
+      customerName: 'Outro Nome',
+      phone: '(85) 99999-9999',
+      note: 'Sem cebola',
+      changeFor: '50,00',
+    }
+
+    const result = applyCheckoutPreferences(form, preferences, ['zona-1', 'zona-2'])
+
+    expect(result).toMatchObject({
+      customerName: 'Outro Nome',
+      phone: '(85) 99999-9999',
+      fulfillment: 'delivery',
+      zoneId: 'zona-1',
+      street: 'Rua das Flores',
+      number: '450',
+      complement: 'Apto 2',
+      district: 'Tapera',
+      city: 'Aquiraz',
+      state: 'CE',
+      zipCode: '61700000',
+      paymentMethod: 'pix',
+      note: 'Sem cebola',
+      changeFor: '50,00',
+    })
+  })
+
+  it('descarta a zona salva quando ela não está mais ativa', () => {
+    const result = applyCheckoutPreferences(
+      initialCheckoutForm,
+      buildCheckoutPreferences(filledForm()),
+      [],
+    )
+
+    expect(result.zoneId).toBe('')
   })
 
   it('informa e apaga as preferências salvas', () => {

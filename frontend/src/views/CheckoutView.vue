@@ -19,11 +19,14 @@ import {
 } from '../features/checkout/checkout'
 import { saveHandoffUrl } from '../features/checkout/handoff'
 import {
+  applyCheckoutPreferences,
+  checkoutPreferencesMatchPhone,
   clearCheckoutPreferences,
   loadCheckoutPreferences,
   saveCheckoutPreferences,
 } from '../features/checkout/preferences'
 import type { CheckoutErrors, CheckoutForm } from '../features/checkout/checkout'
+import type { CheckoutPreferences } from '../features/checkout/preferences'
 import { createOrder, fetchOrderQuote } from '../services/orders'
 import { useCartStore } from '../stores/cart'
 import { useDeliveryZonesStore } from '../stores/deliveryZones'
@@ -45,6 +48,7 @@ const submitting = ref(false)
 const submitError = ref('')
 const idempotencyKey = ref(createIdempotencyKey())
 const lastRequestSignature = ref('')
+const savedPreferences = ref<CheckoutPreferences | null>(null)
 let quoteTimer: ReturnType<typeof setTimeout> | null = null
 
 const isLoading = computed(
@@ -109,6 +113,14 @@ function scheduleQuote(): void {
   }, 250)
 }
 
+function applySavedPreferences(preferences: CheckoutPreferences): void {
+  form.value = applyCheckoutPreferences(
+    form.value,
+    preferences,
+    zones.zones.map((zone) => zone.id),
+  )
+}
+
 async function submit(): Promise<void> {
   submitError.value = ''
   errors.value = validateCheckoutForm(form.value, quoteTotalCents.value)
@@ -149,6 +161,7 @@ async function submit(): Promise<void> {
       saveCheckoutPreferences(form.value)
     } else {
       clearCheckoutPreferences()
+      savedPreferences.value = null
     }
     cart.clear()
     await router.push({
@@ -173,10 +186,21 @@ watch(
 )
 
 watch(
+  () => form.value.phone,
+  (phone) => {
+    const preferences = savedPreferences.value
+    if (preferences && checkoutPreferencesMatchPhone(preferences, phone)) {
+      applySavedPreferences(preferences)
+    }
+  },
+)
+
+watch(
   () => form.value.saveCustomerProfile,
   (save) => {
     if (!save) {
       clearCheckoutPreferences()
+      savedPreferences.value = null
     }
   },
 )
@@ -185,11 +209,12 @@ onMounted(async () => {
   await Promise.all([menu.ensureLoaded(), zones.ensureLoaded()])
 
   const preferences = loadCheckoutPreferences()
+  savedPreferences.value = preferences
   if (preferences) {
-    form.value = { ...form.value, ...preferences }
-    const zoneStillActive = zones.zones.some((zone) => zone.id === form.value.zoneId)
-    if (!zoneStillActive) {
-      form.value.zoneId = ''
+    form.value.customerName = preferences.customerName
+    form.value.phone = preferences.phone
+    if (checkoutPreferencesMatchPhone(preferences, form.value.phone)) {
+      applySavedPreferences(preferences)
     }
   }
 
@@ -229,8 +254,52 @@ onUnmounted(() => {
 
     <div v-else class="checkout-layout">
       <form class="checkout-form" novalidate @submit.prevent="submit">
+        <section class="checkout-section" aria-labelledby="customer-title">
+          <h2 id="customer-title">1. Seus dados</h2>
+          <p class="checkout-preferences-note">
+            Identifique o cliente primeiro para preencher as escolhas salvas neste navegador.
+          </p>
+          <label class="field">
+            <span>Nome completo</span>
+            <input
+              v-model="form.customerName"
+              id="checkout-customerName"
+              name="customerName"
+              type="text"
+              autocomplete="name"
+              :aria-invalid="errors.customerName ? 'true' : undefined"
+              :aria-describedby="errors.customerName ? 'checkout-customerName-error' : undefined"
+            />
+            <small v-if="errors.customerName" id="checkout-customerName-error" class="field-error">
+              {{ errors.customerName }}
+            </small>
+          </label>
+          <label class="field">
+            <span>Telefone</span>
+            <input
+              :value="form.phone"
+              id="checkout-phone"
+              name="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="(85) 99999-9999"
+              :aria-invalid="errors.phone ? 'true' : undefined"
+              :aria-describedby="errors.phone ? 'checkout-phone-error' : undefined"
+              @input="form.phone = formatPhone(($event.target as HTMLInputElement).value)"
+            />
+            <small v-if="errors.phone" id="checkout-phone-error" class="field-error">
+              {{ errors.phone }}
+            </small>
+          </label>
+          <label class="choice choice--opt-in">
+            <input v-model="form.saveCustomerProfile" name="saveCustomerProfile" type="checkbox" />
+            <span>Salvar meus dados para agilizar o próximo pedido</span>
+          </label>
+        </section>
+
         <section class="checkout-section" aria-labelledby="fulfillment-title">
-          <h2 id="fulfillment-title">1. Recebimento</h2>
+          <h2 id="fulfillment-title">2. Recebimento</h2>
           <div class="choice-group">
             <label class="choice">
               <input v-model="form.fulfillment" name="fulfillment" type="radio" value="delivery" />
@@ -248,7 +317,7 @@ onUnmounted(() => {
           class="checkout-section"
           aria-labelledby="address-title"
         >
-          <h2 id="address-title">2. Entrega</h2>
+          <h2 id="address-title">3. Entrega</h2>
           <label class="field">
             <span>Zona de entrega</span>
             <select
@@ -361,47 +430,6 @@ onUnmounted(() => {
               </small>
             </label>
           </div>
-        </section>
-
-        <section class="checkout-section" aria-labelledby="customer-title">
-          <h2 id="customer-title">{{ form.fulfillment === 'delivery' ? '3' : '2' }}. Seus dados</h2>
-          <label class="field">
-            <span>Nome completo</span>
-            <input
-              v-model="form.customerName"
-              id="checkout-customerName"
-              name="customerName"
-              type="text"
-              autocomplete="name"
-              :aria-invalid="errors.customerName ? 'true' : undefined"
-              :aria-describedby="errors.customerName ? 'checkout-customerName-error' : undefined"
-            />
-            <small v-if="errors.customerName" id="checkout-customerName-error" class="field-error">
-              {{ errors.customerName }}
-            </small>
-          </label>
-          <label class="field">
-            <span>Telefone</span>
-            <input
-              :value="form.phone"
-              id="checkout-phone"
-              name="phone"
-              type="tel"
-              inputmode="tel"
-              autocomplete="tel"
-              placeholder="(85) 99999-9999"
-              :aria-invalid="errors.phone ? 'true' : undefined"
-              :aria-describedby="errors.phone ? 'checkout-phone-error' : undefined"
-              @input="form.phone = formatPhone(($event.target as HTMLInputElement).value)"
-            />
-            <small v-if="errors.phone" id="checkout-phone-error" class="field-error">
-              {{ errors.phone }}
-            </small>
-          </label>
-          <label class="choice choice--opt-in">
-            <input v-model="form.saveCustomerProfile" name="saveCustomerProfile" type="checkbox" />
-            <span>Salvar meus dados para agilizar o próximo pedido</span>
-          </label>
         </section>
 
         <section class="checkout-section" aria-labelledby="payment-title">

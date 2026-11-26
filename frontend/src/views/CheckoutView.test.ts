@@ -210,6 +210,45 @@ describe('CheckoutView', () => {
     expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
   })
 
+  it('preenche os dados associados quando o telefone identifica o cliente salvo', async () => {
+    seedPreferences({
+      fulfillment: 'delivery',
+      zoneId: 'zona-1',
+      customerName: 'João Souza',
+      phone: '85988888888',
+      street: 'Rua Salva',
+      number: '10',
+      complement: '',
+      district: 'Centro',
+      city: 'Aquiraz',
+      state: 'CE',
+      zipCode: '61700000',
+      paymentMethod: 'pix',
+    })
+
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    await wrapper.get('input[name="customerName"]').setValue('Outro Nome')
+    await wrapper.get('input[name="phone"]').setValue('85999999999')
+    await wrapper.get('select[name="zoneId"]').setValue('')
+    await wrapper.get('input[name="street"]').setValue('')
+    await flushPromises()
+
+    await wrapper.get('input[name="phone"]').setValue('85988888888')
+    await flushPromises()
+
+    expect((wrapper.get('input[name="customerName"]').element as HTMLInputElement).value).toBe(
+      'Outro Nome',
+    )
+    expect((wrapper.get('select[name="zoneId"]').element as HTMLSelectElement).value).toBe('zona-1')
+    expect((wrapper.get('input[name="street"]').element as HTMLInputElement).value).toBe(
+      'Rua Salva',
+    )
+    expect(
+      (wrapper.get('input[name="paymentMethod"][value="pix"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+  })
+
   it('avisa que as escolhas podem ser salvas e oferece opt-out', async () => {
     const { wrapper } = await mountCheckout({ seed: true })
 
@@ -283,6 +322,22 @@ describe('CheckoutView', () => {
     }
     expect(wrapper.find('#customer-title').exists()).toBe(true)
     expect(wrapper.find('#payment-title').exists()).toBe(true)
+  })
+
+  it('coloca a identificação do cliente antes das demais etapas', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    const titles = wrapper.findAll('section[aria-labelledby] h2').map((title) => title.text())
+    expect(titles).toEqual([
+      '1. Seus dados',
+      '2. Recebimento',
+      '3. Entrega',
+      '4. Pagamento',
+      '5. Revisão e envio',
+    ])
+    expect(wrapper.text()).toContain(
+      'Identifique o cliente primeiro para preencher as escolhas salvas neste navegador.',
+    )
   })
 
   it('associa cada erro de campo ao input correspondente', async () => {

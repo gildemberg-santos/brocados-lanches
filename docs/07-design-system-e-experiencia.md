@@ -256,14 +256,15 @@ Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummary
 
 Etapas visuais:
 
-1. Recebimento (delivery/retirada).
-2. Endereço/zona (somente delivery).
-3. Dados do cliente.
+1. Dados do cliente (nome e telefone).
+2. Recebimento (delivery/retirada).
+3. Endereço/zona (somente delivery).
 4. Pagamento e troco.
 5. Revisão e envio.
 
 Regras:
 
+- O cliente é identificado primeiro; quando o telefone informado corresponde às preferências salvas neste navegador, o checkout preenche entrega, endereço, zona e pagamento. Não há consulta pública por telefone ao perfil do servidor (D-038).
 - Retirada oculta endereço e zera taxa.
 - Zona inativa não aparece.
 - Telefone com máscara e normalização.

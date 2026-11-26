@@ -1,4 +1,4 @@
-import type { CheckoutForm, Fulfillment, PaymentMethod } from './checkout'
+import { normalizePhone, type CheckoutForm, type Fulfillment, type PaymentMethod } from './checkout'
 
 export const CHECKOUT_PREFERENCES_KEY = 'brocados:checkout-preferences'
 
@@ -116,6 +116,36 @@ export function loadCheckoutPreferences(): CheckoutPreferences | null {
     }
   } catch {
     return null
+  }
+}
+
+/** Só completa os dados associados quando o telefone identifica o mesmo cliente. */
+export function checkoutPreferencesMatchPhone(
+  preferences: CheckoutPreferences,
+  phone: string,
+): boolean {
+  const savedPhone = normalizePhone(preferences.phone)
+  return savedPhone !== '' && savedPhone === normalizePhone(phone)
+}
+
+/** Aplica o que depende do cliente identificado; nunca sobrescreve nome/telefone. */
+export function applyCheckoutPreferences(
+  form: CheckoutForm,
+  preferences: CheckoutPreferences,
+  activeZoneIds: readonly string[] = [],
+): CheckoutForm {
+  return {
+    ...form,
+    fulfillment: preferences.fulfillment,
+    zoneId: activeZoneIds.includes(preferences.zoneId) ? preferences.zoneId : '',
+    street: preferences.street,
+    number: preferences.number,
+    complement: preferences.complement,
+    district: preferences.district,
+    city: preferences.city,
+    state: preferences.state,
+    zipCode: preferences.zipCode,
+    paymentMethod: preferences.paymentMethod,
   }
 }
 
