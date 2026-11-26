@@ -18,7 +18,11 @@ import {
   validateCheckoutForm,
 } from '../features/checkout/checkout'
 import { saveHandoffUrl } from '../features/checkout/handoff'
-import { loadCheckoutPreferences, saveCheckoutPreferences } from '../features/checkout/preferences'
+import {
+  clearCheckoutPreferences,
+  loadCheckoutPreferences,
+  saveCheckoutPreferences,
+} from '../features/checkout/preferences'
 import type { CheckoutErrors, CheckoutForm } from '../features/checkout/checkout'
 import { createOrder, fetchOrderQuote } from '../services/orders'
 import { useCartStore } from '../stores/cart'
@@ -141,7 +145,11 @@ async function submit(): Promise<void> {
   try {
     const created = await createOrder(request, idempotencyKey.value)
     saveHandoffUrl(created.publicId, created.whatsappUrl)
-    saveCheckoutPreferences(form.value)
+    if (form.value.saveCustomerProfile) {
+      saveCheckoutPreferences(form.value)
+    } else {
+      clearCheckoutPreferences()
+    }
     cart.clear()
     await router.push({
       name: 'order',
@@ -162,6 +170,15 @@ watch(
     scheduleQuote()
   },
   { deep: true },
+)
+
+watch(
+  () => form.value.saveCustomerProfile,
+  (save) => {
+    if (!save) {
+      clearCheckoutPreferences()
+    }
+  },
 )
 
 onMounted(async () => {
@@ -198,7 +215,8 @@ onUnmounted(() => {
     <RouterLink class="back-link" :to="{ name: 'cart' }">← Voltar ao carrinho</RouterLink>
     <h1>Finalizar pedido</h1>
     <p class="checkout-preferences-note">
-      Suas escolhas ficam salvas neste navegador para o próximo pedido. Você pode apagá-las na
+      Suas escolhas podem ser salvas neste navegador e no servidor para o próximo pedido. Você pode
+      desativar no formulário e apagar na
       <RouterLink to="/privacidade">política de privacidade</RouterLink>.
     </p>
 
@@ -379,6 +397,10 @@ onUnmounted(() => {
             <small v-if="errors.phone" id="checkout-phone-error" class="field-error">
               {{ errors.phone }}
             </small>
+          </label>
+          <label class="choice choice--opt-in">
+            <input v-model="form.saveCustomerProfile" name="saveCustomerProfile" type="checkbox" />
+            <span>Salvar meus dados para agilizar o próximo pedido</span>
           </label>
         </section>
 
@@ -583,6 +605,15 @@ onUnmounted(() => {
 
 .choice:has(input:checked) {
   border-color: var(--brand-primary);
+}
+
+.choice--opt-in {
+  width: 100%;
+  align-items: flex-start;
+}
+
+.choice--opt-in input {
+  margin-top: 4px;
 }
 
 .field {

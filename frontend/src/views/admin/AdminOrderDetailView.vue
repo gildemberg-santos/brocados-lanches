@@ -130,6 +130,52 @@ watch(orderId, (next) => {
         </dl>
       </section>
 
+      <section
+        v-if="order.customerProfile"
+        class="admin-page__section"
+        aria-labelledby="order-profile-title"
+      >
+        <h2 id="order-profile-title">Cliente recorrente</h2>
+        <p v-if="order.customerProfile.optedOut" class="admin-page__hint">
+          Perfil desativado por solicitação do cliente; apenas o pedido permanece registrado.
+        </p>
+        <dl v-else class="detail-list">
+          <div>
+            <dt>Pedidos com este telefone</dt>
+            <dd>{{ order.customerProfile.orderCount }}</dd>
+          </div>
+          <div v-if="order.customerProfile.lastOrderAt">
+            <dt>Último pedido</dt>
+            <dd>{{ formatOrderDateTime(order.customerProfile.lastOrderAt) }}</dd>
+          </div>
+          <div v-if="order.customerProfile.address">
+            <dt>Último endereço</dt>
+            <dd>
+              {{ order.customerProfile.address.street }},
+              {{ order.customerProfile.address.number }} —
+              {{ order.customerProfile.address.district }},
+              {{ order.customerProfile.address.city }}/{{ order.customerProfile.address.state }}
+            </dd>
+          </div>
+          <div v-if="order.customerProfile.zoneName">
+            <dt>Última zona</dt>
+            <dd>{{ order.customerProfile.zoneName }}</dd>
+          </div>
+          <div v-if="order.customerProfile.fulfillment">
+            <dt>Recebimento</dt>
+            <dd>{{ FULFILLMENT_LABELS[order.customerProfile.fulfillment] }}</dd>
+          </div>
+          <div v-if="order.customerProfile.paymentMethod">
+            <dt>Pagamento</dt>
+            <dd>{{ PAYMENT_LABELS[order.customerProfile.paymentMethod] }}</dd>
+          </div>
+          <div v-if="order.customerProfile.retainedUntil">
+            <dt>Perfil mantido até</dt>
+            <dd>{{ formatOrderDateTime(order.customerProfile.retainedUntil) }}</dd>
+          </div>
+        </dl>
+      </section>
+
       <section class="admin-page__section" aria-labelledby="order-items-title">
         <h2 id="order-items-title">Itens</h2>
         <ul class="detail-items">
@@ -237,6 +283,13 @@ watch(orderId, (next) => {
 .admin-page__error {
   border-color: var(--status-error);
   color: var(--status-error);
+}
+
+.admin-page__hint {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
+  line-height: 1.5;
 }
 
 .admin-page__section {

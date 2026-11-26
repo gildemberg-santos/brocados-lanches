@@ -1,7 +1,7 @@
 # Modelo de Dados — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
+**Versão:** 1.1  
+**Atualizado em:** 26/11/2026  
 **Banco:** MongoDB 8+  
 **Bancos:** `brocados_dev`, `brocados_test`, `brocados` (produção)  
 **Relacionados:** `04-arquitetura.md`, `06-contrato-api.md`, `09-qualidade-e-testes.md`.
@@ -20,7 +20,7 @@
 - Todo documento mutável tem `createdAt` e `updatedAt`.
 - Documentos criados por seed de desenvolvimento carregam `seed.fictitious: true` e `seed.source`.
 - Documentos de catálogo não são apagados fisicamente; usam `active: false`.
-- Campos de PII existem apenas em `orders` e `admin_users`.
+- Campos de PII existem apenas em `orders`, `customer_profiles` e `admin_users`.
 - Não usar arrays ilimitados dentro de documentos.
 
 ---
@@ -32,6 +32,7 @@ erDiagram
   CATEGORIES ||--o{ PRODUCTS : contains
   PRODUCTS }o--o{ ADDONS : allows
   DELIVERY_ZONES ||--o{ ORDERS : used_by
+  ORDERS ||--o| CUSTOMER_PROFILES : recognized_by_phone
   ORDERS ||--|{ ORDER_ITEMS : has
   ADMIN_USERS ||--o{ SESSIONS : owns
   ADMIN_USERS ||--o{ AUDIT_LOGS : acts
@@ -408,6 +409,40 @@ Operação:
 findOneAndUpdate({_id: "orders"}, {$inc: {seq: 1}}, {upsert: true, returnDocument: "after"})
 ```
 
+### 3.11 `customer_profiles`
+
+Perfil de conveniência reconhecido pelo telefone normalizado. Não é uma API pública, não recebe `note` nem `payment.changeForCents` e não altera preço, taxa, disponibilidade ou status. A escrita acontece depois que o pedido foi gravado e falha não impede a criação do pedido (D-038).
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `_id` | ObjectID | sim | |
+| `phoneKey` | string | sim | Só dígitos, com prefixo `55` em números locais; único |
+| `phone` | string | não | Última forma informada pelo cliente |
+| `name` | string | não | Último nome informado |
+| `address` | object | não | Último endereço de entrega |
+| `fulfillment` | enum | não | `delivery` ou `pickup` |
+| `zone` | object | não | Snapshot `{ id, name, feeCents }` |
+| `paymentMethod` | enum | não | `cash`, `card` ou `pix` |
+| `orderCount` | int | sim | Incrementado a cada pedido com perfil ativo |
+| `lastOrderPublicId` | string | não | `publicId` do último pedido |
+| `lastOrderAt` | datetime | não | UTC; redefine a retenção |
+| `optedOut` | bool | sim | `true` mantém apenas um tombstone mínimo |
+| `createdAt` | datetime | sim | UTC |
+| `updatedAt` | datetime | sim | UTC |
+| `expiresAt` | datetime | sim | 24 meses após o último pedido; TTL |
+
+Índices:
+
+- `{ phoneKey: 1 }` único.
+- `{ expiresAt: 1 }` com `expireAfterSeconds: 0` (TTL).
+- `{ lastOrderAt: -1 }`.
+
+`optedOut: true` remove nome, telefone, endereço, zona, forma de entrega/pagamento, contagem e último pedido; mantém apenas `phoneKey`, prazos e o tombstone para impedir recriação automática por pedidos posteriores. A exclusão definitiva também pode ser solicitada pelos canais em `/contato`.
+
+### 3.12 `orders` e `customer_profiles`
+
+O detalhe administrativo do pedido pode exibir `customerProfile` somente para administrador autenticado; nunca há listagem pública nem consulta por telefone. O resumo contém nome, telefone, `orderCount`, último pedido, último endereço, zona, forma de entrega/pagamento, `optedOut`, `updatedAt` e `retainedUntil`, sem `phoneKey`.
+
 ---
 
 ## 4. Invariantes
@@ -461,6 +496,7 @@ Toda transição inválida retorna `409 CONFLICT`.
 | Dado | Retenção proposta | Ação |
 |---|---|---|
 | Pedidos | 24 meses | Anonimizar PII após o prazo |
+| Perfil de conveniência | 24 meses após o último pedido | TTL e tombstone de opt-out |
 | Sessões | 7 dias | TTL |
 | Auditoria | 12 meses | Arquivar/anonimizar |
 | Logs | 30 dias | Expirar |
@@ -474,6 +510,7 @@ Dados pessoais:
 - `orders.customer.phone`
 - `orders.address.*`
 - `orders.items[].note`
+- `customer_profiles.phone`, `customer_profiles.name`, `customer_profiles.address.*`
 - `admin_users.name`, `admin_users.email`
 
 Nunca colocar PII em:

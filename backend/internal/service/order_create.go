@@ -84,7 +84,33 @@ func (s *OrderService) Create(ctx context.Context, request domain.OrderRequest, 
 		}
 		return domain.Order{}, false, err
 	}
+	s.syncCustomerProfile(ctx, stored, request)
 	return stored, false, nil
+}
+
+// syncCustomerProfile registra os dados de conveniência depois que o pedido já
+// foi gravado. Uma falha aqui não desfaz nem bloqueia o pedido.
+func (s *OrderService) syncCustomerProfile(ctx context.Context, order domain.Order, request domain.OrderRequest) {
+	if s.profiles == nil {
+		return
+	}
+
+	now := time.Now().UTC()
+	profile, err := domain.NewCustomerProfileFromOrder(order, now)
+	if err != nil {
+		s.logger.Warn("customer profile skipped", "reason", "invalid_phone")
+		return
+	}
+
+	if request.SaveCustomerProfile != nil && !*request.SaveCustomerProfile {
+		err = s.profiles.OptOut(ctx, profile.PhoneKey, now)
+	} else {
+		err = s.profiles.Upsert(ctx, profile)
+	}
+	if err != nil {
+		// O erro pode carregar detalhe do driver; só a causa genérica entra no log.
+		s.logger.Warn("customer profile update failed", "reason", "write_failed")
+	}
 }
 
 // GetByPublicID devolve o pedido para acompanhamento. O handler escolhe quais

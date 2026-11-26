@@ -24,6 +24,7 @@ export interface CheckoutForm {
   paymentMethod: PaymentMethod
   changeFor: string
   note: string
+  saveCustomerProfile: boolean
 }
 
 export type CheckoutErrors = Partial<Record<keyof CheckoutForm, string>>
@@ -43,6 +44,7 @@ export const initialCheckoutForm: CheckoutForm = {
   paymentMethod: 'cash',
   changeFor: '',
   note: '',
+  saveCustomerProfile: true,
 }
 
 export function createIdempotencyKey(): string {
@@ -130,6 +132,7 @@ export function buildCreateOrderRequest(items: CartItem[], form: CheckoutForm): 
       method: form.paymentMethod,
     },
     note: form.note.trim(),
+    saveCustomerProfile: form.saveCustomerProfile,
   }
 
   if (form.fulfillment === 'delivery') {

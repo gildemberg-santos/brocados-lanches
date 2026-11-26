@@ -56,6 +56,10 @@ type OrderRequest struct {
 	Address     *OrderAddress `json:"address,omitempty"`
 	Payment     OrderPayment  `json:"payment"`
 	Note        string        `json:"note,omitempty"`
+
+	// SaveCustomerProfile é opcional por compatibilidade: ausência significa
+	// salvar. Quando false, o perfil de conveniência é desativado no servidor.
+	SaveCustomerProfile *bool `json:"saveCustomerProfile,omitempty"`
 }
 
 // OrderCustomer são dados pessoais mínimos para executar o pedido.

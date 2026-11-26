@@ -210,11 +210,14 @@ describe('CheckoutView', () => {
     expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
   })
 
-  it('avisa que as escolhas ficam salvas neste navegador', async () => {
+  it('avisa que as escolhas podem ser salvas e oferece opt-out', async () => {
     const { wrapper } = await mountCheckout({ seed: true })
 
-    expect(wrapper.text()).toContain('Suas escolhas ficam salvas neste navegador')
+    expect(wrapper.text()).toContain('Suas escolhas podem ser salvas neste navegador e no servidor')
     expect(wrapper.find('a[href="/privacidade"]').exists()).toBe(true)
+    expect(
+      (wrapper.get('input[name="saveCustomerProfile"]').element as HTMLInputElement).checked,
+    ).toBe(true)
   })
 
   it('shows server totals and catalog item names', async () => {
@@ -337,6 +340,7 @@ describe('CheckoutView', () => {
     expect(mockedCreateOrder).toHaveBeenCalledTimes(1)
     const [request, key] = mockedCreateOrder.mock.calls[0]
     expect(request.payment.changeForCents).toBe(5000)
+    expect(request.saveCustomerProfile).toBe(true)
     expect(key.length).toBeGreaterThanOrEqual(16)
     expect(cart.isEmpty).toBe(true)
     expect(router.currentRoute.value.name).toBe('order')
@@ -359,6 +363,29 @@ describe('CheckoutView', () => {
     const stored = localStorage.getItem(CHECKOUT_PREFERENCES_KEY) ?? ''
     expect(stored).not.toContain('Sem cebola')
     expect(stored).not.toContain('50,00')
+  })
+
+  it('envia opt-out e apaga as preferências quando o cliente desmarca a opção', async () => {
+    seedPreferences({
+      fulfillment: 'delivery',
+      zoneId: 'zona-1',
+      customerName: 'João Souza',
+      phone: '85988888888',
+      city: 'Aquiraz',
+      state: 'CE',
+    })
+    const { wrapper } = await mountCheckout({ seed: true })
+    expect(loadCheckoutPreferences()).not.toBeNull()
+
+    await wrapper.get('input[name="saveCustomerProfile"]').setValue(false)
+    expect(loadCheckoutPreferences()).toBeNull()
+
+    await fillForm(wrapper)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockedCreateOrder.mock.calls[0][0].saveCustomerProfile).toBe(false)
+    expect(localStorage.getItem(CHECKOUT_PREFERENCES_KEY)).toBeNull()
   })
 
   it('keeps the cart when the order fails', async () => {

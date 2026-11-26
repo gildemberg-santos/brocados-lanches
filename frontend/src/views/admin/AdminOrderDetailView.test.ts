@@ -96,6 +96,48 @@ describe('AdminOrderDetailView', () => {
     expect(wrapper.text()).toContain('Pendente')
   })
 
+  it('mostra o resumo do perfil de conveniência quando o cliente é recorrente', async () => {
+    mockedDetail.mockResolvedValue({
+      ...detail,
+      customerProfile: {
+        name: 'Maria Silva',
+        phone: '+5585999998708',
+        orderCount: 3,
+        lastOrderAt: '2026-11-20T12:00:00Z',
+        fulfillment: 'delivery',
+        zoneName: 'Centro',
+        paymentMethod: 'pix',
+        optedOut: false,
+        retainedUntil: '2028-11-20T12:00:00Z',
+      },
+    })
+
+    const wrapper = await mountView()
+
+    expect(wrapper.get('#order-profile-title').text()).toBe('Cliente recorrente')
+    expect(wrapper.text()).toContain('Pedidos com este telefone')
+    expect(wrapper.text()).toContain('3')
+    expect(wrapper.text()).toContain('Última zona')
+    expect(wrapper.text()).toContain('Centro')
+    expect(wrapper.text()).toContain('Perfil mantido até')
+  })
+
+  it('informa quando o perfil foi desativado', async () => {
+    mockedDetail.mockResolvedValue({
+      ...detail,
+      customerProfile: {
+        name: 'Maria Silva',
+        phone: '+5585999998708',
+        orderCount: 0,
+        optedOut: true,
+      },
+    })
+
+    const wrapper = await mountView()
+
+    expect(wrapper.text()).toContain('Perfil desativado por solicitação do cliente')
+  })
+
   it('envia a transição e confirma o resultado', async () => {
     mockedDetail.mockResolvedValue(detail)
     mockedUpdate.mockResolvedValue({ ...detail, status: 'confirmed' })

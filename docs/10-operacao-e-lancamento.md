@@ -184,6 +184,7 @@ commit → fmt/lint/test/docs/design/build → imagem → preview → aprovaçã
 | Dado | Proposta |
 |---|---|
 | Pedidos | 24 meses; depois anonimizar PII |
+| Perfil de conveniência | 24 meses após o último pedido; TTL e tombstone de opt-out |
 | Sessões | 7 dias (TTL) |
 | Auditoria | 12 meses |
 | Logs | 30 dias |
@@ -309,7 +310,8 @@ Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem s
 - endereço de entrega;
 - observação do pedido;
 - dados de autenticação do admin (nome/e-mail/senha com hash);
-- preferências do checkout no navegador (entrega, zona, nome, telefone, endereço e pagamento), sem observação nem troco; podem ser apagadas em `/privacidade` (D-037).
+- preferências do checkout no navegador (entrega, zona, nome, telefone, endereço e pagamento), sem observação nem troco; podem ser apagadas em `/privacidade` (D-037);
+- perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038).
 
 Não coletar CPF, e-mail de cliente ou dados de cartão.
 
@@ -318,6 +320,7 @@ Não coletar CPF, e-mail de cliente ou dados de cartão.
 - executar o pedido;
 - contatar sobre o pedido;
 - entregar/retirar;
+- conveniência: reaproveitar escolhas no próximo pedido no navegador e no perfil por telefone, com opt-out no checkout e exclusão pelos canais da loja;
 - cumprir obrigação legal;
 - segurança e auditoria.
 
@@ -335,6 +338,7 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 ### 10.4 Retenção e anonimização
 
 - Pedidos: 24 meses; depois remover/mascarar nome, telefone, endereço e observação, preservando estatística.
+- Perfil de conveniência: 24 meses após o último pedido; expira por TTL. No opt-out, dados de conveniência são removidos imediatamente e fica apenas um tombstone com a chave e os prazos.
 - Sessões: TTL de 7 dias.
 - Auditoria: 12 meses, sem PII.
 - Preferências do checkout: até o cliente apagar em `/privacidade` ou limpar os dados do navegador.

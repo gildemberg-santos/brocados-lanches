@@ -19,16 +19,34 @@ type AdminOrderRepository interface {
 
 // AdminOrderService aplica validação, máscara de PII e auditoria à operação.
 type AdminOrderService struct {
-	repo AdminOrderRepository
-	now  func() time.Time
+	repo     AdminOrderRepository
+	profiles CustomerProfileStore
+	now      func() time.Time
+}
+
+// AdminOrderServiceOption adiciona dependências opcionais ao serviço do painel.
+type AdminOrderServiceOption func(*AdminOrderService)
+
+// WithAdminCustomerProfiles permite que o detalhe do pedido mostre o perfil
+// reconhecido pelo telefone, sem criar uma rota pública de consulta.
+func WithAdminCustomerProfiles(store CustomerProfileStore) AdminOrderServiceOption {
+	return func(service *AdminOrderService) {
+		if store != nil {
+			service.profiles = store
+		}
+	}
 }
 
 // NewAdminOrderService valida as dependências do serviço de operação.
-func NewAdminOrderService(repo AdminOrderRepository) (*AdminOrderService, error) {
+func NewAdminOrderService(repo AdminOrderRepository, options ...AdminOrderServiceOption) (*AdminOrderService, error) {
 	if repo == nil {
 		return nil, errors.New("admin order repository is required")
 	}
-	return &AdminOrderService{repo: repo, now: time.Now}, nil
+	service := &AdminOrderService{repo: repo, now: time.Now}
+	for _, option := range options {
+		option(service)
+	}
+	return service, nil
 }
 
 // List devolve a fila com PII mascarada e metadados de paginação.
@@ -62,6 +80,27 @@ func (s *AdminOrderService) Get(ctx context.Context, id string) (domain.Order, e
 		return domain.Order{}, err
 	}
 	return order, nil
+}
+
+// GetCustomerProfile devolve o perfil reconhecido para o telefone do pedido.
+// O painel já está autenticado; ainda assim nenhuma chave normalizada é
+// devolvida ao cliente.
+func (s *AdminOrderService) GetCustomerProfile(ctx context.Context, phone string) (*domain.CustomerProfile, error) {
+	if s.profiles == nil {
+		return nil, nil
+	}
+	phoneKey := domain.NormalizePhoneKey(phone)
+	if phoneKey == "" {
+		return nil, nil
+	}
+	profile, found, err := s.profiles.FindByPhoneKey(ctx, phoneKey)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, nil
+	}
+	return &profile, nil
 }
 
 // UpdateStatus valida a matriz de transições e grava status, histórico e

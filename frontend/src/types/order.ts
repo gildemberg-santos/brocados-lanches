@@ -56,6 +56,7 @@ export interface CreateOrderRequest extends OrderQuoteRequest {
     changeForCents?: number
   }
   note: string
+  saveCustomerProfile?: boolean
 }
 
 export interface CreatedOrder {
@@ -135,6 +136,20 @@ export interface AdminOrderStatusChange {
   actorId?: string
 }
 
+export interface AdminCustomerProfile {
+  name: string
+  phone: string
+  orderCount: number
+  lastOrderAt?: string
+  address?: AdminOrderAddress
+  fulfillment?: Fulfillment
+  zoneName?: string
+  paymentMethod?: PaymentMethod
+  optedOut: boolean
+  updatedAt?: string
+  retainedUntil?: string
+}
+
 export interface AdminOrderDetail {
   id: string
   orderNumber: number
@@ -142,6 +157,7 @@ export interface AdminOrderDetail {
   status: string
   fulfillment: Fulfillment
   customer: OrderCustomer
+  customerProfile?: AdminCustomerProfile
   address?: AdminOrderAddress
   zone?: AdminOrderZone
   items: AdminOrderItem[]

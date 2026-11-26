@@ -16,6 +16,7 @@ import (
 type AdminOrderService interface {
 	List(ctx context.Context, query domain.AdminOrderListQuery) (service.AdminPage[domain.AdminOrderListItem], error)
 	Get(ctx context.Context, id string) (domain.Order, error)
+	GetCustomerProfile(ctx context.Context, phone string) (*domain.CustomerProfile, error)
 	UpdateStatus(ctx context.Context, actorID, id string, request domain.OrderStatusChangeRequest) (domain.Order, error)
 }
 
@@ -42,6 +43,7 @@ type adminOrderDetailResponse struct {
 	Status           string                           `json:"status"`
 	Fulfillment      string                           `json:"fulfillment"`
 	Customer         adminOrderCustomerResponse       `json:"customer"`
+	CustomerProfile  *adminCustomerProfileResponse    `json:"customerProfile,omitempty"`
 	Address          *adminOrderAddressResponse       `json:"address,omitempty"`
 	Zone             *adminOrderZoneResponse          `json:"zone,omitempty"`
 	Items            []adminOrderItemResponse         `json:"items"`
@@ -61,6 +63,20 @@ type adminOrderDetailResponse struct {
 type adminOrderCustomerResponse struct {
 	Name  string `json:"name"`
 	Phone string `json:"phone"`
+}
+
+type adminCustomerProfileResponse struct {
+	Name          string                     `json:"name"`
+	Phone         string                     `json:"phone"`
+	OrderCount    int                        `json:"orderCount"`
+	LastOrderAt   string                     `json:"lastOrderAt,omitempty"`
+	Address       *adminOrderAddressResponse `json:"address,omitempty"`
+	Fulfillment   string                     `json:"fulfillment,omitempty"`
+	ZoneName      string                     `json:"zoneName,omitempty"`
+	PaymentMethod string                     `json:"paymentMethod,omitempty"`
+	OptedOut      bool                       `json:"optedOut"`
+	UpdatedAt     string                     `json:"updatedAt,omitempty"`
+	RetainedUntil string                     `json:"retainedUntil,omitempty"`
 }
 
 type adminOrderAddressResponse struct {
@@ -153,8 +169,19 @@ func handleAdminGetOrder(orders AdminOrderService, logger *slog.Logger) http.Han
 			writeError(w, r, logger, err)
 			return
 		}
+
+		detail := newAdminOrderDetailResponse(order)
+		profile, profileErr := orders.GetCustomerProfile(r.Context(), order.Customer.Phone)
+		if profileErr != nil {
+			// Perfil é conveniência: o detalhe do pedido não pode falhar por ele.
+			// Nenhum dado do cliente entra no log.
+			logger.Warn("admin customer profile lookup failed", "reason", "lookup_failed")
+		} else if profile != nil {
+			detail.CustomerProfile = newAdminCustomerProfileResponse(*profile)
+		}
+
 		writeJSON(w, http.StatusOK, adminItemEnvelope[adminOrderDetailResponse]{
-			Data: newAdminOrderDetailResponse(order),
+			Data: detail,
 		})
 	}
 }
@@ -286,6 +313,36 @@ func newAdminOrderDetailResponse(order domain.Order) adminOrderDetailResponse {
 	if order.Zone != nil {
 		response.Zone = &adminOrderZoneResponse{
 			ID: order.Zone.ID, Name: order.Zone.Name, FeeCents: order.Zone.FeeCents,
+		}
+	}
+	return response
+}
+
+func newAdminCustomerProfileResponse(profile domain.CustomerProfile) *adminCustomerProfileResponse {
+	response := &adminCustomerProfileResponse{
+		Name:          profile.Name,
+		Phone:         profile.Phone,
+		OrderCount:    profile.OrderCount,
+		LastOrderAt:   formatAdminTime(profile.LastOrderAt),
+		Fulfillment:   string(profile.Fulfillment),
+		PaymentMethod: profile.PaymentMethod,
+		OptedOut:      profile.OptedOut,
+		UpdatedAt:     formatAdminTime(profile.UpdatedAt),
+		RetainedUntil: formatAdminTime(profile.ExpiresAt),
+	}
+	if profile.Zone != nil {
+		response.ZoneName = profile.Zone.Name
+	}
+	if profile.Address != nil {
+		response.Address = &adminOrderAddressResponse{
+			Street:     profile.Address.Street,
+			Number:     profile.Address.Number,
+			Complement: profile.Address.Complement,
+			District:   profile.Address.District,
+			City:       profile.Address.City,
+			State:      profile.Address.State,
+			ZipCode:    profile.Address.ZipCode,
+			Reference:  profile.Address.Reference,
 		}
 	}
 	return response

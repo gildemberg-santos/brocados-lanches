@@ -272,9 +272,12 @@ Idempotency-Key: 4d1f6b1e-7c2a-4e2f-9f2a-1c3d5e7f9a0b
   "payment": {
     "method": "cash",
     "changeForCents": 10000
-  }
+  },
+  "saveCustomerProfile": true
 }
 ```
+
+`saveCustomerProfile` é opcional; ausência significa `true`. Quando `false`, o servidor desativa o perfil de conveniência daquele telefone e remove os dados dele, sem afetar o pedido gravado. Preço, taxa, total e disponibilidade nunca vêm do cliente; a preferência também não entra no hash de idempotência.
 
 Para retirada:
 
@@ -544,6 +547,8 @@ GET /api/v1/admin/orders?status=pending&from=2026-11-18T00:00:00Z&to=2026-11-19T
 - Filtros: `status`, `from`, `to` (RFC 3339 UTC), `fulfillment` (`delivery`/`pickup`) e `q` (número ou dígitos do telefone; aceita o telefone mascarado da fila).
 - Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`. Qualquer outro campo retorna `422 VALIDATION_ERROR`.
 - A fila devolve `customerName` com iniciais e `phone` com os últimos quatro dígitos (`****8708`); o detalhe completo exige sessão e inclui snapshot, cliente, endereço, zona, pagamento, itens e `statusHistory`.
+- Quando existe perfil de conveniência para o telefone do pedido, o detalhe inclui `customerProfile` com `name`, `phone`, `orderCount`, `lastOrderAt`, `address`, `fulfillment`, `zoneName`, `paymentMethod`, `optedOut`, `updatedAt` e `retainedUntil`. A chave normalizada `phoneKey` nunca é devolvida. Falha na leitura do perfil não falha o detalhe do pedido.
+- Não existe rota pública de consulta por telefone; apenas o detalhe administrativo autenticado mostra o resumo.
 - Dados pessoais só para admin autenticado; não vão para log nem para auditoria.
 
 Transição:

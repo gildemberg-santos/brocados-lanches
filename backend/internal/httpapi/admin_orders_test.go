@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -15,14 +16,18 @@ import (
 )
 
 type fakeAdminOrdersHandlerService struct {
-	item    domain.AdminOrderListItem
-	order   domain.Order
-	query   domain.AdminOrderListQuery
-	actorID string
-	id      string
-	request domain.OrderStatusChangeRequest
-	err     error
-	calls   int
+	item         domain.AdminOrderListItem
+	order        domain.Order
+	profile      *domain.CustomerProfile
+	profileErr   error
+	query        domain.AdminOrderListQuery
+	actorID      string
+	id           string
+	profilePhone string
+	request      domain.OrderStatusChangeRequest
+	err          error
+	calls        int
+	profileCalls int
 }
 
 func (f *fakeAdminOrdersHandlerService) List(_ context.Context, query domain.AdminOrderListQuery) (service.AdminPage[domain.AdminOrderListItem], error) {
@@ -37,6 +42,12 @@ func (f *fakeAdminOrdersHandlerService) Get(_ context.Context, id string) (domai
 	f.calls++
 	f.id = id
 	return f.order, f.err
+}
+
+func (f *fakeAdminOrdersHandlerService) GetCustomerProfile(_ context.Context, phone string) (*domain.CustomerProfile, error) {
+	f.profileCalls++
+	f.profilePhone = phone
+	return f.profile, f.profileErr
 }
 
 func (f *fakeAdminOrdersHandlerService) UpdateStatus(_ context.Context, actorID, id string, request domain.OrderStatusChangeRequest) (domain.Order, error) {
@@ -156,6 +167,65 @@ func TestAdminGetOrderReturnsFullDetail(t *testing.T) {
 	}
 	if detail.TotalCents != 2800 || detail.CreatedAt != "2026-11-22T12:00:00Z" {
 		t.Errorf("totals/timestamps = %+v", detail)
+	}
+}
+
+func TestAdminGetOrderIncludesCustomerProfile(t *testing.T) {
+	created := time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC)
+	orders := &fakeAdminOrdersHandlerService{
+		order: adminOrderDetailFixture(),
+		profile: &domain.CustomerProfile{
+			PhoneKey:      "5585992358708",
+			Phone:         "+5585992358708",
+			Name:          "Maria Silva",
+			OrderCount:    3,
+			LastOrderAt:   created,
+			Fulfillment:   domain.FulfillmentDelivery,
+			Zone:          &domain.OrderZone{Name: "Centro"},
+			PaymentMethod: domain.PaymentMethodPix,
+			UpdatedAt:     created,
+			ExpiresAt:     created.AddDate(0, 24, 0),
+		},
+	}
+	router := newAdminOrdersTestRouter(newAdminOperatorAuth(), orders)
+
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, newAdminRequest(http.MethodGet, "/api/v1/admin/orders/"+adminOrderDetailFixture().ID, ""))
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body = %s", response.Code, response.Body.String())
+	}
+	var envelope struct {
+		Data adminOrderDetailResponse `json:"data"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	profile := envelope.Data.CustomerProfile
+	if profile == nil || profile.OrderCount != 3 || profile.Name != "Maria Silva" || profile.ZoneName != "Centro" {
+		t.Fatalf("customerProfile = %+v", profile)
+	}
+	if profile.LastOrderAt != "2026-11-20T12:00:00Z" || profile.RetainedUntil != "2028-11-20T12:00:00Z" {
+		t.Errorf("profile timestamps = %+v", profile)
+	}
+	if orders.profilePhone != "+5585992358708" {
+		t.Errorf("profile phone = %q", orders.profilePhone)
+	}
+}
+
+func TestAdminGetOrderDoesNotFailWhenProfileLookupFails(t *testing.T) {
+	orders := &fakeAdminOrdersHandlerService{
+		order:      adminOrderDetailFixture(),
+		profileErr: errors.New("mongo indisponível"),
+	}
+	router := newAdminOrdersTestRouter(newAdminOperatorAuth(), orders)
+
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, newAdminRequest(http.MethodGet, "/api/v1/admin/orders/"+adminOrderDetailFixture().ID, ""))
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body = %s", response.Code, response.Body.String())
+	}
+	if orders.profileCalls != 1 {
+		t.Errorf("profileCalls = %d, want 1", orders.profileCalls)
 	}
 }
 

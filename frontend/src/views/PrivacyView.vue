@@ -53,6 +53,11 @@ onMounted(() => {
           forma de pagamento (Pix, cartão ou dinheiro) e, quando pago em dinheiro, o valor informado
           para troco;
         </li>
+        <li>
+          perfil de conveniência no servidor, identificado pelo telefone: nome, último endereço de
+          entrega, entrega/retirada, zona e forma de pagamento usados no pedido. Observação e valor
+          de troco não entram nesse perfil.
+        </li>
       </ul>
       <p>
         O endereço é solicitado apenas na entrega; na retirada, não é pedido. Não solicitamos CPF,
@@ -100,8 +105,10 @@ onMounted(() => {
           contatar você sobre o pedido;
         </li>
         <li>
-          conveniência: reaproveitar no próximo pedido as escolhas já informadas, mantidas apenas
-          neste navegador;
+          conveniência: reaproveitar no próximo pedido as escolhas já informadas, no navegador e em
+          um perfil no servidor identificado pelo telefone. Esse tratamento pode ser desativado no
+          checkout; nesse caso o perfil existente é desativado e seus dados de conveniência são
+          removidos;
         </li>
         <li>
           legítimo interesse: segurança, prevenção a abuso e auditoria das alterações no painel;
@@ -143,6 +150,11 @@ onMounted(() => {
         </li>
         <li>
           sessões administrativas: no máximo 7 dias, com expiração por inatividade em 8 horas;
+        </li>
+        <li>
+          perfil de conveniência no servidor: 24 meses, contados do último pedido; depois disso é
+          removido automaticamente. Você também pode desativá-lo no checkout ou pedir a exclusão
+          pelos canais da loja;
         </li>
         <li>auditoria: 12 meses, sem dados pessoais dos clientes;</li>
         <li>logs: 30 dias, sem nome, telefone, endereço ou observação do pedido;</li>
@@ -189,8 +201,8 @@ onMounted(() => {
       <h2 id="privacy-changes-title">8. Alterações desta política</h2>
       <p>
         Esta é a versão vigente, publicada em 25/11/2026 e atualizada em 26/11/2026 para descrever
-        as preferências do checkout. Mudanças relevantes serão comunicadas pelos canais da loja
-        nesta página.
+        as preferências do checkout e o perfil de conveniência no servidor. Mudanças relevantes
+        serão comunicadas pelos canais da loja nesta página.
       </p>
     </section>
   </main>

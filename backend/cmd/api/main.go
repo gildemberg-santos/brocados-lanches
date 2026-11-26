@@ -62,6 +62,9 @@ func run() error {
 	if err := repository.EnsureOrderIndexes(startupContext, database); err != nil {
 		return err
 	}
+	if err := repository.EnsureCustomerProfileIndexes(startupContext, database); err != nil {
+		return err
+	}
 	if err := repository.EnsureAdminIndexes(startupContext, database); err != nil {
 		return err
 	}
@@ -99,11 +102,22 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	orderService, err := service.NewOrderService(orderRepository, operationLocation)
+	customerProfileRepository, err := repository.NewCustomerProfileRepository(database)
 	if err != nil {
 		return err
 	}
-	adminOrderService, err := service.NewAdminOrderService(orderRepository)
+	orderService, err := service.NewOrderService(
+		orderRepository,
+		operationLocation,
+		service.WithCustomerProfiles(customerProfileRepository, logger),
+	)
+	if err != nil {
+		return err
+	}
+	adminOrderService, err := service.NewAdminOrderService(
+		orderRepository,
+		service.WithAdminCustomerProfiles(customerProfileRepository),
+	)
 	if err != nil {
 		return err
 	}

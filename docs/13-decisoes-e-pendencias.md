@@ -1,7 +1,7 @@
 # Decisões e Pendências — Brocados Lanches
 
 **Versão:** 1.1  
-**Atualizado em:** 25/11/2026  
+**Atualizado em:** 26/11/2026  
 **Status:** registro vivo.  
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `08-backlog.md`, `adr/`.
 
@@ -59,6 +59,7 @@
 | D-035 | 26/11/2026 | O carrinho mostra somente o subtotal; taxa de entrega e total aparecem no checkout, depois da escolha de entrega/retirada e da zona, calculados no servidor | Decidido e implementado | A cobrança antecipada sugeria taxa mesmo para retirada; a cotação autoritativa continua no `POST /orders/quote` | `07-design-system-e-experiencia.md` §5.4, `08-backlog.md` §7, `frontend/src/components/CartSummary.vue`, `frontend/src/views/CartView.vue` |
 | D-036 | 26/11/2026 | A cotação no checkout só é enviada quando a entrega tem `zoneId` ou quando a forma é retirada; após recarregar, o resumo pede a zona antes de calcular | Decidido e implementado | O recarregamento reinicia o formulário sem zona e disparava `422` com `zoneId` vazio; o servidor continua validando a requisição | `07-design-system-e-experiencia.md` §5.5, `08-backlog.md` §7, `frontend/src/views/CheckoutView.vue` |
 | D-037 | 26/11/2026 | Após o pedido gravado, o checkout salva no `localStorage` forma de entrega, zona, nome, telefone, endereço e pagamento para preencher o próximo pedido; observação e valor de troco ficam de fora, e as preferências podem ser apagadas em `/privacidade` | Decidido e implementado | O cliente pediu para reaproveitar as escolhas do “Finalizar pedido” automaticamente e depois excluiu observação e troco; zona inativa é descartada ao carregar, e nada é enviado ao servidor além do pedido | `07-design-system-e-experiencia.md` §5.5 e §5.8, `08-backlog.md` US-035, `10-operacao-e-lancamento.md` §10, `frontend/src/features/checkout/preferences.ts`, `frontend/src/views/CheckoutView.vue`, `frontend/src/views/PrivacyView.vue` |
+| D-038 | 26/11/2026 | O servidor grava um perfil de conveniência por telefone normalizado depois que o pedido é gravado, sem observação nem troco, com opt-out no checkout, retenção de 24 meses, nenhuma API pública de consulta e resumo apenas no detalhe administrativo autenticado | Decidido e implementado | Reconhece cliente recorrente no painel e agiliza pedidos futuros sem transformar marketing em finalidade; falha na escrita não impede o pedido e o replay idempotente não reescreve o perfil | `05-modelo-de-dados.md` §3.11, `06-contrato-api.md` §7 e §12, `08-backlog.md` US-036, `10-operacao-e-lancamento.md` §10, `backend/internal/domain/customer_profile.go`, `backend/internal/repository/customer.go`, `frontend/src/views/CheckoutView.vue` |
 
 ### 2.1 Contrato refletido no AGENTS
 

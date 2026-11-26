@@ -142,6 +142,19 @@ func TestCanonicalRequestHash(t *testing.T) {
 	if third == first {
 		t.Error("hash did not change with request body")
 	}
+
+	// A preferência de perfil não altera o pedido nem a idempotência: um replay
+	// com outra escolha continua devolvendo o mesmo pedido gravado.
+	withOptOut := orderRequestFixture()
+	save := false
+	withOptOut.SaveCustomerProfile = &save
+	fourth, err := CanonicalRequestHash(withOptOut)
+	if err != nil {
+		t.Fatalf("CanonicalRequestHash() opt-out error = %v", err)
+	}
+	if fourth != first {
+		t.Error("hash changed with customer profile preference")
+	}
 }
 
 func TestOrderRequestValidateRejectsLongNote(t *testing.T) {

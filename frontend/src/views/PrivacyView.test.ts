@@ -76,6 +76,10 @@ describe('PrivacyView', () => {
     expect(text).toContain('Observação e valor de troco não são salvos')
     expect(text).toContain('Apagar preferências salvas neste navegador')
     expect(text).toContain('até você apagar nesta página')
+    expect(text).toContain('perfil de conveniência no servidor, identificado pelo telefone')
+    expect(text).toContain('Observação e valor de troco não entram nesse perfil')
+    expect(text).toContain('Esse tratamento pode ser desativado no checkout')
+    expect(text).toContain('perfil de conveniência no servidor: 24 meses')
   })
 
   it('apaga as preferências salvas neste navegador', async () => {

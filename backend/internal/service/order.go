@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
@@ -25,17 +26,48 @@ type OrderService struct {
 	reader   OrderReader
 	location *time.Location
 	publicID publicIDGenerator
+
+	profiles CustomerProfileStore
+	logger   *slog.Logger
+}
+
+// OrderServiceOption adiciona dependências opcionais sem alterar os chamadores
+// que só precisam cotar e gravar pedidos.
+type OrderServiceOption func(*OrderService)
+
+// WithCustomerProfiles habilita o perfil de conveniência reconhecido por
+// telefone. O logger recebe apenas erros genéricos, sem dados pessoais.
+func WithCustomerProfiles(store CustomerProfileStore, logger *slog.Logger) OrderServiceOption {
+	return func(service *OrderService) {
+		if store == nil {
+			return
+		}
+		if logger == nil {
+			logger = discardLogger()
+		}
+		service.profiles = store
+		service.logger = logger
+	}
 }
 
 // NewOrderService vincula o service ao repositório e ao fuso da operação.
-func NewOrderService(reader OrderReader, location *time.Location) (*OrderService, error) {
+func NewOrderService(reader OrderReader, location *time.Location, options ...OrderServiceOption) (*OrderService, error) {
 	if reader == nil {
 		return nil, errors.New("order reader is required")
 	}
 	if location == nil {
 		return nil, errors.New("operation timezone is required")
 	}
-	return &OrderService{reader: reader, location: location, publicID: newPublicID}, nil
+	service := &OrderService{
+		reader:   reader,
+		location: location,
+		publicID: newPublicID,
+		logger:   discardLogger(),
+	}
+	for _, option := range options {
+		option(service)
+	}
+	return service, nil
 }
 
 // Quote valida a requisição e devolve subtotal, taxa e total sem gravar nada.
