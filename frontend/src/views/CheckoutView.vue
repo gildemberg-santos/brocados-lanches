@@ -18,6 +18,7 @@ import {
   validateCheckoutForm,
 } from '../features/checkout/checkout'
 import { saveHandoffUrl } from '../features/checkout/handoff'
+import { loadCheckoutPreferences, saveCheckoutPreferences } from '../features/checkout/preferences'
 import type { CheckoutErrors, CheckoutForm } from '../features/checkout/checkout'
 import { createOrder, fetchOrderQuote } from '../services/orders'
 import { useCartStore } from '../stores/cart'
@@ -69,6 +70,11 @@ async function requestQuote(): Promise<void> {
     quotedRequest.value = ''
     quoteError.value = ''
     return
+  }
+
+  if (quoteTimer !== null) {
+    clearTimeout(quoteTimer)
+    quoteTimer = null
   }
 
   quoteLoading.value = true
@@ -135,6 +141,7 @@ async function submit(): Promise<void> {
   try {
     const created = await createOrder(request, idempotencyKey.value)
     saveHandoffUrl(created.publicId, created.whatsappUrl)
+    saveCheckoutPreferences(form.value)
     cart.clear()
     await router.push({
       name: 'order',
@@ -159,10 +166,24 @@ watch(
 
 onMounted(async () => {
   await Promise.all([menu.ensureLoaded(), zones.ensureLoaded()])
+
+  const preferences = loadCheckoutPreferences()
+  if (preferences) {
+    form.value = { ...form.value, ...preferences }
+    const zoneStillActive = zones.zones.some((zone) => zone.id === form.value.zoneId)
+    if (!zoneStillActive) {
+      form.value.zoneId = ''
+    }
+  }
+
   if (menu.state === 'success') {
     cart.removeUnavailable(buildCartLines(cart.items, menu.products).unavailableKeys)
   }
   await requestQuote()
+  if (quoteTimer !== null) {
+    clearTimeout(quoteTimer)
+    quoteTimer = null
+  }
 })
 
 onUnmounted(() => {
@@ -176,6 +197,10 @@ onUnmounted(() => {
   <main id="conteudo" tabindex="-1" class="page-shell checkout-page">
     <RouterLink class="back-link" :to="{ name: 'cart' }">← Voltar ao carrinho</RouterLink>
     <h1>Finalizar pedido</h1>
+    <p class="checkout-preferences-note">
+      Suas escolhas ficam salvas neste navegador para o próximo pedido. Você pode apagá-las na
+      <RouterLink to="/privacidade">política de privacidade</RouterLink>.
+    </p>
 
     <div v-if="cart.isEmpty" class="checkout-empty" role="status">
       <p>Seu carrinho está vazio. Escolha os itens antes de finalizar.</p>
@@ -484,6 +509,12 @@ onUnmounted(() => {
   font-size: var(--font-size-display);
   font-weight: 400;
   line-height: var(--line-height-display);
+}
+
+.checkout-preferences-note {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
 }
 
 .back-link,

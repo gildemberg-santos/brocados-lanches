@@ -308,7 +308,8 @@ Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem s
 - telefone;
 - endereço de entrega;
 - observação do pedido;
-- dados de autenticação do admin (nome/e-mail/senha com hash).
+- dados de autenticação do admin (nome/e-mail/senha com hash);
+- preferências do checkout no navegador (entrega, zona, nome, telefone, endereço e pagamento), sem observação nem troco; podem ser apagadas em `/privacidade` (D-037).
 
 Não coletar CPF, e-mail de cliente ou dados de cartão.
 
@@ -336,6 +337,7 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 - Pedidos: 24 meses; depois remover/mascarar nome, telefone, endereço e observação, preservando estatística.
 - Sessões: TTL de 7 dias.
 - Auditoria: 12 meses, sem PII.
+- Preferências do checkout: até o cliente apagar em `/privacidade` ou limpar os dados do navegador.
 - Logs: 30 dias, sem PII.
 - Backups: 30 dias; respeitar retenção ao restaurar.
 

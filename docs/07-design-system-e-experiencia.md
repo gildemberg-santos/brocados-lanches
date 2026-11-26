@@ -274,6 +274,7 @@ Regras:
 - Se a loja fechar, mensagem clara e ação de voltar ao cardápio.
 - Se o pedido for criado (`201`), limpar carrinho e ir para confirmação; no replay idempotente (`200`), o mesmo destino é usado.
 - Se falhar, preservar carrinho e dados; a chave idempotente é mantida em retries do mesmo pedido e renovada somente quando o conteúdo da requisição muda.
+- Após o pedido gravado (`201` ou replay idempotente), salvar neste navegador entrega/retirada, zona, nome, telefone, endereço e forma de pagamento para o próximo pedido. Observação e valor de troco não são salvos; zona que deixou de existir é descartada ao carregar as preferências (D-037).
 
 Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seção é “Revisão e envio”, com o total cotado pelo servidor e o botão de envio dentro dela; na retirada a etapa de endereço é oculta e a numeração é ajustada.
 
@@ -302,6 +303,7 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 - Link para mapa, se aprovado.
 - Política de privacidade e termos com data de publicação. Desde a US-126 as páginas exibiam a data do rascunho (25/11/2026); em 25/11/2026 o cliente confirmou os textos e eles passaram a ser apresentados como versão vigente, publicada nessa data (D-033). A privacidade e os termos foram detalhados com base em modelos externos, adaptados apenas ao fluxo real (dados do pedido, sessão administrativa, IP para limite de requisições, link `wa.me`, retenção proposta, registro/idempotência, regras de preço/entrega/pagamento e acesso ao painel), sem copiar prestadores, assinaturas ou recursos que a loja não usa.
 - Canal do titular: os canais já publicados na `/contato`, sem inventar CNPJ, razão social ou e-mail (D-033).
+- A política descreve as preferências do checkout guardadas no navegador e oferece o botão “Apagar preferências salvas neste navegador” na seção de retenção; a versão publicada em 25/11/2026 foi atualizada em 26/11/2026 para cobrir esse tratamento (D-037).
 
 ---
 

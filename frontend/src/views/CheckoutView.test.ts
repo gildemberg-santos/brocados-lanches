@@ -4,6 +4,7 @@ import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { CHECKOUT_PREFERENCES_KEY, loadCheckoutPreferences } from '../features/checkout/preferences'
 import { fetchDeliveryZones } from '../services/deliveryZones'
 import { fetchMenu } from '../services/menu'
 import { createOrder, fetchOrderQuote } from '../services/orders'
@@ -92,6 +93,7 @@ async function mountCheckout(options: MountOptions = {}) {
       { path: '/cardapio', name: 'menu', component: StubView },
       { path: '/carrinho', name: 'cart', component: StubView },
       { path: '/checkout', name: 'checkout', component: StubView },
+      { path: '/privacidade', name: 'privacy', component: StubView },
       { path: '/pedido/:publicId', name: 'order', component: StubView },
     ],
   })
@@ -113,6 +115,10 @@ async function chooseDeliveryZone(wrapper: CheckoutWrapper): Promise<void> {
   await flushPromises()
 }
 
+function seedPreferences(preferences: Record<string, unknown>): void {
+  localStorage.setItem(CHECKOUT_PREFERENCES_KEY, JSON.stringify({ version: 1, preferences }))
+}
+
 async function fillForm(wrapper: CheckoutWrapper): Promise<void> {
   await wrapper.get('select[name="zoneId"]').setValue('zona-1')
   await wrapper.get('input[name="customerName"]').setValue('Maria Silva')
@@ -122,6 +128,7 @@ async function fillForm(wrapper: CheckoutWrapper): Promise<void> {
   await wrapper.get('input[name="district"]').setValue('Tapera')
   await wrapper.get('input[name="zipCode"]').setValue('61700000')
   await wrapper.get('input[name="changeFor"]').setValue('50,00')
+  await wrapper.get('textarea[name="note"]').setValue('Sem cebola')
   await flushPromises()
   vi.advanceTimersByTime(300)
   await flushPromises()
@@ -152,6 +159,62 @@ describe('CheckoutView', () => {
     expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Escolha uma zona de entrega para calcular o total.')
     expect(wrapper.text()).not.toContain('Não foi possível')
+  })
+
+  it('preenche o checkout com as preferências salvas no próximo pedido', async () => {
+    seedPreferences({
+      fulfillment: 'pickup',
+      zoneId: 'zona-antiga',
+      customerName: 'João Souza',
+      phone: '85988888888',
+      paymentMethod: 'pix',
+    })
+
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    expect(
+      (wrapper.get('input[name="fulfillment"][value="pickup"]').element as HTMLInputElement)
+        .checked,
+    ).toBe(true)
+    expect((wrapper.get('input[name="customerName"]').element as HTMLInputElement).value).toBe(
+      'João Souza',
+    )
+    expect((wrapper.get('input[name="phone"]').element as HTMLInputElement).value).toBe(
+      '85988888888',
+    )
+    expect(
+      (wrapper.get('input[name="paymentMethod"][value="pix"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+    expect(mockedFetchOrderQuote).toHaveBeenCalledTimes(1)
+  })
+
+  it('descarta uma zona salva que não está mais ativa', async () => {
+    seedPreferences({ fulfillment: 'delivery', zoneId: 'zona-inexistente' })
+
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    expect((wrapper.get('select[name="zoneId"]').element as HTMLSelectElement).value).toBe('')
+    expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Escolha uma zona de entrega para calcular o total.')
+  })
+
+  it('não reapresenta zona inativa salva na retirada ao voltar para entrega', async () => {
+    seedPreferences({ fulfillment: 'pickup', zoneId: 'zona-inexistente' })
+
+    const { wrapper } = await mountCheckout({ seed: true })
+    mockedFetchOrderQuote.mockClear()
+    await wrapper.get('input[name="fulfillment"][value="delivery"]').setValue(true)
+    await flushPromises()
+
+    expect((wrapper.get('select[name="zoneId"]').element as HTMLSelectElement).value).toBe('')
+    expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
+  })
+
+  it('avisa que as escolhas ficam salvas neste navegador', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    expect(wrapper.text()).toContain('Suas escolhas ficam salvas neste navegador')
+    expect(wrapper.find('a[href="/privacidade"]').exists()).toBe(true)
   })
 
   it('shows server totals and catalog item names', async () => {
@@ -278,6 +341,24 @@ describe('CheckoutView', () => {
     expect(cart.isEmpty).toBe(true)
     expect(router.currentRoute.value.name).toBe('order')
     expect(sessionStorage.getItem('brocados:handoff:public-123')).toContain('wa.me')
+
+    const preferences = loadCheckoutPreferences()
+    expect(preferences).toMatchObject({
+      fulfillment: 'delivery',
+      zoneId: 'zona-1',
+      customerName: 'Maria Silva',
+      phone: '(85) 99999-9999',
+      street: 'Rua das Flores',
+      number: '450',
+      district: 'Tapera',
+      city: 'Aquiraz',
+      state: 'CE',
+      zipCode: '61700000',
+      paymentMethod: 'cash',
+    })
+    const stored = localStorage.getItem(CHECKOUT_PREFERENCES_KEY) ?? ''
+    expect(stored).not.toContain('Sem cebola')
+    expect(stored).not.toContain('50,00')
   })
 
   it('keeps the cart when the order fails', async () => {
@@ -289,6 +370,7 @@ describe('CheckoutView', () => {
 
     expect(cart.isEmpty).toBe(false)
     expect(wrapper.text()).toContain('Não foi possível enviar o pedido')
+    expect(loadCheckoutPreferences()).toBeNull()
   })
 
   it('reuses the idempotency key when retrying the same request', async () => {

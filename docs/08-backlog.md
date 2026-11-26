@@ -195,7 +195,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Objetivo:** permitir montar o pedido, cotar no servidor e preencher o checkout sem perder dados.
 
-**Status em 26/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e subtotal), US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência) e US-033/US-034 concluídas (`/checkout` com entrega/retirada, zona, endereço, pagamento, troco, validação por campo, foco no primeiro erro, cotação no servidor, bloqueio de envio e estados de carregamento/erro/sucesso). O CTA “Continuar” do carrinho leva ao checkout. Desde 26/11/2026 o carrinho não carrega zonas nem mostra taxa estimada; taxa e total vêm da cotação da US-032 depois da escolha de entrega/retirada e zona (D-035), sem requisição incompleta após recarregar a página (D-036). O limite de taxa previsto no contrato ainda não está ativo no esqueleto.
+**Status em 26/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e subtotal), US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência) e US-033/US-034 concluídas (`/checkout` com entrega/retirada, zona, endereço, pagamento, troco, validação por campo, foco no primeiro erro, cotação no servidor, bloqueio de envio e estados de carregamento/erro/sucesso). O CTA “Continuar” do carrinho leva ao checkout. Desde 26/11/2026 o carrinho não carrega zonas nem mostra taxa estimada; taxa e total vêm da cotação da US-032 depois da escolha de entrega/retirada e zona (D-035), sem requisição incompleta após recarregar a página (D-036). Desde 26/11/2026, após o pedido gravado o checkout salva no navegador entrega/retirada, zona, nome, telefone, endereço e pagamento para o próximo pedido; observação e troco ficam de fora, e a zona salva é descartada se deixar de existir (D-037). O limite de taxa previsto no contrato ainda não está ativo no esqueleto.
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -204,6 +204,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-032 | API de cotação | P0 | M | US-021 | `POST /orders/quote` valida e devolve totais; sem persistir; testes |
 | US-033 | Formulário de checkout | P0 | G | US-031, US-032 | Delivery/retirada, zona, endereço, pagamento, troco e validação; testes |
 | US-034 | Revisão e envio | P0 | M | US-033 | Total cotado, bloqueio de envio, estados de erro e sucesso |
+| US-035 | Preferências do checkout | P1 | M | US-033, US-034 | Salvar automaticamente após pedido gravado; observação e troco de fora; apagar em `/privacidade`; testes |
 
 **Tarefas técnicas:**
 
@@ -217,6 +218,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Implementar troca de delivery/retirada e troca de zona.
 - [x] Testar loja fechada, zona inativa, item esgotado e troco inválido.
 - [x] Preservar carrinho em falha.
+- [x] Salvar preferências do checkout apenas após pedido gravado, sem observação nem troco (US-035).
+- [x] Validar preferências ao carregar e oferecer exclusão em `/privacidade` (US-035).
 
 ---
 

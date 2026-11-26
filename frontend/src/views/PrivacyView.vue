@@ -1,5 +1,22 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+
+import BaseButton from '../components/BaseButton.vue'
+import { clearCheckoutPreferences, hasCheckoutPreferences } from '../features/checkout/preferences'
+
+const preferencesSaved = ref(false)
+const preferencesFeedback = ref('')
+
+function forgetPreferences(): void {
+  clearCheckoutPreferences()
+  preferencesSaved.value = false
+  preferencesFeedback.value = 'Preferências apagadas deste navegador.'
+}
+
+onMounted(() => {
+  preferencesSaved.value = hasCheckoutPreferences()
+})
 </script>
 
 <template>
@@ -9,7 +26,7 @@ import { RouterLink } from 'vue-router'
     <aside class="info-page__notice" role="note" aria-label="Versão da política">
       <strong>Versão vigente.</strong>
       Esta política descreve o tratamento de dados realizado pela Brocados Lanches.
-      <span class="info-page__date">Publicada em 25/11/2026.</span>
+      <span class="info-page__date">Publicada em 25/11/2026. Atualizada em 26/11/2026.</span>
     </aside>
 
     <section aria-labelledby="privacy-controller-title">
@@ -66,6 +83,11 @@ import { RouterLink } from 'vue-router'
           carrinho salvo no navegador com identificadores e escolhas dos itens; os preços confiáveis
           ficam no servidor.
         </li>
+        <li>
+          preferências do checkout salvas neste navegador após um pedido concluído: forma de
+          entrega, zona, nome, telefone, endereço e forma de pagamento. Observação e valor de troco
+          não são salvos. Você pode apagá-las na seção 5.
+        </li>
       </ul>
       <p>Não usamos analytics, pixels de rastreamento, mapas de calor nem publicidade.</p>
     </section>
@@ -76,6 +98,10 @@ import { RouterLink } from 'vue-router'
         <li>
           execução do pedido: registrar, preparar, entregar ou disponibilizar para retirada, além de
           contatar você sobre o pedido;
+        </li>
+        <li>
+          conveniência: reaproveitar no próximo pedido as escolhas já informadas, mantidas apenas
+          neste navegador;
         </li>
         <li>
           legítimo interesse: segurança, prevenção a abuso e auditoria das alterações no painel;
@@ -121,7 +147,18 @@ import { RouterLink } from 'vue-router'
         <li>auditoria: 12 meses, sem dados pessoais dos clientes;</li>
         <li>logs: 30 dias, sem nome, telefone, endereço ou observação do pedido;</li>
         <li>backups: 30 dias; ao restaurar, os prazos de retenção são reaplicados.</li>
+        <li>
+          preferências do checkout: até você apagar nesta página ou limpar os dados deste navegador.
+        </li>
       </ul>
+      <div class="info-page__preferences">
+        <BaseButton variant="secondary" :disabled="!preferencesSaved" @click="forgetPreferences">
+          Apagar preferências salvas neste navegador
+        </BaseButton>
+        <p v-if="preferencesFeedback" class="info-page__feedback" role="status">
+          {{ preferencesFeedback }}
+        </p>
+      </div>
     </section>
 
     <section aria-labelledby="privacy-rights-title">
@@ -151,8 +188,9 @@ import { RouterLink } from 'vue-router'
     <section aria-labelledby="privacy-changes-title">
       <h2 id="privacy-changes-title">8. Alterações desta política</h2>
       <p>
-        Esta é a versão vigente, publicada em 25/11/2026. Mudanças relevantes serão comunicadas
-        pelos canais da loja nesta página.
+        Esta é a versão vigente, publicada em 25/11/2026 e atualizada em 26/11/2026 para descrever
+        as preferências do checkout. Mudanças relevantes serão comunicadas pelos canais da loja
+        nesta página.
       </p>
     </section>
   </main>
@@ -221,5 +259,16 @@ import { RouterLink } from 'vue-router'
 .info-page a {
   color: var(--brand-neon);
   font-weight: 700;
+}
+
+.info-page__preferences {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.info-page__feedback {
+  color: var(--text-main);
 }
 </style>
