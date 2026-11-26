@@ -36,7 +36,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` documenta a i
 | Protótipo do cliente | Home, Cardápio, Personalizar, Carrinho, Checkout e Créditos |
 | Painel administrativo | Dashboard, Produtos, Categorias, Locais e Taxas, Conta e Contato |
 | Responsividade | Mobile em 375 px e desktop em 1280 px |
-| Dados de demonstração | Categorias, produtos, zonas e pedidos fictícios em `design-system/seed.json` |
+| Dados de demonstração | Categorias, produtos e pedidos fictícios em `design-system/seed.json`; loja segue `/contato` e zonas/taxas foram fornecidas para desenvolvimento |
 
 ### Esqueleto de produção
 
@@ -248,7 +248,7 @@ make dev-web
 
 ### Dados de desenvolvimento
 
-Os dados de `design-system/seed.json` servem apenas para desenvolvimento e teste. As 5 categorias, os 37 produtos, preços, disponibilidade, descrições e imagens foram copiados do catálogo público em `https://cardpiobrocadoslanchess.ola.click/products` em 23/11/2026. Dados de loja, zonas de entrega e pedidos continuam fictícios. Nada do seed foi validado pelo cliente para produção.
+Os dados de `design-system/seed.json` servem apenas para desenvolvimento e teste. As 5 categorias, os 37 produtos, preços, disponibilidade, descrições e imagens foram copiados do catálogo público em `https://cardpiobrocadoslanchess.ola.click/products` em 23/11/2026. Contato, tempo de entrega e horários da loja passaram a seguir o status publicado em `/contato` em 25/11/2026; as 30 zonas e taxas foram fornecidas para o desenvolvimento, e os pedidos continuam fictícios. Nada do seed foi validado pelo cliente para produção.
 
 ```bash
 make seed         # aplica em brocados_dev

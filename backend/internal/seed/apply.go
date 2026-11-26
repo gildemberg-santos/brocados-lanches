@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/brocados-lanches/api/internal/domain"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -117,6 +118,7 @@ func applyStoreSettings(ctx context.Context, database *mongo.Database, store Sto
 		{Key: "whatsapp", Value: store.WhatsApp},
 		{Key: "instagram", Value: store.Instagram},
 		{Key: "address", Value: store.Address},
+		{Key: "openingHours", Value: openingHoursBSON(store.OpeningHours)},
 	}
 
 	count, err := applyDocument(ctx, database, CollectionStoreSettings, bson.D{{Key: "_id", Value: "main"}}, fields, now)
@@ -124,6 +126,25 @@ func applyStoreSettings(ctx context.Context, database *mongo.Database, store Sto
 		return 0, fmt.Errorf("seed store settings: %w", err)
 	}
 	return count, nil
+}
+
+func openingHoursBSON(hours []domain.OpeningHours) bson.A {
+	result := make(bson.A, 0, len(hours))
+	for _, day := range hours {
+		intervals := make(bson.A, 0, len(day.Intervals))
+		for _, interval := range day.Intervals {
+			intervals = append(intervals, bson.D{
+				{Key: "open", Value: interval.Open},
+				{Key: "close", Value: interval.Close},
+			})
+		}
+		result = append(result, bson.D{
+			{Key: "day", Value: day.Day},
+			{Key: "closed", Value: day.Closed},
+			{Key: "intervals", Value: intervals},
+		})
+	}
+	return result
 }
 
 func applyCategory(ctx context.Context, database *mongo.Database, category CategoryDocument, now time.Time) (int, error) {

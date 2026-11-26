@@ -161,4 +161,4 @@ Prioridades:
 
 ## 8. Próximo passo
 
-As próximas entregas de código estão em **Épico 12 — Conformidade com o design system**, com as correções priorizadas da auditoria em `14-auditoria-design-system.md`, além dos **Épicos 8 e 10** em `08-backlog.md`. O **Épico 0 — Descoberta e conteúdo** continua bloqueando catálogo real, taxas, horários, contatos e pagamentos: o seed é fictício e não deve ir para produção sem validação do cliente. Textos legais e créditos já foram publicados em 25/11/2026 (D-033).
+As próximas entregas de código estão em **Épico 12 — Conformidade com o design system**, com as correções priorizadas da auditoria em `14-auditoria-design-system.md`, além dos **Épicos 8 e 10** em `08-backlog.md`. O **Épico 0 — Descoberta e conteúdo** continua bloqueando catálogo real, taxas, horários, contatos e pagamentos: o seed mistura dados copiados de referências, dados fornecidos para o projeto e dados fictícios, e não deve ir para produção sem validação do cliente. Textos legais e créditos já foram publicados em 25/11/2026 (D-033).

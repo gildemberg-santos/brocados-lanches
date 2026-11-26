@@ -1,5 +1,5 @@
-// Comando seed aplica os dados fictícios de design-system/seed.json no banco de
-// desenvolvimento ou teste. Nunca rode contra produção.
+// Comando seed aplica os dados de desenvolvimento de design-system/seed.json
+// no banco de desenvolvimento ou teste. Nunca rode contra produção.
 package main
 
 import (
@@ -45,6 +45,7 @@ func run(args []string, getenv func(string) string) error {
 	if err != nil {
 		return err
 	}
+	plan = seed.ForEnvironment(plan, getenv("APP_ENV"))
 
 	if flags.dryRun {
 		logger.Info("seed plan valid",

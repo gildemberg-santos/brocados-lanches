@@ -2,11 +2,11 @@
   "_meta": {
     "fonte": "brocados-lanches-design-system-v2.5.html",
     "extraido_em": "2026-11-18",
-    "observacao": "Dados de demonstração do protótipo. Telefone e endereço são placeholders fictícios, em formato E.164, e precisam de confirmação. Os emojis presentes nos nomes de categoria do protótipo foram removidos em 25/11/2026 (US-126): não são padrão de interface e não devem ser reintroduzidos sem aprovação de design.",
+    "observacao": "Dados de demonstração do protótipo. Em 25/11/2026 o contato, o tempo de entrega e os horários da loja passaram a seguir o status publicado em /contato, e as zonas e taxas foram fornecidas para o desenvolvimento; precisam de confirmação antes de produção. Os emojis presentes nos nomes de categoria do protótipo foram removidos em 25/11/2026 (US-126): não são padrão de interface e não devem ser reintroduzidos sem aprovação de design.",
     "catalogo_original": {
       "url": "https://cardpiobrocadoslanchess.ola.click/products",
       "extraido_em": "2026-11-23",
-      "observacao": "Nomes, descrições, preços, disponibilidade, categorias e imagens extraídos do catálogo público; imagens originais de 800px servidas localmente em frontend/public/products. Dados de loja, zonas e pedidos permanecem fictícios do protótipo.",
+      "observacao": "Nomes, descrições, preços, disponibilidade, categorias e imagens extraídos do catálogo público; imagens originais de 800px servidas localmente em frontend/public/products. Pedidos permanecem fictícios do protótipo; contato e horários seguem o status publicado em /contato, e as zonas e taxas foram fornecidas para o desenvolvimento em 25/11/2026.",
       "destaques": "Seleção apenas para desenvolvimento (prod_1, prod_5 e prod_24), usada para popular a home. Não representa ranking real de pedidos."
     }
   },
@@ -14,9 +14,46 @@
     "name": "Brocados Lanches",
     "isOpen": true,
     "deliveryTime": "35-50 min",
-    "whatsapp": "+5585999999999",
+    "whatsapp": "+5585992358708",
     "instagram": "@brocadoslanches",
-    "address": "Av. Principal, 1200 - Centro, Aquiraz - CE"
+    "address": "Av. Principal, 1200 - Centro, Aquiraz - CE",
+    "openingHours": [
+      {
+        "day": "sunday",
+        "closed": false,
+        "intervals": [{ "open": "17:45", "close": "23:30" }]
+      },
+      {
+        "day": "monday",
+        "closed": false,
+        "intervals": [{ "open": "18:00", "close": "23:30" }]
+      },
+      {
+        "day": "tuesday",
+        "closed": true,
+        "intervals": []
+      },
+      {
+        "day": "wednesday",
+        "closed": false,
+        "intervals": [{ "open": "18:00", "close": "23:30" }]
+      },
+      {
+        "day": "thursday",
+        "closed": false,
+        "intervals": [{ "open": "18:00", "close": "23:30" }]
+      },
+      {
+        "day": "friday",
+        "closed": false,
+        "intervals": [{ "open": "17:30", "close": "23:30" }]
+      },
+      {
+        "day": "saturday",
+        "closed": false,
+        "intervals": [{ "open": "18:00", "close": "23:30" }]
+      }
+    ]
   },
   "categories": [
     {
@@ -455,24 +492,36 @@
     }
   ],
   "delivery_zones": [
-    {
-      "id": "z1",
-      "name": "Centro",
-      "fee": 5,
-      "active": true
-    },
-    {
-      "id": "z2",
-      "name": "Prainha",
-      "fee": 8,
-      "active": true
-    },
-    {
-      "id": "z3",
-      "name": "Porto das Dunas",
-      "fee": 12,
-      "active": true
-    }
+    { "id": "z1", "name": "Araçá do biel", "fee": 6, "active": true },
+    { "id": "z2", "name": "Canto verde", "fee": 6, "active": true },
+    { "id": "z3", "name": "Vila pagã", "fee": 5, "active": true },
+    { "id": "z4", "name": "Estrada Nova", "fee": 5, "active": true },
+    { "id": "z5", "name": "Pau pombo", "fee": 5, "active": true },
+    { "id": "z6", "name": "Iguape", "fee": 8, "active": true },
+    { "id": "z7", "name": "Novo Iguape", "fee": 8, "active": true },
+    { "id": "z8", "name": "Patacas", "fee": 7, "active": true },
+    { "id": "z9", "name": "Araçá do manduca", "fee": 8, "active": true },
+    { "id": "z10", "name": "Área verde", "fee": 4, "active": true },
+    { "id": "z11", "name": "Engenho velho", "fee": 5, "active": true },
+    { "id": "z12", "name": "Sítio extremo", "fee": 7, "active": true },
+    { "id": "z13", "name": "Presídio ( até a Praia)", "fee": 8, "active": true },
+    { "id": "z14", "name": "Canoa", "fee": 4, "active": true },
+    { "id": "z15", "name": "Araçá da Mônica", "fee": 8, "active": true },
+    { "id": "z16", "name": "Presídio ( até a rua da bica)", "fee": 7, "active": true },
+    { "id": "z17", "name": "Smart city", "fee": 7, "active": true },
+    { "id": "z18", "name": "Fagundes", "fee": 5, "active": true },
+    { "id": "z19", "name": "Praia bella", "fee": 9, "active": true },
+    { "id": "z20", "name": "Tapera", "fee": 3, "active": true },
+    { "id": "z21", "name": "Portelinha", "fee": 5, "active": true },
+    { "id": "z22", "name": "Sítios Novos", "fee": 6, "active": true },
+    { "id": "z23", "name": "Vila Isabel", "fee": 9, "active": true },
+    { "id": "z24", "name": "Lagoa de cima até o açaí", "fee": 10, "active": true },
+    { "id": "z25", "name": "Catu", "fee": 7, "active": true },
+    { "id": "z26", "name": "Machuca", "fee": 15, "active": true },
+    { "id": "z27", "name": "Divineia", "fee": 15, "active": true },
+    { "id": "z28", "name": "Centro de Aquiraz", "fee": 16, "active": true },
+    { "id": "z29", "name": "Barro preto", "fee": 10, "active": true },
+    { "id": "z30", "name": "Riviera", "fee": 12, "active": true }
   ],
   "recent_orders": [
     {

@@ -149,7 +149,7 @@ Todas as alterações são refletidas imediatamente na visão do cliente **dentr
 
 Os dados completos estão em `../design-system/seed.json`.
 
-> No protótipo, telefone, endereço, preços, taxas e produtos são fictícios. O seed de desenvolvimento atual usa categorias, produtos e imagens copiadas do catálogo público como referência visual (ver `docs/13-decisoes-e-pendencias.md`), mas loja, zonas e pedidos seguem fictícios. Não usar em produção sem validação do cliente.
+> No protótipo, telefone, endereço, preços, taxas e produtos são fictícios. O seed de desenvolvimento atual usa categorias, produtos e imagens copiadas do catálogo público como referência visual (ver `docs/13-decisoes-e-pendencias.md`); contato e horários da loja seguem o status publicado em `/contato`, zonas e taxas foram fornecidas em 25/11/2026, e pedidos seguem fictícios. Não usar em produção sem validação do cliente.
 
 ---
 

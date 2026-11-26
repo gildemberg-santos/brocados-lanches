@@ -491,15 +491,16 @@ Nunca colocar PII em:
 
 - Migrações são scripts versionados em `backend/scripts/`; cada uma tem teste e é idempotente.
 - Índices são criados no start, de forma idempotente, com log.
-- Seed de desenvolvimento usa dados fictícios de `design-system/seed.json` ou fixtures versionadas; nunca produção.
+- Seed de desenvolvimento usa os dados versionados em `design-system/seed.json` (parcialmente fictícios, parcialmente copiados de referências públicas e parcialmente fornecidos para o projeto) ou fixtures versionadas; nunca produção.
 - `make seed` importa `categories`, `products`, `delivery_zones` e `store_settings` por upsert de `slug` (loja por `_id: "main"`), com `createdAt` preservado em `$setOnInsert`.
 - Preços e taxas vêm em reais no JSON e são convertidos para centavos em Go, sem ponto flutuante.
 - `make seed-reset` apaga apenas as quatro coleções semeadas; usuários, sessões, pedidos e auditoria não são tocados.
 - O comando recusa `APP_ENV=production`, o banco `brocados` e qualquer nome sem sufixo `_dev` ou `_test`.
-- Cada documento semeado recebe `seed: { fictitious: true, source: "design-system/seed.json" }`. O marcador identifica documento gerado pelo seed de desenvolvimento; não afirma que todos os campos sejam inventados. `allergens` e `openingHours` seguem pendentes de validação.
+- Cada documento semeado recebe `seed: { fictitious: true, source: "design-system/seed.json" }`. O marcador identifica documento gerado pelo seed de desenvolvimento; não afirma que todos os campos sejam inventados. `allergens` segue pendente de validação; `openingHours` do seed foi copiado do status publicado em `/contato`, e as zonas e taxas foram fornecidas em 25/11/2026. Tudo depende de validação da loja antes de produção.
 - Produtos semeados recebem `imageUrl` apontando para `/products/<slug>.<ext>` e `imageAlt` com o nome do produto. Os arquivos originais de 800 px estão em `frontend/public/products/`; em produção devem ser convertidos para WebP/AVIF.
 - Seed de teste usa `brocados_test` e é limpo antes/depois.
-- Categorias, produtos, preços, disponibilidade, descrições e imagens do seed foram copiados do catálogo público em 23/11/2026 apenas como referência de desenvolvimento. Dados de loja, zonas e pedidos permanecem fictícios; todo conteúdo precisa de validação do cliente antes de produção.
+- Categorias, produtos, preços, disponibilidade, descrições e imagens do seed foram copiados do catálogo público em 23/11/2026 apenas como referência de desenvolvimento. Pedidos permanecem fictícios; contato, tempo de entrega e horários da loja passaram a seguir o status publicado em `/contato`, e as 30 zonas e taxas foram fornecidas em 25/11/2026. Todo conteúdo precisa de validação do cliente antes de produção.
+- Com `APP_ENV=test`, o seed aplica a loja sempre aberta e sem `openingHours` para que os cenários E2E não dependam do relógio; em desenvolvimento os horários publicados são preservados.
 - Alterações de schema exigem atualização deste documento e do contrato, se afetarem a API.
 
 ---

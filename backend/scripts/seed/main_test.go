@@ -50,7 +50,8 @@ func TestParseOptionsRejectsUnknownFlag(t *testing.T) {
 func TestRunDryRunValidatesRepositorySeed(t *testing.T) {
 	path := filepath.Join("..", "..", "..", "design-system", "seed.json")
 
-	if err := run([]string{"-file", path, "-dry-run"}, nil); err != nil {
+	getenv := func(string) string { return "" }
+	if err := run([]string{"-file", path, "-dry-run"}, getenv); err != nil {
 		t.Fatalf("run() error = %v", err)
 	}
 }

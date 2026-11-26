@@ -9,6 +9,9 @@ import (
 	"strings"
 	"testing"
 	"unicode"
+
+	"github.com/brocados-lanches/api/internal/domain"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func TestCentsFromReais(t *testing.T) {
@@ -198,6 +201,19 @@ func TestValidateRejectsInvalidStoreSettings(t *testing.T) {
 		{name: "whatsapp com máscara", mutate: func(data *Data) { data.Store.WhatsApp = "(85) 99999-9999" }},
 		{name: "sem deliveryTime", mutate: func(data *Data) { data.Store.DeliveryTime = "" }},
 		{name: "sem endereço", mutate: func(data *Data) { data.Store.Address = "" }},
+		{name: "dia inválido", mutate: func(data *Data) { data.Store.OpeningHours[0].Day = "domingo" }},
+		{
+			name: "horário inválido",
+			mutate: func(data *Data) {
+				data.Store.OpeningHours[0].Intervals[0].Open = "18h"
+			},
+		},
+		{
+			name: "dia duplicado",
+			mutate: func(data *Data) {
+				data.Store.OpeningHours = append(data.Store.OpeningHours, domain.OpeningHours{Day: "sunday", Closed: true})
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -228,6 +244,9 @@ func TestBuildIsDeterministic(t *testing.T) {
 	}
 	if first.Store.Name != "Brocados Lanches" || !first.Store.IsOpen {
 		t.Fatalf("Build() store = %+v", first.Store)
+	}
+	if !reflect.DeepEqual(first.Store.OpeningHours, data.Store.OpeningHours) {
+		t.Fatalf("Build() opening hours = %+v, want %+v", first.Store.OpeningHours, data.Store.OpeningHours)
 	}
 	if len(first.Categories) != 2 || first.Categories[0].Slug != "hamburgueres" {
 		t.Fatalf("Build() categories = %+v", first.Categories)
@@ -274,8 +293,23 @@ func TestLoadRepositorySeedFile(t *testing.T) {
 	if len(plan.Products) != 37 {
 		t.Fatalf("products = %d, want 37", len(plan.Products))
 	}
-	if len(plan.Zones) != 3 {
-		t.Fatalf("zones = %d, want 3", len(plan.Zones))
+	if len(plan.Zones) != 30 {
+		t.Fatalf("zones = %d, want 30", len(plan.Zones))
+	}
+	if !data.Store.IsOpen || data.Store.WhatsApp != "+5585992358708" {
+		t.Fatalf("store contact = %+v, want open store with +5585992358708", data.Store)
+	}
+	if len(plan.Store.OpeningHours) != 7 {
+		t.Fatalf("opening hours = %d, want 7", len(plan.Store.OpeningHours))
+	}
+	if plan.Store.OpeningHours[0].Day != "sunday" || plan.Store.OpeningHours[2].Day != "tuesday" || !plan.Store.OpeningHours[2].Closed {
+		t.Fatalf("unexpected opening hours = %+v", plan.Store.OpeningHours)
+	}
+	if got := plan.Store.OpeningHours[0].Intervals[0]; got.Open != "17:45" || got.Close != "23:30" {
+		t.Fatalf("sunday interval = %+v, want 17:45-23:30", got)
+	}
+	if got := plan.Store.OpeningHours[5].Intervals[0]; got.Open != "17:30" || got.Close != "23:30" {
+		t.Fatalf("friday interval = %+v, want 17:30-23:30", got)
 	}
 	if plan.Products[0].PriceCents != 4999 {
 		t.Fatalf("first product price = %d, want 4999", plan.Products[0].PriceCents)
@@ -283,8 +317,11 @@ func TestLoadRepositorySeedFile(t *testing.T) {
 	if plan.Products[2].PriceCents != 8999 {
 		t.Fatalf("combo price = %d, want 8999", plan.Products[2].PriceCents)
 	}
-	if plan.Zones[2].FeeCents != 1200 {
-		t.Fatalf("last zone fee = %d, want 1200", plan.Zones[2].FeeCents)
+	if plan.Zones[0].Slug != "araca-do-biel" || plan.Zones[0].FeeCents != 600 {
+		t.Fatalf("first zone = %+v, want araca-do-biel with 600 cents", plan.Zones[0])
+	}
+	if plan.Zones[29].Name != "Riviera" || plan.Zones[29].FeeCents != 1200 {
+		t.Fatalf("last zone = %+v, want Riviera with 1200 cents", plan.Zones[29])
 	}
 
 	featured := make([]string, 0, 3)
@@ -360,6 +397,77 @@ func TestRepositorySeedImagesExist(t *testing.T) {
 	}
 }
 
+func TestSeedDeliveryZonesMatchProvidedList(t *testing.T) {
+	expected := map[string]int64{
+		"Araçá do biel":                 600,
+		"Canto verde":                   600,
+		"Vila pagã":                     500,
+		"Estrada Nova":                  500,
+		"Pau pombo":                     500,
+		"Iguape":                        800,
+		"Novo Iguape":                   800,
+		"Patacas":                       700,
+		"Araçá do manduca":              800,
+		"Área verde":                    400,
+		"Engenho velho":                 500,
+		"Sítio extremo":                 700,
+		"Presídio ( até a Praia)":       800,
+		"Canoa":                         400,
+		"Araçá da Mônica":               800,
+		"Presídio ( até a rua da bica)": 700,
+		"Smart city":                    700,
+		"Fagundes":                      500,
+		"Praia bella":                   900,
+		"Tapera":                        300,
+		"Portelinha":                    500,
+		"Sítios Novos":                  600,
+		"Vila Isabel":                   900,
+		"Lagoa de cima até o açaí":      1000,
+		"Catu":                          700,
+		"Machuca":                       1500,
+		"Divineia":                      1500,
+		"Centro de Aquiraz":             1600,
+		"Barro preto":                   1000,
+		"Riviera":                       1200,
+	}
+
+	path := filepath.Join("..", "..", "..", "design-system", "seed.json")
+	data, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	plan, err := Build(data)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	if len(plan.Zones) != len(expected) {
+		t.Fatalf("zones = %d, want %d", len(plan.Zones), len(expected))
+	}
+
+	seenSlugs := make(map[string]string, len(plan.Zones))
+	for _, zone := range plan.Zones {
+		want, ok := expected[zone.Name]
+		if !ok {
+			t.Errorf("unexpected zone %q", zone.Name)
+			continue
+		}
+		if zone.FeeCents != want {
+			t.Errorf("zone %q fee = %d, want %d", zone.Name, zone.FeeCents, want)
+		}
+		if !zone.Active {
+			t.Errorf("zone %q is not active", zone.Name)
+		}
+		if previous, exists := seenSlugs[zone.Slug]; exists {
+			t.Errorf("duplicate slug %q for %q and %q", zone.Slug, previous, zone.Name)
+		}
+		seenSlugs[zone.Slug] = zone.Name
+		delete(expected, zone.Name)
+	}
+	for name := range expected {
+		t.Errorf("missing zone %q", name)
+	}
+}
+
 func TestLoadRejectsInvalidJSON(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "seed.json")
 	if err := os.WriteFile(path, []byte("{invalid"), 0o600); err != nil {
@@ -377,6 +485,61 @@ func TestApplyRequiresDatabase(t *testing.T) {
 	}
 }
 
+func TestForEnvironment(t *testing.T) {
+	data := fakeData()
+	plan, err := Build(data)
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	plan.Store.IsOpen = false
+	plan.Store.OpeningHours = []domain.OpeningHours{{
+		Day:       "sunday",
+		Intervals: []domain.OpeningInterval{{Open: "18:00", Close: "23:30"}},
+	}}
+
+	testPlan := ForEnvironment(plan, "test")
+	if !testPlan.Store.IsOpen || len(testPlan.Store.OpeningHours) != 0 {
+		t.Fatalf("ForEnvironment(test) store = %+v", testPlan.Store)
+	}
+
+	developmentPlan := ForEnvironment(plan, "development")
+	if developmentPlan.Store.IsOpen || len(developmentPlan.Store.OpeningHours) != 1 {
+		t.Fatalf("ForEnvironment(development) store = %+v", developmentPlan.Store)
+	}
+}
+
+func TestOpeningHoursBSON(t *testing.T) {
+	hours := []domain.OpeningHours{
+		{
+			Day:    "sunday",
+			Closed: false,
+			Intervals: []domain.OpeningInterval{
+				{Open: "17:45", Close: "23:30"},
+			},
+		},
+		{Day: "tuesday", Closed: true, Intervals: []domain.OpeningInterval{}},
+	}
+
+	want := bson.A{
+		bson.D{
+			{Key: "day", Value: "sunday"},
+			{Key: "closed", Value: false},
+			{Key: "intervals", Value: bson.A{
+				bson.D{{Key: "open", Value: "17:45"}, {Key: "close", Value: "23:30"}},
+			}},
+		},
+		bson.D{
+			{Key: "day", Value: "tuesday"},
+			{Key: "closed", Value: true},
+			{Key: "intervals", Value: bson.A{}},
+		},
+	}
+
+	if got := openingHoursBSON(hours); !reflect.DeepEqual(got, want) {
+		t.Fatalf("openingHoursBSON() = %+v, want %+v", got, want)
+	}
+}
+
 func fakeData() Data {
 	return Data{
 		Store: Store{
@@ -386,6 +549,11 @@ func fakeData() Data {
 			WhatsApp:     "+5585999999999",
 			Instagram:    "@brocadoslanches",
 			Address:      "Av. Principal, 1200 - Centro, Aquiraz - CE",
+			OpeningHours: []domain.OpeningHours{{
+				Day:       "sunday",
+				Closed:    false,
+				Intervals: []domain.OpeningInterval{{Open: "18:00", Close: "23:30"}},
+			}},
 		},
 		Categories: []Category{
 			{ID: "cat_1", Name: "Hambúrgueres", Active: true},

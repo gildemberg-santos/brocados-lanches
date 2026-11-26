@@ -22,14 +22,15 @@ type Data struct {
 	DeliveryZones []DeliveryZone `json:"delivery_zones"`
 }
 
-// Store reúne os dados fictícios da loja.
+// Store reúne os dados de desenvolvimento da loja.
 type Store struct {
-	Name         string `json:"name"`
-	IsOpen       bool   `json:"isOpen"`
-	DeliveryTime string `json:"deliveryTime"`
-	WhatsApp     string `json:"whatsapp"`
-	Instagram    string `json:"instagram"`
-	Address      string `json:"address"`
+	Name         string                `json:"name"`
+	IsOpen       bool                  `json:"isOpen"`
+	DeliveryTime string                `json:"deliveryTime"`
+	WhatsApp     string                `json:"whatsapp"`
+	Instagram    string                `json:"instagram"`
+	Address      string                `json:"address"`
+	OpeningHours []domain.OpeningHours `json:"openingHours"`
 }
 
 // Category é uma categoria do protótipo.
@@ -77,6 +78,7 @@ type StoreSettings struct {
 	WhatsApp     string
 	Instagram    string
 	Address      string
+	OpeningHours []domain.OpeningHours
 }
 
 // CategoryDocument é uma categoria pronta para persistência.
@@ -146,6 +148,7 @@ func (d Data) Validate() error {
 		WhatsApp:     d.Store.WhatsApp,
 		Instagram:    d.Store.Instagram,
 		Address:      d.Store.Address,
+		OpeningHours: d.Store.OpeningHours,
 	}
 	if err := store.Validate(); err != nil {
 		problems = append(problems, fmt.Errorf("store: %w", err))
@@ -251,6 +254,7 @@ func Build(data Data) (Plan, error) {
 			WhatsApp:     data.Store.WhatsApp,
 			Instagram:    data.Store.Instagram,
 			Address:      data.Store.Address,
+			OpeningHours: cloneOpeningHours(data.Store.OpeningHours),
 		},
 	}
 
@@ -301,6 +305,31 @@ func Build(data Data) (Plan, error) {
 	}
 
 	return plan, nil
+}
+
+// ForEnvironment ajusta o plano para testes E2E determinísticos: sem horários e
+// com o kill switch ligado, o status da loja não depende da hora da execução.
+func ForEnvironment(plan Plan, environment string) Plan {
+	if !strings.EqualFold(strings.TrimSpace(environment), "test") {
+		return plan
+	}
+	plan.Store.IsOpen = true
+	plan.Store.OpeningHours = nil
+	return plan
+}
+
+func cloneOpeningHours(hours []domain.OpeningHours) []domain.OpeningHours {
+	if hours == nil {
+		return nil
+	}
+	copied := make([]domain.OpeningHours, len(hours))
+	for index, day := range hours {
+		copied[index] = day
+		if day.Intervals != nil {
+			copied[index].Intervals = append([]domain.OpeningInterval(nil), day.Intervals...)
+		}
+	}
+	return copied
 }
 
 // CentsFromReais converte um valor em reais, sempre em texto, para centavos.

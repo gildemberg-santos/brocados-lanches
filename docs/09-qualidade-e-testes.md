@@ -47,8 +47,9 @@
 
 Regras:
 
-- Seed de desenvolvimento é marcado como tal; categorias, produtos e imagens vêm do catálogo público de referência, enquanto loja, zonas e pedidos são fictícios.
-- `seed.Build` valida a configuração da loja com as mesmas regras da API (inclusive `whatsapp` em E.164), para que um `PATCH /admin/store` parcial nunca seja bloqueado por dado inválido do próprio seed.
+- Seed de desenvolvimento é marcado como tal; categorias, produtos e imagens vêm do catálogo público de referência, contato/horários seguem o status publicado em `/contato`, zonas e taxas foram fornecidas em 25/11/2026, e pedidos são fictícios.
+- `seed.Build` valida a configuração da loja com as mesmas regras da API (inclusive `whatsapp` em E.164 e `openingHours`), para que um `PATCH /admin/store` parcial nunca seja bloqueado por dado inválido do próprio seed.
+- Com `APP_ENV=test`, `seed.ForEnvironment` força `isOpen: true` e remove `openingHours` para o E2E não depender da hora da execução; o seed de desenvolvimento mantém os horários publicados.
 - Teste de integração usa Mongo real e descartável; o teste atual pula se `MONGO_TEST_URI` não estiver definido.
 - Não usar telefone, endereço ou nome reais em fixture.
 - Relógio é injetável (`platform/clock`) para testar horário da loja.

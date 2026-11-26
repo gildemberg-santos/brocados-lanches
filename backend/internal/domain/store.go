@@ -141,8 +141,8 @@ func validateOpeningHours(days []OpeningHours) error {
 
 // IsOpenAt aplica o kill switch e, quando existem horários cadastrados, a faixa
 // vigente no fuso informado. Sem horários cadastrados, o kill switch decide:
-// o seed de desenvolvimento ainda não contém openingHours e os horários reais
-// dependem da validação da US-025.
+// o seed de desenvolvimento traz horários copiados do status publicado em
+// /contato como referência, sujeitos à validação da loja.
 func (s StoreSettings) IsOpenAt(now time.Time, location *time.Location) bool {
 	if !s.IsOpen {
 		return false
