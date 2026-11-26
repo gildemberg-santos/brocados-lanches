@@ -9,7 +9,6 @@ import { fetchMenu } from '../services/menu'
 import { useCartStore } from '../stores/cart'
 import type { CartItem } from '../types/cart'
 import type { CatalogProduct, Menu } from '../types/catalog'
-import type { DeliveryZone } from '../types/delivery'
 import {
   makeCategory,
   makeMenu,
@@ -67,8 +66,6 @@ interface MountOptions {
   seed?: boolean
   menu?: Menu
   menuError?: boolean
-  zones?: DeliveryZone[]
-  zonesError?: boolean
 }
 
 async function mountCart(options: MountOptions = {}) {
@@ -84,17 +81,6 @@ async function mountCart(options: MountOptions = {}) {
     mockedFetchMenu.mockRejectedValue(new Error('network error'))
   } else {
     mockedFetchMenu.mockResolvedValue(options.menu ?? fullMenu)
-  }
-
-  if (options.zonesError) {
-    mockedFetchDeliveryZones.mockRejectedValue(new Error('network error'))
-  } else {
-    mockedFetchDeliveryZones.mockResolvedValue(
-      options.zones ?? [
-        { id: 'zone-1', name: 'Centro', feeCents: 800, sortOrder: 1 },
-        { id: 'zone-2', name: 'Prainha', feeCents: 1200, sortOrder: 2 },
-      ],
-    )
   }
 
   const router = createRouter({
@@ -127,17 +113,25 @@ describe('CartView', () => {
 
     expect(wrapper.text()).toContain('Seu carrinho está vazio')
     expect(wrapper.get('a[href="/cardapio"]').attributes('href')).toBe('/cardapio')
-    expect(mockedFetchDeliveryZones).toHaveBeenCalled()
   })
 
-  it('lists items with catalog prices, estimated fee and total', async () => {
+  it('lists items with catalog prices and the subtotal, without a delivery fee', async () => {
     const { wrapper } = await mountCart({ seed: true })
 
     expect(wrapper.text()).toContain('Brocado Cheddar')
+    expect(wrapper.text()).toContain('Subtotal (1)')
     expect(wrapper.text()).toContain('23,00')
-    expect(wrapper.text()).toContain('8,00')
-    expect(wrapper.text()).toContain('31,00')
+    expect(wrapper.text()).not.toContain('31,00')
+    expect(wrapper.text()).toContain('A taxa de entrega aparece no checkout')
     expect(wrapper.text()).toContain('O total é calculado no servidor no próximo passo.')
+  })
+
+  it('does not load delivery zones before checkout', async () => {
+    const { wrapper } = await mountCart({ seed: true })
+
+    expect(mockedFetchDeliveryZones).not.toHaveBeenCalled()
+    expect(wrapper.text()).not.toContain('estimada · menor taxa ativa')
+    expect(wrapper.text()).not.toContain('Total parcial')
   })
 
   it('shows the selected options and note', async () => {
@@ -187,14 +181,6 @@ describe('CartView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Brocado Cheddar')
-  })
-
-  it('keeps the total partial when delivery zones cannot be loaded', async () => {
-    const { wrapper } = await mountCart({ seed: true, zonesError: true })
-
-    expect(wrapper.text()).toContain('A calcular no checkout')
-    expect(wrapper.text()).toContain('Total parcial')
-    expect(wrapper.text()).toContain('23,00')
   })
 
   it('navigates to checkout from the cart CTA', async () => {

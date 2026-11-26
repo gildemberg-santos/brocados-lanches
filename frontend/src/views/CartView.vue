@@ -10,12 +10,10 @@ import ErrorState from '../components/ErrorState.vue'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import { buildCartLines, calculateSubtotalCents } from '../features/cart/cart'
 import { useCartStore } from '../stores/cart'
-import { useDeliveryZonesStore } from '../stores/deliveryZones'
 import { useMenuStore } from '../stores/menu'
 
 const cart = useCartStore()
 const menu = useMenuStore()
-const zones = useDeliveryZonesStore()
 const router = useRouter()
 
 const isLoading = computed(() => menu.state === 'idle' || menu.state === 'loading')
@@ -23,17 +21,12 @@ const lines = computed(() => buildCartLines(cart.items, menu.products).lines)
 const subtotalCents = computed(() => calculateSubtotalCents(lines.value))
 
 onMounted(async () => {
-  const menuLoad = menu.ensureLoaded()
-  const zonesLoad = zones.ensureLoaded()
-
-  await menuLoad
+  await menu.ensureLoaded()
 
   if (menu.state === 'success') {
     const { unavailableKeys } = buildCartLines(cart.items, menu.products)
     cart.removeUnavailable(unavailableKeys)
   }
-
-  await zonesLoad
 })
 </script>
 
@@ -90,11 +83,7 @@ onMounted(async () => {
           </p>
         </section>
 
-        <CartSummary
-          :subtotal-cents="subtotalCents"
-          :delivery-fee-cents="zones.cheapestFeeCents"
-          :item-count="cart.count"
-        >
+        <CartSummary :subtotal-cents="subtotalCents" :item-count="cart.count">
           <template #action>
             <BaseButton :disabled="lines.length === 0" @click="router.push({ name: 'checkout' })">
               Continuar

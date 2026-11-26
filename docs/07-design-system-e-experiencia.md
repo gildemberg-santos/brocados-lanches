@@ -245,9 +245,8 @@ Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummary
 **Objetivo:** revisar antes do checkout.
 
 - Itens com opções, observação, quantidade e remover.
-- Subtotal, taxa estimada e total.
-- Aviso de que o total final é confirmado no checkout.
-- Antes da escolha da zona, a taxa estimada usa a menor taxa ativa; se a API falhar, o resumo mostra “A calcular no checkout” e total parcial.
+- Subtotal apenas: nenhuma taxa ou total com entrega é exibido nesta etapa.
+- Aviso de que a taxa aparece no checkout, após a escolha entre entrega e retirada, e de que o total é calculado no servidor.
 - CTA “Continuar” habilitado quando há itens disponíveis; leva a `/checkout`.
 - Estado vazio com CTA para o cardápio.
 

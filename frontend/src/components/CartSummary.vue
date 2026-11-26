@@ -1,18 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import PriceText from './PriceText.vue'
 
-const props = defineProps<{
+defineProps<{
   subtotalCents: number
-  deliveryFeeCents: number | null
   itemCount: number
 }>()
-
-const totalCents = computed(() => props.subtotalCents + (props.deliveryFeeCents ?? 0))
-const totalLabel = computed(() =>
-  props.deliveryFeeCents === null ? 'Total parcial' : 'Total estimado',
-)
 </script>
 
 <template>
@@ -20,28 +12,15 @@ const totalLabel = computed(() =>
     <h2 id="cart-summary-title">Resumo do pedido</h2>
 
     <dl class="cart-summary__rows">
-      <div class="cart-summary__row">
-        <dt>Itens ({{ itemCount }})</dt>
-        <dd><PriceText :value-cents="subtotalCents" /></dd>
-      </div>
-      <div class="cart-summary__row">
-        <dt>Taxa de entrega</dt>
-        <dd v-if="deliveryFeeCents === null" class="cart-summary__pending">
-          A calcular no checkout
-        </dd>
-        <dd v-else>
-          <PriceText :value-cents="deliveryFeeCents" />
-          <span class="cart-summary__hint">estimada · menor taxa ativa</span>
-        </dd>
-      </div>
       <div class="cart-summary__row cart-summary__row--total">
-        <dt>{{ totalLabel }}</dt>
-        <dd><PriceText :value-cents="totalCents" /></dd>
+        <dt>Subtotal ({{ itemCount }})</dt>
+        <dd><PriceText :value-cents="subtotalCents" /></dd>
       </div>
     </dl>
 
     <p class="cart-summary__note">
-      Retirada não paga taxa de entrega. O valor final é confirmado no checkout.
+      A taxa de entrega aparece no checkout, depois que você escolher entrega ou retirada. O total é
+      calculado no servidor.
     </p>
 
     <div v-if="$slots.action" class="cart-summary__action">
@@ -90,12 +69,6 @@ const totalLabel = computed(() =>
   justify-items: end;
   gap: 2px;
   margin: 0;
-}
-
-.cart-summary__pending,
-.cart-summary__hint {
-  color: var(--text-sub);
-  font-size: var(--font-size-caption);
 }
 
 .cart-summary__row--total {

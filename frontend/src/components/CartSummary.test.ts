@@ -4,26 +4,27 @@ import { describe, expect, it } from 'vitest'
 import CartSummary from './CartSummary.vue'
 
 describe('CartSummary', () => {
-  it('shows subtotal, estimated fee and estimated total', () => {
+  it('mostra apenas o subtotal e explica quando a taxa aparece', () => {
     const wrapper = mount(CartSummary, {
-      props: { subtotalCents: 5600, deliveryFeeCents: 800, itemCount: 2 },
+      props: { subtotalCents: 5600, itemCount: 2 },
     })
 
-    expect(wrapper.text()).toContain('Itens (2)')
+    expect(wrapper.text()).toContain('Subtotal (2)')
     expect(wrapper.text()).toContain('56,00')
-    expect(wrapper.text()).toContain('8,00')
-    expect(wrapper.text()).toContain('64,00')
-    expect(wrapper.text()).toContain('estimada · menor taxa ativa')
-    expect(wrapper.text()).toContain('Retirada não paga taxa de entrega.')
+    expect(wrapper.text()).not.toContain('Taxa de entrega estimada')
+    expect(wrapper.text()).not.toContain('8,00')
+    expect(wrapper.text()).not.toContain('64,00')
+    expect(wrapper.text()).toContain('A taxa de entrega aparece no checkout')
+    expect(wrapper.text()).toContain('O total é calculado no servidor')
   })
 
-  it('keeps the total partial when the fee is unknown', () => {
+  it('atualiza o subtotal conforme a quantidade de itens', () => {
     const wrapper = mount(CartSummary, {
-      props: { subtotalCents: 2300, deliveryFeeCents: null, itemCount: 1 },
+      props: { subtotalCents: 2300, itemCount: 1 },
     })
 
-    expect(wrapper.text()).toContain('A calcular no checkout')
-    expect(wrapper.text()).toContain('Total parcial')
-    expect(wrapper.text()).not.toContain('Total estimado')
+    expect(wrapper.text()).toContain('Subtotal (1)')
+    expect(wrapper.text()).toContain('23,00')
+    expect(wrapper.text()).not.toContain('Total parcial')
   })
 })

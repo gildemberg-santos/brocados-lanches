@@ -60,7 +60,7 @@ O esqueleto da Fase 1 já inclui:
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
-- carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e totais estimados pela menor taxa ativa;
+- carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e subtotal sem taxa; a taxa e o total aparecem no checkout, após a escolha de entrega/retirada e zona;
 - checkout com entrega/retirada, zona, endereço, pagamento, troco e validação por campo; confirmação que limpa o carrinho somente após `201` e permite reenviar/copiar o link do WhatsApp;
 - estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo, carrinho, checkout e pedido;
 - componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText`, `AdminOrderFilters`, `OrderStatusBadge`, `OrderStatusActions`, `AdminCatalogFilters`, `AdminCatalogForm`, `AdminCatalogList`, `AdminProductForm` e outros) e services/stores tipados;
