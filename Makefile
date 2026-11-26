@@ -9,7 +9,7 @@ endif
 
 .PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-e2e \
 	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check build build-api build-web \
-	seed seed-reset seed-check up up-offline down logs ps
+	seed seed-reset seed-check migrate-reference-check migrate-reference up up-offline down logs ps
 
 help:
 	@printf '%s\n' \
@@ -27,6 +27,8 @@ help:
 		'  make seed        Aplica os dados fictícios no banco de desenvolvimento' \
 		'  make seed-reset  Esvazia as coleções semeadas e reaplica os dados fictícios' \
 		'  make seed-check  Valida o seed.json sem acessar o MongoDB' \
+		'  make migrate-reference-check  Valida o plano da migração sem acessar o MongoDB' \
+		'  make migrate-reference  Aplica a migração versionada (exige MIGRATION_CONFIRM)' \
 		'  make build       Compila backend e frontend' \
 		'  make up          Sobe MongoDB, API e web com Docker Compose' \
 		'  make up-offline  Compila o frontend no host e sobe sem baixar npm no Docker' \
@@ -75,6 +77,14 @@ seed-reset:
 
 seed-check:
 	cd backend && go run ./scripts/seed -dry-run
+
+# A migração é somente leitura por padrão. Para gravar, o chamador precisa
+# exportar MIGRATION_CONFIRM=APPLY_VALIDATED_REFERENCE_DATA_20261125.
+migrate-reference-check:
+	cd backend && go run ./scripts/migrate/20261125-dados-referencia
+
+migrate-reference:
+	cd backend && go run ./scripts/migrate/20261125-dados-referencia -apply -confirm "$$MIGRATION_CONFIRM"
 
 lint: lint-api lint-web
 

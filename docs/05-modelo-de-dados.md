@@ -501,6 +501,10 @@ Nunca colocar PII em:
 - Seed de teste usa `brocados_test` e é limpo antes/depois.
 - Categorias, produtos, preços, disponibilidade, descrições e imagens do seed foram copiados do catálogo público em 23/11/2026 apenas como referência de desenvolvimento. Pedidos permanecem fictícios; contato, tempo de entrega e horários da loja passaram a seguir o status publicado em `/contato`, e as 30 zonas e taxas foram fornecidas em 25/11/2026. Todo conteúdo precisa de validação do cliente antes de produção.
 - Com `APP_ENV=test`, o seed aplica a loja sempre aberta e sem `openingHours` para que os cenários E2E não dependam do relógio; em desenvolvimento os horários publicados são preservados.
+- A migração versionada `20261125-dados-referencia` usa o mesmo plano, mas não apaga coleções: atualiza as quatro coleções do seed por upsert e desativa (`active: false`; produtos também `available: false`) os documentos fora do plano. Pedidos, usuários, sessões e auditoria permanecem intactos.
+- A migração grava `migration: { version, source }` nos documentos que altera, sem reaproveitar o marcador `seed.fictitious`. Só grava com `-apply`, confirmação explícita e alvo coerente: produção exige `APP_ENV=production` e `MONGO_DB=brocados`.
+- Em produção o kill switch `isOpen` é lido de `store_settings` e preservado; apenas contato, horários, tempo de entrega, catálogo e zonas são substituídos pelo plano. Em dev/teste o `isOpen: true` do seed permanece para o E2E.
+- A URI de produção vem de variável de ambiente/secret manager; nunca é gravada em script, documentação ou log.
 - Alterações de schema exigem atualização deste documento e do contrato, se afetarem a API.
 
 ---

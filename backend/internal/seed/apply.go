@@ -31,6 +31,15 @@ type Result struct {
 	DeliveryZones int
 }
 
+// ApplyOptions controla a escrita do plano sem alterar a validação de alvo do
+// chamador. MarkerKey e Marker substituem o marcador padrão de desenvolvimento
+// quando a migração versionada reaproveita o mesmo plano.
+type ApplyOptions struct {
+	Reset     bool
+	MarkerKey string
+	Marker    bson.D
+}
+
 var seedMarker = bson.D{
 	{Key: "fictitious", Value: true},
 	{Key: "source", Value: "design-system/seed.json"},
@@ -53,14 +62,33 @@ func Apply(ctx context.Context, database *mongo.Database, plan Plan, reset bool)
 	if err := ValidateTarget(database.Name(), ""); err != nil {
 		return Result{}, err
 	}
+	return ApplyWithOptions(ctx, database, plan, ApplyOptions{Reset: reset})
+}
+
+// ApplyWithOptions grava o plano sem validar o alvo: a validação é
+// responsabilidade da migração que o chama. É usada apenas para reaproveitar o
+// plano determinístico do seed em migrações versionadas, com outro marcador.
+func ApplyWithOptions(ctx context.Context, database *mongo.Database, plan Plan, options ApplyOptions) (Result, error) {
+	if database == nil {
+		return Result{}, errors.New("mongo database is required")
+	}
 	if plan.Store.Name == "" {
 		return Result{}, errors.New("seed plan has no store name")
 	}
 
-	now := time.Now().UTC()
-	result := Result{Database: database.Name(), Reset: reset}
+	markerKey := options.MarkerKey
+	if markerKey == "" {
+		markerKey = "seed"
+	}
+	marker := options.Marker
+	if len(marker) == 0 {
+		marker = seedMarker
+	}
 
-	if reset {
+	now := time.Now().UTC()
+	result := Result{Database: database.Name(), Reset: options.Reset}
+
+	if options.Reset {
 		for _, collection := range seededCollections {
 			if _, err := database.Collection(collection).DeleteMany(ctx, bson.D{}); err != nil {
 				return Result{}, fmt.Errorf("reset collection %s: %w", collection, err)
@@ -68,14 +96,14 @@ func Apply(ctx context.Context, database *mongo.Database, plan Plan, reset bool)
 		}
 	}
 
-	storeCount, err := applyStoreSettings(ctx, database, plan.Store, now)
+	storeCount, err := applyStoreSettings(ctx, database, plan.Store, now, markerKey, marker)
 	if err != nil {
 		return Result{}, err
 	}
 	result.StoreSettings = storeCount
 
 	for _, category := range plan.Categories {
-		count, err := applyCategory(ctx, database, category, now)
+		count, err := applyCategory(ctx, database, category, now, markerKey, marker)
 		if err != nil {
 			return Result{}, err
 		}
@@ -92,7 +120,7 @@ func Apply(ctx context.Context, database *mongo.Database, plan Plan, reset bool)
 		if !ok {
 			return Result{}, fmt.Errorf("category %q is missing after seed", product.CategorySlug)
 		}
-		count, err := applyProduct(ctx, database, product, categoryID, now)
+		count, err := applyProduct(ctx, database, product, categoryID, now, markerKey, marker)
 		if err != nil {
 			return Result{}, err
 		}
@@ -100,7 +128,7 @@ func Apply(ctx context.Context, database *mongo.Database, plan Plan, reset bool)
 	}
 
 	for _, zone := range plan.Zones {
-		count, err := applyZone(ctx, database, zone, now)
+		count, err := applyZone(ctx, database, zone, now, markerKey, marker)
 		if err != nil {
 			return Result{}, err
 		}
@@ -110,7 +138,7 @@ func Apply(ctx context.Context, database *mongo.Database, plan Plan, reset bool)
 	return result, nil
 }
 
-func applyStoreSettings(ctx context.Context, database *mongo.Database, store StoreSettings, now time.Time) (int, error) {
+func applyStoreSettings(ctx context.Context, database *mongo.Database, store StoreSettings, now time.Time, markerKey string, marker bson.D) (int, error) {
 	fields := bson.D{
 		{Key: "name", Value: store.Name},
 		{Key: "isOpen", Value: store.IsOpen},
@@ -121,7 +149,7 @@ func applyStoreSettings(ctx context.Context, database *mongo.Database, store Sto
 		{Key: "openingHours", Value: openingHoursBSON(store.OpeningHours)},
 	}
 
-	count, err := applyDocument(ctx, database, CollectionStoreSettings, bson.D{{Key: "_id", Value: "main"}}, fields, now)
+	count, err := applyDocument(ctx, database, CollectionStoreSettings, bson.D{{Key: "_id", Value: "main"}}, fields, now, markerKey, marker)
 	if err != nil {
 		return 0, fmt.Errorf("seed store settings: %w", err)
 	}
@@ -147,7 +175,7 @@ func openingHoursBSON(hours []domain.OpeningHours) bson.A {
 	return result
 }
 
-func applyCategory(ctx context.Context, database *mongo.Database, category CategoryDocument, now time.Time) (int, error) {
+func applyCategory(ctx context.Context, database *mongo.Database, category CategoryDocument, now time.Time, markerKey string, marker bson.D) (int, error) {
 	fields := bson.D{
 		{Key: "slug", Value: category.Slug},
 		{Key: "name", Value: category.Name},
@@ -162,6 +190,8 @@ func applyCategory(ctx context.Context, database *mongo.Database, category Categ
 		bson.D{{Key: "slug", Value: category.Slug}},
 		fields,
 		now,
+		markerKey,
+		marker,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("seed category %q: %w", category.Slug, err)
@@ -175,6 +205,8 @@ func applyProduct(
 	product ProductDocument,
 	categoryID bson.ObjectID,
 	now time.Time,
+	markerKey string,
+	marker bson.D,
 ) (int, error) {
 	fields := bson.D{
 		{Key: "slug", Value: product.Slug},
@@ -200,6 +232,8 @@ func applyProduct(
 		bson.D{{Key: "slug", Value: product.Slug}},
 		fields,
 		now,
+		markerKey,
+		marker,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("seed product %q: %w", product.Slug, err)
@@ -207,7 +241,7 @@ func applyProduct(
 	return count, nil
 }
 
-func applyZone(ctx context.Context, database *mongo.Database, zone ZoneDocument, now time.Time) (int, error) {
+func applyZone(ctx context.Context, database *mongo.Database, zone ZoneDocument, now time.Time, markerKey string, marker bson.D) (int, error) {
 	fields := bson.D{
 		{Key: "slug", Value: zone.Slug},
 		{Key: "name", Value: zone.Name},
@@ -223,6 +257,8 @@ func applyZone(ctx context.Context, database *mongo.Database, zone ZoneDocument,
 		bson.D{{Key: "slug", Value: zone.Slug}},
 		fields,
 		now,
+		markerKey,
+		marker,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("seed delivery zone %q: %w", zone.Slug, err)
@@ -237,10 +273,12 @@ func applyDocument(
 	filter bson.D,
 	fields bson.D,
 	now time.Time,
+	markerKey string,
+	marker bson.D,
 ) (int, error) {
 	set := make(bson.D, 0, len(fields)+2)
 	set = append(set, fields...)
-	set = append(set, bson.E{Key: "seed", Value: seedMarker}, bson.E{Key: "updatedAt", Value: now})
+	set = append(set, bson.E{Key: markerKey, Value: marker}, bson.E{Key: "updatedAt", Value: now})
 
 	update := bson.D{
 		{Key: "$set", Value: set},

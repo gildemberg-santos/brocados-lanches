@@ -266,6 +266,28 @@ make seed-check   # valida o JSON sem conectar no MongoDB
 
 > Nunca rode seed ou testes contra um banco de produção. Use `brocados_dev` ou `brocados_test`.
 
+### Migração versionada de dados de referência
+
+A migração `20261125-dados-referencia` reaproveita o plano determinístico do seed para atualizar `store_settings`, categorias, produtos e zonas. Ela não apaga documentos: os itens que não estão no plano são desativados (`active: false`; produtos também `available: false`). Pedidos, usuários, sessões e auditoria não são tocados.
+
+```bash
+make migrate-reference-check  # valida o plano sem conectar no MongoDB
+
+# Produção: a URI e a confirmação vêm do ambiente, nunca do repositório.
+APP_ENV=production MONGO_DB=brocados \
+  MIGRATION_CONFIRM=APPLY_VALIDATED_REFERENCE_DATA_20261125 \
+  make migrate-reference
+```
+
+- Sem `-apply`, o comando apenas valida o plano; `make migrate-reference` já envia a flag.
+- `APP_ENV=production` exige `MONGO_DB=brocados` e a confirmação acima; não existe atalho para gravar em produção.
+- Os documentos escritos recebem `migration: { version: "20261125-dados-referencia", source: "design-system/seed.json" }`, distinto do marcador `seed.fictitious`.
+- Em produção, o kill switch `isOpen` atual é preservado: a migração não altera essa decisão da operação. Em dev/teste o valor do seed é mantido para o E2E.
+- **Não execute em produção sem validar antes** catálogo, preços, horários, contato, zonas e taxas com a loja. O seed é referência de desenvolvimento, não conteúdo aprovado.
+- Rollback: restaurar o backup anterior das quatro coleções ou aplicar uma migração corretiva versionada; itens desativados podem ser reativados com registro.
+
+Nunca armazene a URI de produção em arquivos versionados. Use variável de ambiente injetada pelo secret manager da plataforma.
+
 ---
 
 ## 5. Testes e validação

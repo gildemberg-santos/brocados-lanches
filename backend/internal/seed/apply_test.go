@@ -54,7 +54,7 @@ func TestApplyIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Apply() error = %v", err)
 	}
-	if result.StoreSettings != 1 || result.Categories != 5 || result.Products != 37 || result.DeliveryZones != 3 {
+	if result.StoreSettings != 1 || result.Categories != 5 || result.Products != 37 || result.DeliveryZones != 30 {
 		t.Fatalf("Apply() result = %+v", result)
 	}
 
@@ -88,7 +88,7 @@ func TestApplyIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("second Apply() error = %v", err)
 	}
-	if second.StoreSettings != 1 || second.Categories != 5 || second.Products != 37 || second.DeliveryZones != 3 {
+	if second.StoreSettings != 1 || second.Categories != 5 || second.Products != 37 || second.DeliveryZones != 30 {
 		t.Fatalf("second Apply() result = %+v", second)
 	}
 	assertDocumentCounts(t, ctx, database)
@@ -105,7 +105,7 @@ func assertDocumentCounts(t *testing.T, ctx context.Context, database *mongo.Dat
 		CollectionStoreSettings: 1,
 		CollectionCategories:    5,
 		CollectionProducts:      37,
-		CollectionDeliveryZones: 3,
+		CollectionDeliveryZones: 30,
 	}
 	for collection, want := range expected {
 		got, err := database.Collection(collection).CountDocuments(ctx, bson.D{})

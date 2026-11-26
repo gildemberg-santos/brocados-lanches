@@ -174,6 +174,10 @@ commit → fmt/lint/test/docs/design/build → imagem → preview → aprovaçã
 - Ordem: expandir → migrar → contrair.
 - Nunca alterar documento em produção por comando manual sem registro.
 - Toda migração tem rollback ou plano de correção.
+- A migração `20261125-dados-referencia` (`backend/scripts/migrate/20261125-dados-referencia/`) atualiza loja, categorias, produtos e zonas a partir do plano do seed. Não apaga documentos: desativa os que ficaram fora do plano e preserva pedidos, usuários, sessões e auditoria. Em produção o kill switch `isOpen` atual é preservado.
+- Antes de executar em produção: validar catálogo, preços, horários, contato, zonas e taxas com a loja; tirar backup das quatro coleções; conferir `make migrate-reference-check`.
+- Execução: `APP_ENV=production MONGO_DB=brocados MIGRATION_CONFIRM=APPLY_VALIDATED_REFERENCE_DATA_20261125 make migrate-reference`. A URI vem de `MONGO_URI`/`MONGODB_URI` no ambiente e nunca entra no repositório.
+- Rollback: restaurar o backup das quatro coleções ou aplicar migração corretiva versionada. Documentos desativados só voltam a `active: true` com registro da correção.
 
 ### 6.3 Retenção
 

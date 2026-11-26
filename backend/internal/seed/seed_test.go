@@ -485,6 +485,16 @@ func TestApplyRequiresDatabase(t *testing.T) {
 	}
 }
 
+func TestApplyWithOptionsRequiresDatabase(t *testing.T) {
+	options := ApplyOptions{
+		MarkerKey: "migration",
+		Marker:    bson.D{{Key: "version", Value: "20261125-dados-referencia"}},
+	}
+	if _, err := ApplyWithOptions(context.Background(), nil, Plan{Store: StoreSettings{Name: "Loja"}}, options); err == nil {
+		t.Fatal("ApplyWithOptions() error = nil, want error")
+	}
+}
+
 func TestForEnvironment(t *testing.T) {
 	data := fakeData()
 	plan, err := Build(data)
