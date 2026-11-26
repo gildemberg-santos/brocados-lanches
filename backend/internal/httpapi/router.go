@@ -20,19 +20,20 @@ type Pinger interface {
 
 // Dependencies reúne o que o roteador precisa para funcionar.
 type Dependencies struct {
-	Pinger       Pinger
-	Catalog      CatalogService
-	Store        StoreService
-	Orders       OrderService
-	AdminAuth    AdminAuthService
-	AdminCookie  AdminCookieConfig
-	AdminCatalog AdminCatalogService
-	AdminStore   AdminStoreService
-	AdminOrders  AdminOrderService
-	AdminUsers   AdminUsersService
-	LoginLimiter *ratelimit.Limiter
-	Limiters     Limiters
-	Logger       *slog.Logger
+	Pinger           Pinger
+	Catalog          CatalogService
+	Store            StoreService
+	Orders           OrderService
+	CustomerProfiles CustomerLookupService
+	AdminAuth        AdminAuthService
+	AdminCookie      AdminCookieConfig
+	AdminCatalog     AdminCatalogService
+	AdminStore       AdminStoreService
+	AdminOrders      AdminOrderService
+	AdminUsers       AdminUsersService
+	LoginLimiter     *ratelimit.Limiter
+	Limiters         Limiters
+	Logger           *slog.Logger
 }
 
 type healthResponse struct {
@@ -79,6 +80,10 @@ func NewRouter(deps Dependencies) http.Handler {
 		router.Get("/store", handleStore(deps.Store, logger))
 		router.Get("/menu", limitByIP(limiters.Menu, handleMenu(deps.Catalog, logger)))
 		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
+		router.Post(
+			"/customers/profile",
+			limitByIP(limiters.CustomerLookups, handleCustomerProfileLookup(deps.CustomerProfiles, limiters.CustomerPhones, logger)),
+		)
 		router.Post("/orders/quote", limitByIP(limiters.Quotes, handleQuote(deps.Orders, logger)))
 		router.Post("/orders", limitByIP(limiters.Orders, handleCreateOrder(deps.Orders, limiters.OrderPhones, logger)))
 		router.Get("/orders/{publicId}", limitByIP(limiters.Tracking, handleTrackOrder(deps.Orders, logger)))

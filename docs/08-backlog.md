@@ -195,7 +195,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 **Objetivo:** permitir montar o pedido, cotar no servidor e preencher o checkout sem perder dados.
 
-**Status em 26/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e subtotal), US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência) e US-033/US-034 concluídas (`/checkout` com entrega/retirada, zona, endereço, pagamento, troco, validação por campo, foco no primeiro erro, cotação no servidor, bloqueio de envio e estados de carregamento/erro/sucesso). O CTA “Continuar” do carrinho leva ao checkout. Desde 26/11/2026 o carrinho não carrega zonas nem mostra taxa estimada; taxa e total vêm da cotação da US-032 depois da escolha de entrega/retirada e zona (D-035), sem requisição incompleta após recarregar a página (D-036). Desde 26/11/2026, após o pedido gravado o checkout salva no navegador entrega/retirada, zona, nome, telefone, endereço e pagamento para o próximo pedido; observação e troco ficam de fora, e a zona salva é descartada se deixar de existir (D-037). Também desde 26/11/2026 o servidor grava, de forma best-effort depois do pedido, um perfil de conveniência por telefone, com opt-out no checkout, retenção de 24 meses e resumo no detalhe administrativo (US-036/D-038). O limite de taxa previsto no contrato ainda não está ativo no esqueleto.
+**Status em 26/11/2026:** US-030 concluída (`useCartStore` com schema `v1`, persistência de IDs/escolhas/quantidades, limpeza de versões antigas e validação contra o catálogo), US-031 concluída (`/carrinho` com `CartLine`, `CartSummary` e `QuantityStepper`, quantidade, remoção, limpeza, estado vazio e subtotal), US-032 concluída (`POST /orders/quote` com validação de itens, opções, adicionais, zona e status da loja; totais calculados no servidor por `domain.BuildQuote`; sem persistência) e US-033/US-034 concluídas (`/checkout` com entrega/retirada, zona, endereço, pagamento, troco, validação por campo, foco no primeiro erro, cotação no servidor, bloqueio de envio e estados de carregamento/erro/sucesso). O CTA “Continuar” do carrinho leva ao checkout. Desde 26/11/2026 o carrinho não carrega zonas nem mostra taxa estimada; taxa e total vêm da cotação da US-032 depois da escolha de entrega/retirada e zona (D-035), sem requisição incompleta após recarregar a página (D-036). Desde 26/11/2026, após o pedido gravado o checkout salva no navegador entrega/retirada, zona, nome, telefone, endereço e pagamento para o próximo pedido; observação e troco ficam de fora, e a zona salva é descartada se deixar de existir (D-037). Também desde 26/11/2026 o servidor grava, de forma best-effort depois do pedido, um perfil de conveniência por telefone, com opt-out no checkout, retenção de 24 meses e resumo no detalhe administrativo (US-036/D-038). Ainda em 26/11/2026 o checkout passou a identificar o cliente primeiro e, com a opção de conveniência habilitada, consulta `POST /customers/profile` para preencher entrega, endereço, zona e pagamento quando o telefone não corresponde às preferências locais; a resposta é mínima, limitada e não substitui a cotação autoritativa (D-039).
 
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
@@ -205,7 +205,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-033 | Formulário de checkout | P0 | G | US-031, US-032 | Delivery/retirada, zona, endereço, pagamento, troco e validação; testes |
 | US-034 | Revisão e envio | P0 | M | US-033 | Total cotado, bloqueio de envio, estados de erro e sucesso |
 | US-035 | Preferências do checkout | P1 | M | US-033, US-034 | Salvar automaticamente após pedido gravado; observação e troco de fora; apagar em `/privacidade`; testes |
-| US-036 | Perfil de conveniência no servidor | P1 | G | US-034, US-035 | Perfil por telefone normalizado após pedido gravado; sem observação/troco; opt-out; retenção 24 meses; resumo no detalhe admin; sem API pública; testes |
+| US-036 | Perfil de conveniência no servidor | P1 | G | US-034, US-035 | Perfil por telefone normalizado após pedido gravado; sem observação/troco; opt-out; retenção 24 meses; resumo no detalhe admin; testes |
+| US-037 | Consulta de conveniência por telefone | P1 | M | US-036 | `POST /customers/profile` com opt-in no checkout, resposta mínima, sem taxa/histórico, limites por IP e telefone; checkout preenche demais etapas pelo telefone; testes |
 
 **Tarefas técnicas:**
 
@@ -224,6 +225,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Preservar carrinho em falha.
 - [x] Salvar preferências do checkout apenas após pedido gravado, sem observação nem troco (US-035).
 - [x] Validar preferências ao carregar e oferecer exclusão em `/privacidade` (US-035).
+- [x] Expor consulta de conveniência mínima por telefone com limites por IP e telefone (US-037).
+- [x] Consultar o perfil no checkout quando o telefone não corresponde às preferências locais (US-037).
 
 ---
 

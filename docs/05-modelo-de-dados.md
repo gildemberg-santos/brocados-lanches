@@ -411,7 +411,7 @@ findOneAndUpdate({_id: "orders"}, {$inc: {seq: 1}}, {upsert: true, returnDocumen
 
 ### 3.11 `customer_profiles`
 
-Perfil de conveniência reconhecido pelo telefone normalizado. Não é uma API pública, não recebe `note` nem `payment.changeForCents` e não altera preço, taxa, disponibilidade ou status. A escrita acontece depois que o pedido foi gravado e falha não impede a criação do pedido (D-038).
+Perfil de conveniência reconhecido pelo telefone normalizado. Não recebe `note` nem `payment.changeForCents` e não altera preço, taxa, disponibilidade ou status. A escrita acontece depois que o pedido foi gravado e falha não impede a criação do pedido (D-038). A leitura pública é limitada a `POST /customers/profile`, com finalidade exclusiva de preencher o próximo pedido; a resposta não inclui `feeCents`, contagem, histórico nem `phoneKey` (D-039).
 
 | Campo | Tipo | Obrigatório | Observação |
 |---|---|---|---|
@@ -441,7 +441,7 @@ Perfil de conveniência reconhecido pelo telefone normalizado. Não é uma API p
 
 ### 3.12 `orders` e `customer_profiles`
 
-O detalhe administrativo do pedido pode exibir `customerProfile` somente para administrador autenticado; nunca há listagem pública nem consulta por telefone. O resumo contém nome, telefone, `orderCount`, último pedido, último endereço, zona, forma de entrega/pagamento, `optedOut`, `updatedAt` e `retainedUntil`, sem `phoneKey`.
+O detalhe administrativo do pedido pode exibir `customerProfile` somente para administrador autenticado; nunca há listagem pública de pedidos ou de perfis. A consulta pública permitida devolve somente a sugestão de conveniência por telefone, sem vincular pedidos (D-039). O resumo administrativo contém nome, telefone, `orderCount`, último pedido, último endereço, zona, forma de entrega/pagamento, `optedOut`, `updatedAt` e `retainedUntil`, sem `phoneKey`.
 
 ---
 

@@ -55,8 +55,9 @@ onMounted(() => {
         </li>
         <li>
           perfil de conveniência no servidor, identificado pelo telefone: nome, último endereço de
-          entrega, entrega/retirada, zona e forma de pagamento usados no pedido. Observação e valor
-          de troco não entram nesse perfil.
+          entrega, entrega/retirada, zona e forma de pagamento usados no pedido. Com sua autorização
+          no checkout, esse perfil pode ser consultado pelo telefone informado para preencher o
+          próximo pedido; a resposta não traz taxa, histórico de pedidos, observação ou troco.
         </li>
       </ul>
       <p>
@@ -105,10 +106,10 @@ onMounted(() => {
           contatar você sobre o pedido;
         </li>
         <li>
-          conveniência: reaproveitar no próximo pedido as escolhas já informadas, no navegador e em
-          um perfil no servidor identificado pelo telefone. Esse tratamento pode ser desativado no
-          checkout; nesse caso o perfil existente é desativado e seus dados de conveniência são
-          removidos;
+          conveniência: buscar e reaproveitar no próximo pedido as escolhas já informadas, no
+          navegador e em um perfil no servidor identificado pelo telefone. Esse tratamento pode ser
+          desativado no checkout; nesse caso o perfil existente é desativado e seus dados de
+          conveniência são removidos;
         </li>
         <li>
           legítimo interesse: segurança, prevenção a abuso e auditoria das alterações no painel;

@@ -13,35 +13,41 @@ import (
 // Limites do contrato (docs/06-contrato-api.md §15). A janela é fixa e curta
 // para não reter chaves identificáveis por mais tempo que o necessário.
 const (
-	rateLimitWindow      = time.Minute
-	rateLimitRetryAfter  = "60"
-	orderPerIPLimit      = 10
-	orderPerPhoneLimit   = 3
-	quotePerIPLimit      = 30
-	trackingPerIPLimit   = 60
-	menuPerIPLimit       = 120
-	adminPerSessionLimit = 120
+	rateLimitWindow       = time.Minute
+	rateLimitRetryAfter   = "60"
+	orderPerIPLimit       = 10
+	orderPerPhoneLimit    = 3
+	customerPerIPLimit    = 10
+	customerPerPhoneLimit = 3
+	quotePerIPLimit       = 30
+	trackingPerIPLimit    = 60
+	menuPerIPLimit        = 120
+	adminPerSessionLimit  = 120
 )
 
 // Limiters reúne os limitadores das rotas públicas e do painel.
 type Limiters struct {
-	Orders      *ratelimit.Limiter
-	OrderPhones *ratelimit.Limiter
-	Quotes      *ratelimit.Limiter
-	Tracking    *ratelimit.Limiter
-	Menu        *ratelimit.Limiter
-	Admin       *ratelimit.Limiter
+	Orders          *ratelimit.Limiter
+	OrderPhones     *ratelimit.Limiter
+	CustomerLookups *ratelimit.Limiter
+	CustomerPhones  *ratelimit.Limiter
+	Quotes          *ratelimit.Limiter
+	Tracking        *ratelimit.Limiter
+	Menu            *ratelimit.Limiter
+	Admin           *ratelimit.Limiter
 }
 
 // DefaultLimiters cria limitadores com os valores do contrato.
 func DefaultLimiters() Limiters {
 	return Limiters{
-		Orders:      newLimiter(orderPerIPLimit),
-		OrderPhones: newLimiter(orderPerPhoneLimit),
-		Quotes:      newLimiter(quotePerIPLimit),
-		Tracking:    newLimiter(trackingPerIPLimit),
-		Menu:        newLimiter(menuPerIPLimit),
-		Admin:       newLimiter(adminPerSessionLimit),
+		Orders:          newLimiter(orderPerIPLimit),
+		OrderPhones:     newLimiter(orderPerPhoneLimit),
+		CustomerLookups: newLimiter(customerPerIPLimit),
+		CustomerPhones:  newLimiter(customerPerPhoneLimit),
+		Quotes:          newLimiter(quotePerIPLimit),
+		Tracking:        newLimiter(trackingPerIPLimit),
+		Menu:            newLimiter(menuPerIPLimit),
+		Admin:           newLimiter(adminPerSessionLimit),
 	}
 }
 
@@ -51,6 +57,12 @@ func (l *Limiters) fillDefaults() {
 	}
 	if l.OrderPhones == nil {
 		l.OrderPhones = newLimiter(orderPerPhoneLimit)
+	}
+	if l.CustomerLookups == nil {
+		l.CustomerLookups = newLimiter(customerPerIPLimit)
+	}
+	if l.CustomerPhones == nil {
+		l.CustomerPhones = newLimiter(customerPerPhoneLimit)
 	}
 	if l.Quotes == nil {
 		l.Quotes = newLimiter(quotePerIPLimit)
@@ -110,6 +122,15 @@ func allowOrderPhone(limiter *ratelimit.Limiter, phone string) bool {
 		return true
 	}
 	return limiter.Allow("phone|" + token.Hash(strings.ToLower(strings.TrimSpace(phone))))
+}
+
+// allowCustomerPhone usa a chave normalizada apenas como hash; o telefone
+// informado nunca fica na memória do limitador nem em log.
+func allowCustomerPhone(limiter *ratelimit.Limiter, phone string) bool {
+	if limiter == nil || phone == "" {
+		return true
+	}
+	return limiter.Allow("customer|" + token.Hash(domain.NormalizePhoneKey(phone)))
 }
 
 func writeRateLimited(w http.ResponseWriter, r *http.Request) {

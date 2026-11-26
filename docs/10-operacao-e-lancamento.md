@@ -311,7 +311,7 @@ Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem s
 - observação do pedido;
 - dados de autenticação do admin (nome/e-mail/senha com hash);
 - preferências do checkout no navegador (entrega, zona, nome, telefone, endereço e pagamento), sem observação nem troco; podem ser apagadas em `/privacidade` (D-037);
-- perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038).
+- perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038). Com a opção habilitada, o checkout consulta esse perfil pelo telefone informado para preencher o próximo pedido, com limites por IP e telefone e sem devolver histórico ou taxa (D-039).
 
 Não coletar CPF, e-mail de cliente ou dados de cartão.
 

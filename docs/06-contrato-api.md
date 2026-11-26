@@ -1,8 +1,8 @@
 # Contrato de API — Brocados Lanches
 
-**Versão:** 1.1  
+**Versão:** 1.2  
 **Base:** `/api/v1`  
-**Atualizado em:** 21/11/2026  
+**Atualizado em:** 26/11/2026  
 **Relacionados:** `04-arquitetura.md`, `05-modelo-de-dados.md`, `09-qualidade-e-testes.md`.
 
 ---
@@ -42,6 +42,7 @@ Fora de `/api/v1`:
 | GET | `/store` | Status efetivo, horários, contato, prazo |
 | GET | `/menu` | Categorias, produtos, opções e adicionais ativos |
 | GET | `/delivery-zones` | Zonas ativas com taxa |
+| POST | `/customers/profile` | Consulta de conveniência por telefone (D-039) |
 | POST | `/orders/quote` | Cotação server-side sem persistir |
 | POST | `/orders` | Cria pedido persistido |
 | GET | `/orders/{publicId}` | Acompanhamento público mínimo |
@@ -159,6 +160,53 @@ Regras:
 ```
 
 Somente zonas ativas, ordenadas por `sortOrder` e, em empate, por `name`. A taxa é sempre do servidor. Lista vazia retorna `data: []`.
+
+---
+
+## 5.1. `POST /customers/profile`
+
+Consulta de conveniência usada pelo checkout depois que o cliente autoriza o tratamento e informa um telefone brasileiro completo. Não cria, altera nem apaga perfil, não consulta pedidos e não serve para marketing. O telefone vai no corpo — nunca na URL — e toda resposta usa `Cache-Control: no-store`.
+
+### Request
+
+```http
+POST /api/v1/customers/profile
+Content-Type: application/json
+```
+
+```json
+{ "phone": "(85) 99999-9999" }
+```
+
+### Response
+
+```json
+{
+  "data": {
+    "found": true,
+    "profile": {
+      "name": "Maria Silva",
+      "phone": "(85) 99999-9999",
+      "fulfillment": "delivery",
+      "zone": { "id": "665f1c2a9b1e4a0012a3b4e1", "name": "Tapera" },
+      "address": {
+        "street": "Rua das Flores",
+        "number": "450",
+        "complement": "Apto 2",
+        "district": "Tapera",
+        "city": "Aquiraz",
+        "state": "CE",
+        "zipCode": "61700000"
+      },
+      "paymentMethod": "pix"
+    }
+  }
+}
+```
+
+Perfil ausente ou desativado por opt-out retorna `{"data":{"found":false}}`, sem distinção entre os dois casos. A resposta nunca inclui `feeCents`, `orderCount`, `lastOrderPublicId`, `note`, `changeForCents`, histórico de pedidos ou `phoneKey`. Zona retornada é apenas sugestão: o cliente descarta zona inativa e a taxa continua sendo calculada por `POST /orders/quote` e revalidada em `POST /orders`.
+
+`422 VALIDATION_ERROR` para telefone incompleto ou fora do formato; `400 VALIDATION_ERROR` para JSON inválido ou campo desconhecido. Limites em `§15`.
 
 ---
 
@@ -548,7 +596,7 @@ GET /api/v1/admin/orders?status=pending&from=2026-11-18T00:00:00Z&to=2026-11-19T
 - Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`. Qualquer outro campo retorna `422 VALIDATION_ERROR`.
 - A fila devolve `customerName` com iniciais e `phone` com os últimos quatro dígitos (`****8708`); o detalhe completo exige sessão e inclui snapshot, cliente, endereço, zona, pagamento, itens e `statusHistory`.
 - Quando existe perfil de conveniência para o telefone do pedido, o detalhe inclui `customerProfile` com `name`, `phone`, `orderCount`, `lastOrderAt`, `address`, `fulfillment`, `zoneName`, `paymentMethod`, `optedOut`, `updatedAt` e `retainedUntil`. A chave normalizada `phoneKey` nunca é devolvida. Falha na leitura do perfil não falha o detalhe do pedido.
-- Não existe rota pública de consulta por telefone; apenas o detalhe administrativo autenticado mostra o resumo.
+- A única consulta pública por telefone é `POST /customers/profile` (§5.1), restrita à conveniência do checkout; histórico e contagem de pedidos continuam apenas no detalhe administrativo autenticado.
 - Dados pessoais só para admin autenticado; não vão para log nem para auditoria.
 
 Transição:
@@ -649,6 +697,8 @@ Regras:
 | `POST /admin/auth/login` | 5/min | IP + e-mail |
 | `POST /orders` | 10/min | IP |
 | `POST /orders` | 3/min | telefone |
+| `POST /customers/profile` | 10/min | IP |
+| `POST /customers/profile` | 3/min | telefone |
 | `POST /orders/quote` | 30/min | IP |
 | `GET /orders/{publicId}` | 60/min | IP |
 | `GET /menu` | 120/min | IP |

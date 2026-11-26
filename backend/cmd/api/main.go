@@ -121,6 +121,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	customerService, err := service.NewCustomerService(customerProfileRepository)
+	if err != nil {
+		return err
+	}
 
 	adminRepository, err := repository.NewAdminRepository(database)
 	if err != nil {
@@ -160,15 +164,16 @@ func run() error {
 	server := &http.Server{
 		Addr: cfg.Addr(),
 		Handler: httpapi.NewRouter(httpapi.Dependencies{
-			Pinger:       mongoClient,
-			Catalog:      catalogService,
-			Store:        storeService,
-			Orders:       orderService,
-			AdminAuth:    adminAuthService,
-			AdminCatalog: adminCatalogService,
-			AdminStore:   adminStoreService,
-			AdminOrders:  adminOrderService,
-			AdminUsers:   adminUsersService,
+			Pinger:           mongoClient,
+			Catalog:          catalogService,
+			Store:            storeService,
+			Orders:           orderService,
+			CustomerProfiles: customerService,
+			AdminAuth:        adminAuthService,
+			AdminCatalog:     adminCatalogService,
+			AdminStore:       adminStoreService,
+			AdminOrders:      adminOrderService,
+			AdminUsers:       adminUsersService,
 			AdminCookie: httpapi.AdminCookieConfig{
 				Name:   cfg.AdminCookieNameEffective(),
 				Secure: cfg.AdminCookieSecure,

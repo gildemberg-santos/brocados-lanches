@@ -48,6 +48,21 @@ export interface OrderAddress {
 
 export type PaymentMethod = 'cash' | 'card' | 'pix'
 
+/** Dados mínimos devolvidos pela consulta de conveniência por telefone. */
+export interface CustomerProfileLookup {
+  name?: string
+  phone?: string
+  fulfillment?: Fulfillment
+  zone?: { id: string; name: string }
+  address?: OrderAddress
+  paymentMethod?: PaymentMethod
+}
+
+export interface CustomerProfileLookupResponse {
+  found: boolean
+  profile?: CustomerProfileLookup
+}
+
 export interface CreateOrderRequest extends OrderQuoteRequest {
   customer: OrderCustomer
   address?: OrderAddress

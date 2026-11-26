@@ -15,8 +15,10 @@ import {
   formatCents,
   formatPhone,
   initialCheckoutForm,
+  normalizePhone,
   validateCheckoutForm,
 } from '../features/checkout/checkout'
+import { applyCustomerProfile, canLookupCustomer } from '../features/checkout/customer'
 import { saveHandoffUrl } from '../features/checkout/handoff'
 import {
   applyCheckoutPreferences,
@@ -27,6 +29,7 @@ import {
 } from '../features/checkout/preferences'
 import type { CheckoutErrors, CheckoutForm } from '../features/checkout/checkout'
 import type { CheckoutPreferences } from '../features/checkout/preferences'
+import { fetchCustomerProfile } from '../services/customers'
 import { createOrder, fetchOrderQuote } from '../services/orders'
 import { useCartStore } from '../stores/cart'
 import { useDeliveryZonesStore } from '../stores/deliveryZones'
@@ -49,7 +52,12 @@ const submitError = ref('')
 const idempotencyKey = ref(createIdempotencyKey())
 const lastRequestSignature = ref('')
 const savedPreferences = ref<CheckoutPreferences | null>(null)
+const profileLookupLoading = ref(false)
+const profileLookupMessage = ref('')
 let quoteTimer: ReturnType<typeof setTimeout> | null = null
+let profileLookupTimer: ReturnType<typeof setTimeout> | null = null
+let profileLookupSequence = 0
+let lastLookedUpPhone = ''
 
 const isLoading = computed(
   () =>
@@ -121,6 +129,83 @@ function applySavedPreferences(preferences: CheckoutPreferences): void {
   )
 }
 
+function clearProfileLookup(): void {
+  if (profileLookupTimer !== null) {
+    clearTimeout(profileLookupTimer)
+    profileLookupTimer = null
+  }
+  profileLookupSequence += 1
+  profileLookupLoading.value = false
+  profileLookupMessage.value = ''
+}
+
+function scheduleCustomerLookup(): void {
+  clearProfileLookup()
+  if (!form.value.saveCustomerProfile || !canLookupCustomer(form.value.phone)) {
+    return
+  }
+
+  const phone = form.value.phone
+  const phoneKey = normalizePhone(phone)
+  if (phoneKey === lastLookedUpPhone) {
+    return
+  }
+
+  const sequence = profileLookupSequence
+  profileLookupTimer = setTimeout(() => {
+    void requestCustomerLookup(phone, phoneKey, sequence)
+  }, 500)
+}
+
+function lookupStillCurrent(phoneKey: string, sequence: number): boolean {
+  return (
+    sequence === profileLookupSequence &&
+    form.value.saveCustomerProfile &&
+    normalizePhone(form.value.phone) === phoneKey
+  )
+}
+
+async function requestCustomerLookup(
+  phone: string,
+  phoneKey: string,
+  sequence: number,
+): Promise<void> {
+  profileLookupTimer = null
+  if (!lookupStillCurrent(phoneKey, sequence)) {
+    return
+  }
+
+  profileLookupLoading.value = true
+  profileLookupMessage.value = 'Buscando dados salvos para este telefone...'
+  try {
+    const response = await fetchCustomerProfile(phone)
+    if (!lookupStillCurrent(phoneKey, sequence)) {
+      return
+    }
+    lastLookedUpPhone = phoneKey
+    if (response.found && response.profile) {
+      form.value = applyCustomerProfile(
+        form.value,
+        response.profile,
+        zones.zones.map((zone) => zone.id),
+      )
+      profileLookupMessage.value = 'Dados encontrados. Confira e ajuste se necessário.'
+    } else {
+      profileLookupMessage.value = ''
+    }
+  } catch {
+    if (!lookupStillCurrent(phoneKey, sequence)) {
+      return
+    }
+    lastLookedUpPhone = ''
+    profileLookupMessage.value = 'Não foi possível buscar seus dados agora. Preencha manualmente.'
+  } finally {
+    if (sequence === profileLookupSequence) {
+      profileLookupLoading.value = false
+    }
+  }
+}
+
 async function submit(): Promise<void> {
   submitError.value = ''
   errors.value = validateCheckoutForm(form.value, quoteTotalCents.value)
@@ -190,8 +275,11 @@ watch(
   (phone) => {
     const preferences = savedPreferences.value
     if (preferences && checkoutPreferencesMatchPhone(preferences, phone)) {
+      clearProfileLookup()
       applySavedPreferences(preferences)
+      return
     }
+    scheduleCustomerLookup()
   },
 )
 
@@ -199,9 +287,12 @@ watch(
   () => form.value.saveCustomerProfile,
   (save) => {
     if (!save) {
+      clearProfileLookup()
       clearCheckoutPreferences()
       savedPreferences.value = null
+      return
     }
+    scheduleCustomerLookup()
   },
 )
 
@@ -232,6 +323,11 @@ onUnmounted(() => {
   if (quoteTimer !== null) {
     clearTimeout(quoteTimer)
   }
+  if (profileLookupTimer !== null) {
+    clearTimeout(profileLookupTimer)
+  }
+  // Ignora a resposta de uma busca em voo quando a tela é fechada.
+  profileLookupSequence += 1
 })
 </script>
 
@@ -240,8 +336,8 @@ onUnmounted(() => {
     <RouterLink class="back-link" :to="{ name: 'cart' }">← Voltar ao carrinho</RouterLink>
     <h1>Finalizar pedido</h1>
     <p class="checkout-preferences-note">
-      Suas escolhas podem ser salvas neste navegador e no servidor para o próximo pedido. Você pode
-      desativar no formulário e apagar na
+      Com sua autorização, podemos buscar e salvar suas escolhas neste navegador e no servidor para
+      agilizar o próximo pedido. Você pode desativar no formulário e apagar na
       <RouterLink to="/privacidade">política de privacidade</RouterLink>.
     </p>
 
@@ -257,7 +353,7 @@ onUnmounted(() => {
         <section class="checkout-section" aria-labelledby="customer-title">
           <h2 id="customer-title">1. Seus dados</h2>
           <p class="checkout-preferences-note">
-            Identifique o cliente primeiro para preencher as escolhas salvas neste navegador.
+            Informe o telefone para preencher as escolhas salvas neste navegador ou no servidor.
           </p>
           <label class="field">
             <span>Nome completo</span>
@@ -294,8 +390,16 @@ onUnmounted(() => {
           </label>
           <label class="choice choice--opt-in">
             <input v-model="form.saveCustomerProfile" name="saveCustomerProfile" type="checkbox" />
-            <span>Salvar meus dados para agilizar o próximo pedido</span>
+            <span>Buscar e salvar meus dados para agilizar meus pedidos</span>
           </label>
+          <p
+            v-if="profileLookupLoading || profileLookupMessage"
+            class="checkout-preferences-note"
+            role="status"
+            aria-live="polite"
+          >
+            {{ profileLookupMessage || 'Buscando dados salvos para este telefone...' }}
+          </p>
         </section>
 
         <section class="checkout-section" aria-labelledby="fulfillment-title">

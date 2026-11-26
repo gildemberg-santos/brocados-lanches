@@ -264,7 +264,8 @@ Etapas visuais:
 
 Regras:
 
-- O cliente é identificado primeiro; quando o telefone informado corresponde às preferências salvas neste navegador, o checkout preenche entrega, endereço, zona e pagamento. Não há consulta pública por telefone ao perfil do servidor (D-038).
+- O cliente é identificado primeiro. Se o telefone corresponder às preferências locais, o checkout as aplica sem consultar a API. Caso contrário, com a opção de conveniência habilitada e um telefone brasileiro completo, o checkout consulta `POST /customers/profile` e preenche entrega, endereço, zona e pagamento; nome digitado, observação e troco não são sobrescritos (D-039).
+- A consulta ao perfil não devolve taxa, histórico de pedidos, observação, troco nem `phoneKey`. Zona inativa retornada pelo perfil é descartada; preço e taxa continuam vindo da cotação autoritativa.
 - Retirada oculta endereço e zera taxa.
 - Zona inativa não aparece.
 - Telefone com máscara e normalização.
@@ -276,7 +277,7 @@ Regras:
 - Se o pedido for criado (`201`), limpar carrinho e ir para confirmação; no replay idempotente (`200`), o mesmo destino é usado.
 - Se falhar, preservar carrinho e dados; a chave idempotente é mantida em retries do mesmo pedido e renovada somente quando o conteúdo da requisição muda.
 - Após o pedido gravado (`201` ou replay idempotente), salvar neste navegador entrega/retirada, zona, nome, telefone, endereço e forma de pagamento para o próximo pedido. Observação e valor de troco não são salvos; zona que deixou de existir é descartada ao carregar as preferências (D-037).
-- Checkbox “Salvar meus dados para agilizar o próximo pedido”, marcado por padrão. Ao desmarcar, as preferências locais são apagadas e o pedido envia `saveCustomerProfile: false`; o servidor desativa o perfil por telefone e remove os dados de conveniência, mantendo o pedido (D-038).
+- Checkbox “Buscar e salvar meus dados para agilizar meus pedidos”, marcado por padrão. Desmarcado, não há consulta ao perfil, as preferências locais são apagadas e o pedido envia `saveCustomerProfile: false`; o servidor desativa o perfil por telefone e remove os dados de conveniência, mantendo o pedido (D-038).
 
 Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seção é “Revisão e envio”, com o total cotado pelo servidor e o botão de envio dentro dela; na retirada a etapa de endereço é oculta e a numeração é ajustada.
 
@@ -305,7 +306,7 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 - Link para mapa, se aprovado.
 - Política de privacidade e termos com data de publicação. Desde a US-126 as páginas exibiam a data do rascunho (25/11/2026); em 25/11/2026 o cliente confirmou os textos e eles passaram a ser apresentados como versão vigente, publicada nessa data (D-033). A privacidade e os termos foram detalhados com base em modelos externos, adaptados apenas ao fluxo real (dados do pedido, sessão administrativa, IP para limite de requisições, link `wa.me`, retenção proposta, registro/idempotência, regras de preço/entrega/pagamento e acesso ao painel), sem copiar prestadores, assinaturas ou recursos que a loja não usa.
 - Canal do titular: os canais já publicados na `/contato`, sem inventar CNPJ, razão social ou e-mail (D-033).
-- A política descreve as preferências do checkout guardadas no navegador e oferece o botão “Apagar preferências salvas neste navegador” na seção de retenção; a versão publicada em 25/11/2026 foi atualizada em 26/11/2026 para cobrir esse tratamento (D-037) e o perfil de conveniência no servidor, com opt-out no checkout, retenção de 24 meses e exclusão pelos canais da loja (D-038).
+- A política descreve as preferências do checkout guardadas no navegador e oferece o botão “Apagar preferências salvas neste navegador” na seção de retenção; a versão publicada em 25/11/2026 foi atualizada em 26/11/2026 para cobrir esse tratamento (D-037), o perfil de conveniência no servidor, com opt-out no checkout, retenção de 24 meses e exclusão pelos canais da loja (D-038), e a consulta por telefone com finalidade exclusiva de preencher o próximo pedido (D-039).
 
 ---
 

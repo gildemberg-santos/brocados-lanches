@@ -14,13 +14,18 @@ import (
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
 )
 
-func rateLimitTestRouter(orders OrderService, limits Limiters) http.Handler {
+func rateLimitTestRouter(orders OrderService, limits Limiters, customers ...CustomerLookupService) http.Handler {
+	var customerService CustomerLookupService
+	if len(customers) > 0 {
+		customerService = customers[0]
+	}
 	return NewRouter(Dependencies{
-		Pinger:   fakePinger{},
-		Orders:   orders,
-		Catalog:  fakeCatalogService{},
-		Limiters: limits,
-		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Pinger:           fakePinger{},
+		Orders:           orders,
+		Catalog:          fakeCatalogService{},
+		CustomerProfiles: customerService,
+		Limiters:         limits,
+		Logger:           slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 }
 
@@ -144,6 +149,84 @@ func TestPublicRateLimits(t *testing.T) {
 			}
 			if calls := test.wantCalls(orders); calls != test.limit {
 				t.Errorf("service calls = %d, want %d", calls, test.limit)
+			}
+		})
+	}
+}
+
+func TestCustomerProfileRateLimits(t *testing.T) {
+	tests := []struct {
+		name      string
+		limit     int
+		varyIP    bool
+		configure func(*Limiters, *ratelimit.Limiter)
+	}{
+		{
+			name:  "consulta por IP",
+			limit: customerPerIPLimit,
+			configure: func(limits *Limiters, limiter *ratelimit.Limiter) {
+				limits.CustomerLookups = limiter
+			},
+		},
+		{
+			name:   "consulta por telefone",
+			limit:  customerPerPhoneLimit,
+			varyIP: true,
+			configure: func(limits *Limiters, limiter *ratelimit.Limiter) {
+				limits.CustomerPhones = limiter
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			limiter, err := ratelimit.New(test.limit, rateLimitWindow)
+			if err != nil {
+				t.Fatal(err)
+			}
+			limits := Limiters{
+				Orders:          newLimiter(1000),
+				OrderPhones:     newLimiter(1000),
+				CustomerLookups: newLimiter(1000),
+				CustomerPhones:  newLimiter(1000),
+				Quotes:          newLimiter(1000),
+				Tracking:        newLimiter(1000),
+				Menu:            newLimiter(1000),
+				Admin:           newLimiter(1000),
+			}
+			test.configure(&limits, limiter)
+
+			customers := &fakeCustomerLookupService{}
+			handler := rateLimitTestRouter(&fakeOrderService{}, limits, customers)
+			for attempt := 0; attempt < test.limit; attempt++ {
+				remoteAddr := "192.0.2.1:1234"
+				if test.varyIP {
+					remoteAddr = fmt.Sprintf("192.0.2.%d:1234", attempt+1)
+				}
+				response := rateLimitRequest(
+					handler,
+					http.MethodPost,
+					"/api/v1/customers/profile",
+					`{"phone":"85999999999"}`,
+					remoteAddr,
+				)
+				if response.Code == http.StatusTooManyRequests {
+					t.Fatalf("attempt %d was rate limited before the limit", attempt+1)
+				}
+			}
+
+			response := rateLimitRequest(
+				handler,
+				http.MethodPost,
+				"/api/v1/customers/profile",
+				`{"phone":"85999999999"}`,
+				"192.0.2.1:1234",
+			)
+			if response.Code != http.StatusTooManyRequests {
+				t.Fatalf("status = %d, want 429; body = %s", response.Code, response.Body.String())
+			}
+			if customers.calls != test.limit {
+				t.Errorf("service calls = %d, want %d", customers.calls, test.limit)
 			}
 		})
 	}

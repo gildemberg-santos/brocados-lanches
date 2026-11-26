@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CHECKOUT_PREFERENCES_KEY, loadCheckoutPreferences } from '../features/checkout/preferences'
+import { fetchCustomerProfile } from '../services/customers'
 import { fetchDeliveryZones } from '../services/deliveryZones'
 import { fetchMenu } from '../services/menu'
 import { createOrder, fetchOrderQuote } from '../services/orders'
@@ -16,10 +17,12 @@ import {
   makeOption,
   makeOptionGroup,
 } from '../test/fixtures/catalog'
+import type { CustomerProfileLookupResponse } from '../types/order'
 import CheckoutView from './CheckoutView.vue'
 
 vi.mock('../services/menu', () => ({ fetchMenu: vi.fn() }))
 vi.mock('../services/deliveryZones', () => ({ fetchDeliveryZones: vi.fn() }))
+vi.mock('../services/customers', () => ({ fetchCustomerProfile: vi.fn() }))
 vi.mock('../services/orders', () => ({
   fetchOrderQuote: vi.fn(),
   createOrder: vi.fn(),
@@ -27,6 +30,7 @@ vi.mock('../services/orders', () => ({
 
 const mockedFetchMenu = vi.mocked(fetchMenu)
 const mockedFetchDeliveryZones = vi.mocked(fetchDeliveryZones)
+const mockedFetchCustomerProfile = vi.mocked(fetchCustomerProfile)
 const mockedFetchOrderQuote = vi.mocked(fetchOrderQuote)
 const mockedCreateOrder = vi.mocked(createOrder)
 
@@ -62,6 +66,8 @@ interface MountOptions {
   seed?: boolean
   quoteError?: boolean
   createError?: boolean
+  lookupResponse?: CustomerProfileLookupResponse
+  lookupError?: boolean
 }
 
 async function mountCheckout(options: MountOptions = {}) {
@@ -85,6 +91,11 @@ async function mountCheckout(options: MountOptions = {}) {
     mockedCreateOrder.mockRejectedValue(new Error('falha'))
   } else {
     mockedCreateOrder.mockResolvedValue(created)
+  }
+  if (options.lookupError) {
+    mockedFetchCustomerProfile.mockRejectedValue(new Error('falha'))
+  } else {
+    mockedFetchCustomerProfile.mockResolvedValue(options.lookupResponse ?? { found: false })
   }
 
   const router = createRouter({
@@ -112,6 +123,11 @@ async function chooseDeliveryZone(wrapper: CheckoutWrapper): Promise<void> {
   await wrapper.get('select[name="zoneId"]').setValue('zona-1')
   await flushPromises()
   vi.advanceTimersByTime(300)
+  await flushPromises()
+}
+
+async function advanceCustomerLookup(): Promise<void> {
+  vi.advanceTimersByTime(600)
   await flushPromises()
 }
 
@@ -247,12 +263,133 @@ describe('CheckoutView', () => {
     expect(
       (wrapper.get('input[name="paymentMethod"][value="pix"]').element as HTMLInputElement).checked,
     ).toBe(true)
+    expect(mockedFetchCustomerProfile).not.toHaveBeenCalled()
   })
 
-  it('avisa que as escolhas podem ser salvas e oferece opt-out', async () => {
+  it('busca o perfil no servidor quando o telefone identifica o cliente', async () => {
+    const { wrapper } = await mountCheckout({
+      seed: true,
+      lookupResponse: {
+        found: true,
+        profile: {
+          name: 'Maria Silva',
+          phone: '(85) 99999-9999',
+          fulfillment: 'delivery',
+          zone: { id: 'zona-1', name: 'Centro' },
+          address: {
+            street: 'Rua das Flores',
+            number: '450',
+            complement: 'Apto 2',
+            district: 'Tapera',
+            city: 'Aquiraz',
+            state: 'CE',
+            zipCode: '61700000',
+          },
+          paymentMethod: 'pix',
+        },
+      },
+    })
+
+    await wrapper.get('input[name="phone"]').setValue('85977777777')
+    await advanceCustomerLookup()
+
+    expect(mockedFetchCustomerProfile).toHaveBeenCalledWith('(85) 97777-7777')
+    expect((wrapper.get('input[name="customerName"]').element as HTMLInputElement).value).toBe(
+      'Maria Silva',
+    )
+    expect((wrapper.get('select[name="zoneId"]').element as HTMLSelectElement).value).toBe('zona-1')
+    expect((wrapper.get('input[name="street"]').element as HTMLInputElement).value).toBe(
+      'Rua das Flores',
+    )
+    expect(
+      (wrapper.get('input[name="paymentMethod"][value="pix"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+    expect(wrapper.text()).toContain('Dados encontrados. Confira e ajuste se necessário.')
+  })
+
+  it('não sobrescreve nome, observação ou troco ao aplicar o perfil buscado', async () => {
+    const { wrapper } = await mountCheckout({
+      seed: true,
+      lookupResponse: {
+        found: true,
+        profile: {
+          name: 'Maria Silva',
+          zone: { id: 'zona-antiga', name: 'Antiga' },
+        },
+      },
+    })
+
+    await wrapper.get('input[name="customerName"]').setValue('Outro Nome')
+    await wrapper.get('textarea[name="note"]').setValue('Sem cebola')
+    await wrapper.get('input[name="changeFor"]').setValue('50,00')
+    await wrapper.get('input[name="phone"]').setValue('85977777777')
+    await advanceCustomerLookup()
+
+    expect((wrapper.get('input[name="customerName"]').element as HTMLInputElement).value).toBe(
+      'Outro Nome',
+    )
+    expect((wrapper.get('textarea[name="note"]').element as HTMLInputElement).value).toBe(
+      'Sem cebola',
+    )
+    expect((wrapper.get('input[name="changeFor"]').element as HTMLInputElement).value).toBe('50,00')
+    expect((wrapper.get('select[name="zoneId"]').element as HTMLSelectElement).value).toBe('')
+  })
+
+  it('não consulta o servidor sem telefone completo ou com opt-out', async () => {
     const { wrapper } = await mountCheckout({ seed: true })
 
-    expect(wrapper.text()).toContain('Suas escolhas podem ser salvas neste navegador e no servidor')
+    await wrapper.get('input[name="phone"]').setValue('85977')
+    await advanceCustomerLookup()
+    expect(mockedFetchCustomerProfile).not.toHaveBeenCalled()
+
+    await wrapper.get('input[name="saveCustomerProfile"]').setValue(false)
+    await wrapper.get('input[name="phone"]').setValue('85977777777')
+    await advanceCustomerLookup()
+    expect(mockedFetchCustomerProfile).not.toHaveBeenCalled()
+  })
+
+  it('mostra erro amigável se a busca falhar', async () => {
+    const { wrapper } = await mountCheckout({ seed: true, lookupError: true })
+
+    await wrapper.get('input[name="phone"]').setValue('85977777777')
+    await advanceCustomerLookup()
+
+    expect(wrapper.text()).toContain('Não foi possível buscar seus dados agora.')
+    expect(wrapper.text()).not.toContain('falha')
+  })
+
+  it('ignora a resposta antiga quando o telefone muda durante a busca', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    let resolveFirst: (value: CustomerProfileLookupResponse) => void = () => {}
+    const firstLookup = new Promise<CustomerProfileLookupResponse>((resolve) => {
+      resolveFirst = resolve
+    })
+    mockedFetchCustomerProfile
+      .mockReturnValueOnce(firstLookup)
+      .mockResolvedValue({ found: true, profile: { name: 'Segundo Cliente' } })
+
+    await wrapper.get('input[name="phone"]').setValue('85977777777')
+    vi.advanceTimersByTime(600)
+    await flushPromises()
+    expect(mockedFetchCustomerProfile).toHaveBeenCalledTimes(1)
+
+    await wrapper.get('input[name="phone"]').setValue('85988888888')
+    await advanceCustomerLookup()
+    expect(mockedFetchCustomerProfile).toHaveBeenCalledTimes(2)
+
+    resolveFirst({ found: true, profile: { name: 'Primeiro Cliente' } })
+    await flushPromises()
+
+    expect((wrapper.get('input[name="customerName"]').element as HTMLInputElement).value).toBe(
+      'Segundo Cliente',
+    )
+  })
+
+  it('avisa que as escolhas podem ser buscadas e oferece opt-out', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+
+    expect(wrapper.text()).toContain('podemos buscar e salvar suas escolhas')
+    expect(wrapper.text()).toContain('Buscar e salvar meus dados para agilizar meus pedidos')
     expect(wrapper.find('a[href="/privacidade"]').exists()).toBe(true)
     expect(
       (wrapper.get('input[name="saveCustomerProfile"]').element as HTMLInputElement).checked,
@@ -336,7 +473,7 @@ describe('CheckoutView', () => {
       '5. Revisão e envio',
     ])
     expect(wrapper.text()).toContain(
-      'Identifique o cliente primeiro para preencher as escolhas salvas neste navegador.',
+      'Informe o telefone para preencher as escolhas salvas neste navegador ou no servidor.',
     )
   })
 
