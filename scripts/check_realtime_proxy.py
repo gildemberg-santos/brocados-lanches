@@ -11,19 +11,19 @@ ROOT = Path(__file__).resolve().parent.parent
 CONNECTION_MAP = "brocados_connection_upgrade"
 
 
-def check_nginx(text: str) -> list[str]:
+def check_nginx(text: str, label: str = "nginx.conf") -> list[str]:
     """Confere o mapa de upgrade e os cabeçalhos do location /api/."""
     errors: list[str] = []
     if not re.search(r"map\s+\$http_upgrade\s+\$" + CONNECTION_MAP + r"\s*\{", text):
-        errors.append("nginx.conf: falta o mapa $http_upgrade -> $" + CONNECTION_MAP)
+        errors.append(f"{label}: falta o mapa $http_upgrade -> ${CONNECTION_MAP}")
     if not re.search(r"default\s+upgrade\s*;", text):
-        errors.append("nginx.conf: o mapa de upgrade precisa de 'default upgrade;'")
+        errors.append(f"{label}: o mapa de upgrade precisa de 'default upgrade;'")
     if not re.search(r"''\s+close\s*;", text):
-        errors.append("nginx.conf: o mapa de upgrade precisa de \"'' close;\"")
+        errors.append(f"{label}: o mapa de upgrade precisa de \"'' close;\"")
 
     location = re.search(r"location\s+/api/\s*\{(?P<body>.*?)\n\s*\}", text, re.DOTALL)
     if location is None:
-        errors.append("nginx.conf: location /api/ não encontrado")
+        errors.append(f"{label}: location /api/ não encontrado")
         return errors
 
     body = location.group("body")
@@ -35,7 +35,7 @@ def check_nginx(text: str) -> list[str]:
     )
     for directive in required:
         if directive not in body:
-            errors.append(f"nginx.conf: location /api/ precisa de '{directive}'")
+            errors.append(f"{label}: location /api/ precisa de '{directive}'")
     return errors
 
 
@@ -49,16 +49,27 @@ def check_vite(text: str) -> list[str]:
 def collect_errors(root: Path = ROOT) -> list[str]:
     """Retorna os problemas de configuração encontrados."""
     errors: list[str] = []
-    nginx = root / "frontend" / "nginx.conf"
+    nginx_configs = (
+        ("frontend/nginx.conf", "nginx.conf"),
+        ("deploy/nginx.conf.template", "deploy/nginx.conf.template"),
+    )
     vite = root / "frontend" / "vite.config.ts"
 
-    for path, checker in ((nginx, check_nginx), (vite, check_vite)):
+    for relative_path, label in nginx_configs:
+        path = root / relative_path
         try:
             text = path.read_text(encoding="utf-8")
         except FileNotFoundError:
-            errors.append(f"{path.relative_to(root)}: arquivo não encontrado")
+            errors.append(f"{relative_path}: arquivo não encontrado")
             continue
-        errors.extend(checker(text))
+        errors.extend(check_nginx(text, label))
+
+    try:
+        text = vite.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        errors.append("vite.config.ts: arquivo não encontrado")
+    else:
+        errors.extend(check_vite(text))
     return errors
 
 
@@ -70,7 +81,7 @@ def main() -> int:
             print(f"  - {error}", file=sys.stderr)
         return 1
 
-    print("Configuração de tempo real OK: proxy Vite e nginx repassam WebSocket.")
+    print("Configuração de tempo real OK: Vite, nginx local e nginx de produção repassam WebSocket.")
     return 0
 
 

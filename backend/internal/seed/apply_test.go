@@ -76,7 +76,7 @@ func TestApplyIntegration(t *testing.T) {
 	if product.PriceCents != 4999 {
 		t.Fatalf("product priceCents = %d, want 4999", product.PriceCents)
 	}
-	if product.ImageURL != "/products/combo-3-hamburguer.png" || product.ImageAlt != "Combo 3 hambúrguer" {
+	if product.ImageURL != "/products/combo-3-hamburguer.webp" || product.ImageAlt != "Combo 3 hambúrguer" {
 		t.Fatalf("product image = %q / %q", product.ImageURL, product.ImageAlt)
 	}
 	if !product.Seed.Fictitious {
