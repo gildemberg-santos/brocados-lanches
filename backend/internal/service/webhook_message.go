@@ -12,7 +12,7 @@ import (
 func BuildWebhookMessage(event domain.WebhookEvent) string {
 	message := BuildOrderMessage(event.Order)
 	if event.Type == domain.WebhookEventOrderUpdated {
-		message += fmt.Sprintf("\nStatus: %s\n", statusLabel(event.Order.Status))
+		message += fmt.Sprintf("\n✅ Status: %s\n", statusLabel(event.Order.Status))
 	}
 	return message
 }

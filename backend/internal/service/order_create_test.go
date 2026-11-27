@@ -222,7 +222,7 @@ func TestBuildWhatsAppURL(t *testing.T) {
 	if !strings.Contains(link, url.QueryEscape("Pedido #1042")) {
 		t.Errorf("link = %q", link)
 	}
-	if !strings.Contains(link, url.QueryEscape("Total: R$ 62.00")) {
+	if !strings.Contains(link, url.QueryEscape("Total: R$ 62,00")) {
 		t.Errorf("link missing total: %q", link)
 	}
 }

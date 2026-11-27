@@ -27,10 +27,11 @@ func BuildWhatsAppURL(store domain.StoreSettings, order domain.Order) (string, e
 // WhatsApp e no corpo dos webhooks, sem depender de catálogo atual.
 func BuildOrderMessage(order domain.Order) string {
 	var message strings.Builder
-	fmt.Fprintf(&message, "Pedido #%d\n", order.Number)
-	message.WriteString("Itens:\n")
+	fmt.Fprintf(&message, "*Pedido #%d* 🍔\n\n", order.Number)
+
+	message.WriteString("*Itens* 🛒\n")
 	for _, item := range order.Items {
-		fmt.Fprintf(&message, "- %dx %s", item.Quantity, item.Name)
+		fmt.Fprintf(&message, "• %dx %s", item.Quantity, item.Name)
 		if len(item.Options) > 0 {
 			message.WriteString(" (")
 			for index, option := range item.Options {
@@ -47,27 +48,33 @@ func BuildOrderMessage(order domain.Order) string {
 		message.WriteString("\n")
 	}
 	if order.Note != "" {
-		fmt.Fprintf(&message, "Observação: %s\n", order.Note)
+		fmt.Fprintf(&message, "\n*Observação* 📝\n%s\n", order.Note)
 	}
+
+	fmt.Fprintf(&message, "\n*Resumo* 💰\n")
 	fmt.Fprintf(&message, "Subtotal: R$ %s\n", formatCents(order.SubtotalCents))
 	fmt.Fprintf(&message, "Taxa de entrega: R$ %s\n", formatCents(order.DeliveryFeeCents))
-	fmt.Fprintf(&message, "Total: R$ %s\n", formatCents(order.TotalCents))
-	fmt.Fprintf(&message, "Pagamento: %s\n", paymentLabel(order.Payment))
-	fmt.Fprintf(&message, "Cliente: %s — %s\n", order.Customer.Name, order.Customer.Phone)
+	fmt.Fprintf(&message, "*Total: R$ %s*\n", formatCents(order.TotalCents))
+	fmt.Fprintf(&message, "\nPagamento: %s\n", paymentLabel(order.Payment))
+
+	fmt.Fprintf(&message, "\n*Cliente* 👤\n%s\n%s\n",
+		order.Customer.Name,
+		formatPhoneForMessage(order.Customer.Phone),
+	)
+
 	if order.Fulfillment == domain.FulfillmentDelivery && order.Address != nil {
-		fmt.Fprintf(&message, "Entrega: %s, %s — %s, %s/%s — CEP %s\n",
-			order.Address.Street,
-			order.Address.Number,
-			order.Address.District,
-			order.Address.City,
-			order.Address.State,
-			order.Address.ZipCode,
-		)
+		fmt.Fprintf(&message, "\n*Entrega* 📍\n%s, %s\n", order.Address.Street, order.Address.Number)
 		if order.Address.Complement != "" {
 			fmt.Fprintf(&message, "Complemento: %s\n", order.Address.Complement)
 		}
+		fmt.Fprintf(&message, "%s, %s/%s\nCEP %s\n",
+			order.Address.District,
+			order.Address.City,
+			order.Address.State,
+			formatZipCode(order.Address.ZipCode),
+		)
 	} else {
-		message.WriteString("Retirada na loja\n")
+		fmt.Fprintf(&message, "\n*Retirada na loja* 🏪\n")
 	}
 	return message.String()
 }
@@ -94,7 +101,32 @@ func formatCents(cents int64) string {
 	if resto < 0 {
 		resto = -resto
 	}
-	return fmt.Sprintf("%d.%02d", reais, resto)
+	return fmt.Sprintf("%d,%02d", reais, resto)
+}
+
+// formatPhoneForMessage deixa o telefone congelado no pedido legível no texto.
+// Qualquer formato inesperado é mantido como veio do snapshot.
+func formatPhoneForMessage(value string) string {
+	digits := digitsOnly(value)
+	if len(digits) == 12 || len(digits) == 13 {
+		digits = strings.TrimPrefix(digits, "55")
+	}
+	switch len(digits) {
+	case 11:
+		return fmt.Sprintf("+55 (%s) %s-%s", digits[:2], digits[2:7], digits[7:])
+	case 10:
+		return fmt.Sprintf("+55 (%s) %s-%s", digits[:2], digits[2:6], digits[6:])
+	default:
+		return value
+	}
+}
+
+func formatZipCode(value string) string {
+	digits := digitsOnly(value)
+	if len(digits) == 8 {
+		return digits[:5] + "-" + digits[5:]
+	}
+	return value
 }
 
 func digitsOnly(value string) string {

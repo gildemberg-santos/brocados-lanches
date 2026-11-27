@@ -676,7 +676,32 @@ Resposta/corpo parcial:
 }
 ```
 
-- `number` é o telefone do cliente congelado no pedido; `message` reaproveita o texto do handoff do WhatsApp e inclui o status legível após transições. O cabeçalho `X-Brocados-Event` traz `order.created` para criação e `order.updated` para qualquer transição persistida. Não existe cadastro de statuses: um status futuro entra automaticamente pelo evento genérico.
+- `number` é o telefone do cliente congelado no pedido; `message` reaproveita o texto do handoff do WhatsApp e inclui o status legível após transições. O texto usa negrito do WhatsApp (`*...*`), emojis de seção, vírgula decimal e quebras de linha. Exemplo para o pedido #20:
+
+```text
+*Pedido #20* 🍔
+
+*Itens* 🛒
+• 1x Combo 2 hambúrguer
+
+*Resumo* 💰
+Subtotal: R$ 54,99
+Taxa de entrega: R$ 6,00
+*Total: R$ 60,99*
+
+Pagamento: cartão na entrega
+
+*Cliente* 👤
+Gildemberg Santos Gomes
++55 (85) 99136-5507
+
+*Entrega* 📍
+Rua Manuel Alves da Cunha, 60
+Tabajarra, Aquiraz/CE
+CEP 61700-000
+```
+
+Em transições, o texto termina com `✅ Status: Confirmado` (ou o rótulo do status correspondente). O cabeçalho `X-Brocados-Event` traz `order.created` para criação e `order.updated` para qualquer transição persistida. Não existe cadastro de statuses: um status futuro entra automaticamente pelo evento genérico.
 - O evento é ignorado em replay de `Idempotency-Key` (resposta `200` com `Idempotent-Replayed: true`), para não duplicar notificação.
 - Os logs registram apenas categoria do erro, status HTTP e tipo do evento: sem URL completa, corpo, telefone, nome ou endereço.
 

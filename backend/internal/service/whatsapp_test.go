@@ -66,19 +66,61 @@ func TestBuildWhatsAppURLIncludesFrozenOrderDetails(t *testing.T) {
 	message := decodedWhatsAppMessage(t, domain.StoreSettings{WhatsApp: "(85) 99999-9999"}, whatsappOrderFixture(), "5585999999999")
 
 	for _, expected := range []string{
-		"Pedido #1042",
-		"2x Bacon Cheddar (Ao ponto, Bacon) — sem cebola",
-		"Observação: Deixar na portaria",
-		"Subtotal: R$ 54.00",
-		"Taxa de entrega: R$ 8.00",
-		"Total: R$ 62.00",
-		"Pagamento: dinheiro, troco para R$ 100.00",
-		"Cliente: Maria Silva — +5585999999999",
-		"Entrega: Rua das Flores, 450 — Tapera, Aquiraz/CE — CEP 61700-000",
+		"*Pedido #1042* 🍔",
+		"*Itens* 🛒",
+		"• 2x Bacon Cheddar (Ao ponto, Bacon) — sem cebola",
+		"*Observação* 📝",
+		"Deixar na portaria",
+		"*Resumo* 💰",
+		"Subtotal: R$ 54,00",
+		"Taxa de entrega: R$ 8,00",
+		"*Total: R$ 62,00*",
+		"Pagamento: dinheiro, troco para R$ 100,00",
+		"*Cliente* 👤",
+		"Maria Silva",
+		"+55 (85) 99999-9999",
+		"*Entrega* 📍",
+		"Rua das Flores, 450",
+		"Tapera, Aquiraz/CE",
+		"CEP 61700-000",
 	} {
 		if !strings.Contains(message, expected) {
 			t.Errorf("message missing %q:\n%s", expected, message)
 		}
+	}
+}
+
+func TestBuildOrderMessageLayout(t *testing.T) {
+	order := domain.Order{
+		Number:           20,
+		Fulfillment:      domain.FulfillmentDelivery,
+		Customer:         domain.OrderCustomer{Name: "Gildemberg Santos Gomes", Phone: "+5585991365507"},
+		Address:          &domain.OrderAddress{Street: "Rua Manuel Alves da Cunha", Number: "60", District: "Tabajarra", City: "Aquiraz", State: "CE", ZipCode: "61700000"},
+		Items:            []domain.OrderItem{{Name: "Combo 2 hambúrguer", Quantity: 1}},
+		SubtotalCents:    5499,
+		DeliveryFeeCents: 600,
+		TotalCents:       6099,
+		Payment:          domain.OrderPayment{Method: domain.PaymentMethodCard},
+	}
+
+	want := "*Pedido #20* 🍔\n\n" +
+		"*Itens* 🛒\n" +
+		"• 1x Combo 2 hambúrguer\n\n" +
+		"*Resumo* 💰\n" +
+		"Subtotal: R$ 54,99\n" +
+		"Taxa de entrega: R$ 6,00\n" +
+		"*Total: R$ 60,99*\n\n" +
+		"Pagamento: cartão na entrega\n\n" +
+		"*Cliente* 👤\n" +
+		"Gildemberg Santos Gomes\n" +
+		"+55 (85) 99136-5507\n\n" +
+		"*Entrega* 📍\n" +
+		"Rua Manuel Alves da Cunha, 60\n" +
+		"Tabajarra, Aquiraz/CE\n" +
+		"CEP 61700-000\n"
+
+	if got := BuildOrderMessage(order); got != want {
+		t.Errorf("mensagem =\n%s\nwant\n%s", got, want)
 	}
 }
 
