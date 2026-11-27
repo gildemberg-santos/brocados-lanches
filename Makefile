@@ -9,7 +9,7 @@ endif
 
 .PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-config test-e2e \
 	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check config-check build build-api build-web \
-	seed seed-reset seed-check migrate-reference-check migrate-reference up up-offline down logs ps
+	seed seed-reset seed-check migrate-reference-check migrate-reference bench test-load up up-offline down logs ps
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,8 @@ help:
 		'  make dev-web     Sobe apenas o frontend' \
 		'  make test        Roda documentação, design, configuração de proxy, seed, backend e frontend' \
 		'  make test-e2e    Semena brocados_test e roda o Playwright (exige MongoDB)' \
+		'  make bench       Benchmarks do hub WebSocket e do rate limiter' \
+		'  make test-load   Teste de carga HTTP contra uma API em execução (LOADTEST_ARGS)' \
 		'  make lint        Roda go vet/golangci-lint, ESLint e vue-tsc' \
 		'  make fmt         Formata Go e frontend' \
 		'  make fmt-check   Verifica formatação sem alterar arquivos' \
@@ -72,6 +74,16 @@ test-design:
 
 test-config:
 	python3 -m unittest discover -s scripts -p 'test_check_realtime_proxy.py'
+
+# Benchmarks não entram em make test: são executados sob demanda e não têm
+# limite de latency fixado, para não tornar o CI instável.
+bench:
+	cd backend && go test -run '^$$' -bench . -benchmem ./internal/realtime ./internal/platform/ratelimit
+
+# Exige API no ar. Passe flags com LOADTEST_ARGS, por exemplo:
+# make test-load LOADTEST_ARGS="-url http://127.0.0.1:8080 -orders-concurrency 5"
+test-load:
+	cd backend && go run ./cmd/loadtest $(LOADTEST_ARGS)
 
 seed:
 	cd backend && go run ./scripts/seed

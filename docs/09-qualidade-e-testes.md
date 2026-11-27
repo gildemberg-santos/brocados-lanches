@@ -425,6 +425,46 @@ Teste de carga básico:
 
 Não é teste de stress; é verificação de comportamento sob carga inicial.
 
+### 11.1 Teste de carga HTTP automatizado
+
+O comando `backend/cmd/loadtest` executa as três frentes acima contra uma API
+já em execução e imprime contagens, códigos de status e p50/p95/p99:
+
+```bash
+make up                       # ou make dev-api com MongoDB disponível
+make test-load                # usa http://localhost:8080
+make test-load LOADTEST_ARGS="-url http://127.0.0.1:8080 -orders-concurrency 5"
+```
+
+Por padrão o pedido é descoberto em `GET /menu` e `GET /delivery-zones`: o
+primeiro produto disponível com opções obrigatórias atendidas e a primeira zona
+ativa. Para usar um carrinho real, passe `-payload /caminho/pedido.json` com o
+mesmo corpo aceito por `POST /orders`. O relatório nunca imprime nome, telefone
+ou endereço; o pedido gerado é fictício e desativa o perfil de conveniência.
+
+O limite de 10 pedidos/min por IP descrito no contrato pode produzir `429` na
+carga padrão (10 chaves + 2 duplicatas). O comando reporta o `429` como aviso;
+para medir sem esse ruído, reduza `-orders-concurrency`, aumente o limite no
+ambiente de teste ou distribua as chamadas entre IPs. Erros de transporte e
+`5xx` falham o comando. Os testes unitários da ferramenta rodam em `make test`
+com `httptest` e não exigem MongoDB.
+
+### 11.2 Benchmarks de tempo real
+
+Os benchmarks cobrem o custo de abrir/fechar assinaturas, o `fan-out` do hub
+para 1, 10 e 100 assinantes (consumidor rápido e lento), a contenção em tópicos
+públicos distintos e o rate limiter com 1 e 1024 chaves:
+
+```bash
+make bench
+```
+
+Eles não entram em `make test` e não fixam limite de latência: servem para
+acompanhar regressões de alocação e contenção entre versões. Os limites de
+capacidade do hub (10 assinantes por pedido, 200 no tópico administrativo e
+2000 tópicos por instância) continuam descritos em
+[`04-arquitetura.md`](04-arquitetura.md).
+
 ---
 
 ## 12. Gates de qualidade
