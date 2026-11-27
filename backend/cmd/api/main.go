@@ -20,6 +20,7 @@ import (
 	"github.com/brocados-lanches/api/internal/realtime"
 	"github.com/brocados-lanches/api/internal/repository"
 	"github.com/brocados-lanches/api/internal/service"
+	"github.com/getsentry/sentry-go"
 )
 
 func main() {
@@ -37,6 +38,28 @@ func run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	var reporter httpapi.Reporter
+	if cfg.SentryDSN != "" {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              cfg.SentryDSN,
+			Environment:      cfg.SentryEnvironment,
+			Release:          cfg.SentryRelease,
+			EnableTracing:    false,
+			AttachStacktrace: true,
+			BeforeSend: func(event *sentry.Event, _ *sentry.EventHint) *sentry.Event {
+				return httpapi.SanitizeSentryEvent(event)
+			},
+			IgnoreErrors: []string{`^context canceled$`},
+		}); err != nil {
+			// Nunca registra o DSN: ele é credencial de escrita de eventos.
+			logger.Warn("sentry init failed")
+		} else {
+			reporter = httpapi.SentryReporter{}
+			// Registrado antes do defer do Mongo: LIFO envia os eventos por último.
+			defer sentry.Flush(cfg.SentryFlushTimeout)
+		}
+	}
 
 	startupContext, cancelStartup := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelStartup()
@@ -210,6 +233,7 @@ func run() error {
 			LoginLimiter: loginLimiter,
 			Limiters:     httpapi.DefaultLimiters(),
 			Logger:       logger,
+			Reporter:     reporter,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
@@ -231,6 +255,9 @@ func run() error {
 
 	select {
 	case err := <-serverErrors:
+		if reporter != nil {
+			reporter.Capture(context.Background(), err, map[string]string{"scope": "server"})
+		}
 		return err
 	case signalReceived := <-stop:
 		logger.Info("shutdown requested", "signal", signalReceived.String())

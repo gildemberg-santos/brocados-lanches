@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Config reúne as configurações lidas do ambiente.
@@ -21,6 +22,12 @@ type Config struct {
 	AdminBootstrapName     string
 	AdminBootstrapEmail    string
 	AdminBootstrapPassword string
+
+	// Sentry é opcional: DSN vazio desliga o envio de eventos.
+	SentryDSN          string
+	SentryEnvironment  string
+	SentryRelease      string
+	SentryFlushTimeout time.Duration
 }
 
 // Load lê e valida a configuração a partir de getenv.
@@ -46,6 +53,15 @@ func Load(getenv func(string) string) (Config, error) {
 	cfg.AdminBootstrapName = value(getenv("ADMIN_BOOTSTRAP_NAME"), "")
 	cfg.AdminBootstrapEmail = value(getenv("ADMIN_BOOTSTRAP_EMAIL"), "")
 	cfg.AdminBootstrapPassword = getenv("ADMIN_BOOTSTRAP_PASSWORD")
+
+	cfg.SentryDSN = value(getenv("SENTRY_DSN"), "")
+	cfg.SentryEnvironment = value(getenv("SENTRY_ENVIRONMENT"), cfg.Env)
+	cfg.SentryRelease = value(getenv("SENTRY_RELEASE"), "")
+	flushSeconds, err := flushTimeoutSeconds(getenv)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.SentryFlushTimeout = time.Duration(flushSeconds) * time.Second
 
 	if err := validateEnv(cfg.Env); err != nil {
 		return Config{}, err
@@ -105,6 +121,16 @@ func value(raw, fallback string) string {
 		return fallback
 	}
 	return strings.TrimSpace(raw)
+}
+
+// flushTimeoutSeconds limita o tempo de entrega de eventos no shutdown.
+func flushTimeoutSeconds(getenv func(string) string) (int, error) {
+	raw := value(getenv("SENTRY_FLUSH_TIMEOUT_SECONDS"), "2")
+	seconds, err := strconv.Atoi(raw)
+	if err != nil || seconds < 1 || seconds > 30 {
+		return 0, fmt.Errorf("SENTRY_FLUSH_TIMEOUT_SECONDS must be a number between 1 and 30")
+	}
+	return seconds, nil
 }
 
 func validateEnv(env string) error {

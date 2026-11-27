@@ -21,6 +21,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,vue,css}\" \"e2e/**/*.ts\" \"*.{js,mjs,ts,json,html}\""
   },
   "dependencies": {
+    "@sentry/vue": "^11.19.0",
     "pinia": "^4.1.0",
     "vue": "^3.5.45",
     "vue-router": "^5.5.1"

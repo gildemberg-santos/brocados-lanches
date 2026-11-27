@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
+import { reportRouterError } from '../features/monitoring/sentry'
 import HomeView from '../views/HomeView.vue'
 import { redirectAuthenticatedFromLogin, requireAdminAuth } from './adminGuard'
 import { applyRouteMeta } from './meta'
@@ -204,6 +205,10 @@ const router = createRouter({
 
 router.afterEach((to) => {
   applyRouteMeta(to)
+})
+
+router.onError((error, to) => {
+  reportRouterError(error, to.name)
 })
 
 export default router

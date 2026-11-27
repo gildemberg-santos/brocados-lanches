@@ -36,7 +36,7 @@ onMounted(() => {
     <aside class="info-page__notice" role="note" aria-label="Versão da política">
       <strong>Versão vigente.</strong>
       Esta política descreve o tratamento de dados realizado pela Brocados Lanches.
-      <span class="info-page__date">Publicada em 25/11/2026. Atualizada em 26/11/2026.</span>
+      <span class="info-page__date">Publicada em 25/11/2026. Atualizada em 27/11/2026.</span>
     </aside>
 
     <section aria-labelledby="privacy-controller-title">
@@ -109,6 +109,13 @@ onMounted(() => {
           Ele permite consultar apenas o histórico deste dispositivo, sem senha nem consulta por
           telefone. O token viaja no cabeçalho `Authorization` e nunca aparece na URL.
         </li>
+        <li>
+          relatórios de falhas inesperadas da API e do navegador: mensagem de erro sanitizada, rota
+          sem consulta ou identificador opaco, método HTTP, status e duração. O envio não inclui
+          usuário identificado, requisição original, cabeçalhos, corpo, cookies, props de
+          componentes nem gravações de tela; antes do envio, padrões de telefone, e-mail, CEP e link
+          do WhatsApp são removidos.
+        </li>
       </ul>
       <p>Não usamos analytics, pixels de rastreamento, mapas de calor nem publicidade.</p>
     </section>
@@ -151,7 +158,12 @@ onMounted(() => {
         </li>
         <li>
           infraestrutura de hospedagem e banco de dados necessária para servir o site e armazenar o
-          pedido.
+          pedido;
+        </li>
+        <li>
+          Sentry: serviço de monitoramento de erros, usado somente para diagnosticar falhas
+          inesperadas da API e do navegador. Os eventos são sanitizados antes do envio e não trazem
+          dados do pedido nem credenciais.
         </li>
       </ul>
       <p>
@@ -183,6 +195,10 @@ onMounted(() => {
         </li>
         <li>auditoria: 12 meses, sem dados pessoais dos clientes;</li>
         <li>logs: 30 dias, sem nome, telefone, endereço ou observação do pedido;</li>
+        <li>
+          eventos de erro no Sentry: até 30 dias, conforme a configuração da conta contratada, sem
+          dados do pedido nem credenciais;
+        </li>
         <li>backups: 30 dias; ao restaurar, os prazos de retenção são reaplicados.</li>
         <li>
           preferências do checkout: até você apagar nesta página ou limpar os dados deste navegador.
@@ -224,7 +240,9 @@ onMounted(() => {
       <p>
         O site usa TLS, senhas com hash Argon2id, sessões opacas com hash no servidor, cookie
         HttpOnly (Secure em produção), proteção contra CSRF por Origem/Referer e limite de
-        requisições. Logs e mensagens de erro não incluem dados pessoais. Nenhum dado de cartão é
+        requisições. Logs e mensagens de erro não incluem dados pessoais; o monitoramento de erros
+        usa sanitização antes do envio e não coleta identificação de usuário, variáveis de
+        componente, sessão de navegador nem rastreamento de performance. Nenhum dado de cartão é
         coletado ou armazenado.
       </p>
     </section>
@@ -232,10 +250,10 @@ onMounted(() => {
     <section aria-labelledby="privacy-changes-title">
       <h2 id="privacy-changes-title">8. Alterações desta política</h2>
       <p>
-        Esta é a versão vigente, publicada em 25/11/2026 e atualizada em 26/11/2026 para descrever
-        as preferências do checkout, o perfil de conveniência no servidor e o token local de acesso
-        ao histórico de pedidos. Mudanças relevantes serão comunicadas pelos canais da loja nesta
-        página.
+        Esta é a versão vigente, publicada em 25/11/2026 e atualizada em 27/11/2026 para descrever
+        as preferências do checkout, o perfil de conveniência no servidor, o token local de acesso
+        ao histórico de pedidos e o monitoramento sanitizado de erros. Mudanças relevantes serão
+        comunicadas pelos canais da loja nesta página.
       </p>
     </section>
   </main>

@@ -1,7 +1,7 @@
 # Arquitetura — Brocados Lanches
 
 **Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
+**Atualizado em:** 27/11/2026  
 **Status:** arquitetura da V1 planejada; implementação incremental.  
 **Relacionados:** `03-prd.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `09-qualidade-e-testes.md`, `adr/`.
 
@@ -33,6 +33,8 @@ flowchart LR
   API --> M[(MongoDB)]
   API --> WA[Link wa.me]
   API --> LOG[Logs JSON / métricas]
+  API --> SE[Sentry: erros sanitizados]
+  W --> SE
   O[Monitoramento externo] --> N
   O --> API
 ```
@@ -219,6 +221,7 @@ O carrinho guarda uma versão de schema. Se a versão mudar, migra ou limpa com 
 - Um único `src/services/http.ts`.
 - `credentials: 'include'`, timeout, `Accept: application/json`.
 - Erro de API vira `ApiError` com `status`, `code` e mensagem em português.
+- O wrapper central mede a duração e reporta a falha: `4xx` vira breadcrumb, `5xx`/timeout viram evento sanitizado no Sentry; headers, corpo e URL completa nunca são anexados (D-047).
 - Componentes não chamam `fetch` diretamente.
 - Toda tela trata carregando, vazio, erro e sucesso.
 - Nunca mostrar JSON cru ou stack trace.
@@ -357,6 +360,14 @@ O notificador lê configuração e `whatsapp` da loja em uma única consulta ao 
 Os dois PATCH do documento único são disjuntos: a configuração operacional da loja atualiza apenas os campos da loja e o PATCH owner-only atualiza somente `webhook`. Assim, uma leitura obsoleta em uma tela não restaura a configuração da outra.
 
 Diferente do WebSocket, o webhook é um canal externo e carrega PII no corpo; por isso a URL não é devolvida a `operator`, não entra em auditoria e o usuário aceitou explicitamente o risco de SSRF e de envio a terceiros (D-042).
+
+### 6.8 Monitoramento de erros
+
+A API registra 5xx e panics com um `Reporter` injetado pelo compositor; erros de regra de negócio (4xx), health checks e reconexões WebSocket não geram evento (D-047). O middleware clona o hub do Sentry por requisição e anota apenas `request_id`, `method` e o template da rota do Chi — nunca `r.URL.Path` com identificadores. O `BeforeSend` zera `user` e `request` e sanitiza texto, tags, contextos, breadcrumbs e stack traces; `sentry.Flush` roda no shutdown depois do fechamento do Mongo, e falha ao inicializar o SDK não derruba a API.
+
+No navegador, `Sentry.init` recebe o `app` Vue com `tracesSampleRate: 0`, `attachProps: false` e coleta de dados desativada para usuário, cookies, headers, corpos e query string. O cliente HTTP reporta somente 5xx/timeout como evento; erros 4xx ficam como breadcrumb de baixa cardinalidade. Erros de carregamento de rota usam `router.onError` e enviam apenas o nome da rota. O CSP do proxy abre `connect-src` para `https://*.sentry.io`; não há tunnel, source maps, Replay nem `SENTRY_AUTH_TOKEN`.
+
+O DSN é configurado em `SENTRY_DSN` (API) e `VITE_SENTRY_DSN` (build do web). Com DSN vazio, os reporters são neutros e nenhum evento sai do processo. O validador `scripts/check_sentry.py` verifica essas invariantes no CI.
 
 ---
 

@@ -15,6 +15,14 @@ RUN --mount=type=cache,target=/root/.cache/node/corepack \
 COPY design-system/tokens.css ./design-system/tokens.css
 COPY frontend/ ./frontend/
 
+# O DSN do navegador é valor de build (VITE_*), nunca de runtime.
+ARG VITE_SENTRY_DSN=""
+ARG VITE_SENTRY_ENVIRONMENT="development"
+ARG VITE_SENTRY_RELEASE=""
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN} \
+    VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT} \
+    VITE_SENTRY_RELEASE=${VITE_SENTRY_RELEASE}
+
 RUN --mount=type=cache,target=/root/.cache/node/corepack \
     cd frontend && pnpm build
 

@@ -60,6 +60,7 @@ O esqueleto da Fase 1 já inclui:
 - telas administrativas de catálogo em `/admin/produtos`, `/admin/categorias`, `/admin/adicionais` e `/admin/locais`: listagem com busca, filtro por situação e paginação, formulários com slug, preço em reais convertido para centavos, ordem, disponibilidade, grupos de opções e adicionais vinculados;
 - configuração da loja em `/admin/loja`: kill switch, contato, prazo e horários por dia da semana com intervalos e validação no cliente antes do PATCH;
 - servidor HTTP com timeouts, logs JSON sem PII e shutdown gracioso;
+- monitoramento de erros com Sentry somente para `5xx`, panics e timeout, com sanitização antes do envio, DSN por ambiente e nenhum dado do pedido, tracing ou source map (D-047);
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
 - carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e subtotal sem taxa; a taxa e o total aparecem no checkout, após a escolha de entrega/retirada e zona;
@@ -73,7 +74,7 @@ O esqueleto da Fase 1 já inclui:
 - harness E2E com Playwright: smoke da home, navegação para o cardápio, acesso anônimo/credenciais inválidas ao painel, pedido → fila → detalhe → mudança de status, propagação da mudança para o acompanhamento por WebSocket e cenários críticos de falha (loja fechada, esgotado, zona inativa, retirada, troco, idempotência, transição inválida e logout) em desktop e mobile, com API isolada em `brocados_test`, seed fictício aplicado pelo `make test-e2e`, um worker por vez e contas administrativas separadas para respeitar os rate limits;
 - CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E;
 - Dockerfiles de API e web, Nginx same-origin e `compose.yaml` com MongoDB;
-- validação de documentação e design system no gate de commit.
+- validação de documentação, design system, proxies de tempo real e integração do Sentry no gate de commit.
 
 ### Planejamento da V1
 
@@ -299,10 +300,11 @@ Nunca armazene a URI de produção em arquivos versionados. Use variável de amb
 make fmt          # gofmt + Prettier
 make fmt-check    # verifica formatação sem alterar arquivos
 make lint         # go vet/golangci-lint + ESLint + vue-tsc
-make test         # docs, design system, proxies de tempo real, seed, Go e Vitest
+make test         # docs, design, proxies, Sentry, seed, Go e Vitest
 make docs-check   # links relativos da documentação
 make design-check # tokens, cores literais e CDNs no frontend
 make config-check # upgrade WebSocket no Vite e no nginx
+make sentry-check # DSN, PII, escopo de erros e CSP do Sentry
 make build        # binário Go em backend/bin/api e dist do frontend
 ```
 
@@ -333,14 +335,14 @@ O workflow `.github/workflows/ci.yml` roda em pull request, push para `main` e e
 
 | Job | Verifica |
 |---|---|
-| Documentação, design e configuração | `docs-check`, `design-check`, `config-check` e testes dos validadores |
+| Documentação, design e configuração | `docs-check`, `design-check`, `config-check`, `sentry-check` e testes dos validadores |
 | Backend | `gofmt`, `go vet`, `go test -race` com MongoDB 8, seed e build |
 | Frontend | Prettier, ESLint, `vue-tsc`, Vitest e build |
 | E2E | Chromium + Playwright com MongoDB 8 como serviço |
 
 O pipeline não usa secrets: as versões vêm de `backend/go.mod`, `frontend/package.json` e `frontend/pnpm-lock.yaml`. O relatório do Playwright fica como artefato quando o job E2E falha.
 
-O gate de commit executa `make lint`, `make test`, `make docs-check`, `make design-check` e `make config-check`. Ative o hook uma vez por clone:
+O gate de commit executa `make lint`, `make test`, `make docs-check`, `make design-check`, `make config-check` e `make sentry-check`. Ative o hook uma vez por clone:
 
 ```bash
 git config core.hooksPath .githooks

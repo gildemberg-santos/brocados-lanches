@@ -152,6 +152,11 @@ func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err
 			"path", r.URL.Path,
 			"error", scrubForLog(err.Error()),
 		)
+		reporterFrom(r.Context()).Capture(
+			r.Context(),
+			errors.New(scrubForLog(err.Error())),
+			requestTags(r),
+		)
 	}
 
 	w.Header().Set("Cache-Control", "no-store")

@@ -39,6 +39,7 @@ type Dependencies struct {
 	LoginLimiter     *ratelimit.Limiter
 	Limiters         Limiters
 	Logger           *slog.Logger
+	Reporter         Reporter
 }
 
 type healthResponse struct {
@@ -60,9 +61,14 @@ func NewRouter(deps Dependencies) http.Handler {
 	limiters := deps.Limiters
 	limiters.fillDefaults()
 
+	reporter := deps.Reporter
+	if reporter == nil {
+		reporter = noopReporter{}
+	}
+
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	// Devolve o ID na resposta para correlacionar reclamações com os logs.
+	// Devolve o ID na resposta para correlacionar reclamações com logs e eventos.
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if requestID := middleware.GetReqID(r.Context()); requestID != "" {
@@ -71,10 +77,18 @@ func NewRouter(deps Dependencies) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	})
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r.WithContext(withReporter(r.Context(), reporter)))
+		})
+	})
+	// O hub por requisição é criado depois do request ID para carregar a tag
+	// correta; nenhum header, query ou corpo é anexado ao evento.
+	router.Use(sentryScope)
 	// ClientIPFromRemoteAddr não confia em X-Forwarded-For/X-Real-IP, que podem
 	// ser forjados pelo cliente e burlar o rate limit de login.
 	router.Use(middleware.ClientIPFromRemoteAddr)
-	router.Use(middleware.Recoverer)
+	router.Use(recoverer(reporter, logger))
 	router.Use(requestLogger(logger))
 
 	router.Get("/healthz", handleHealth)

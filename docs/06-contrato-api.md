@@ -2,7 +2,7 @@
 
 **Versão:** 1.4  
 **Base:** `/api/v1`  
-**Atualizado em:** 26/11/2026  
+**Atualizado em:** 27/11/2026  
 **Relacionados:** `04-arquitetura.md`, `05-modelo-de-dados.md`, `09-qualidade-e-testes.md`.
 
 ---
@@ -875,6 +875,8 @@ Regras:
 - Resposta pública genérica em 5xx.
 - `429` sem revelar existência de conta.
 - `404` de acompanhamento não revela se o ID já existiu.
+- Com `SENTRY_DSN` configurado, somente `500`/panic gera evento de monitoramento; `4xx`, health checks e falhas de upgrade WebSocket não geram evento (D-047). O evento é sanitizado antes do envio: sem `user`, `request`, headers, query, corpo, telefone, e-mail, CEP, token ou link `wa.me`.
+- O navegador reporta `5xx`/timeout e erro de carregamento de rota; `4xx` vira breadcrumb sem dados pessoais. Não há tracing, Session Replay nem source maps.
 
 ---
 

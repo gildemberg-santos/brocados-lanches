@@ -245,6 +245,21 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Então** o POST traz `number` com o telefone do cliente e `storeNumber` com o da loja, em um único evento, sem PII em log (D-046).
 - **Dado** loja sem `whatsapp` preenchido: nenhum POST é enviado, o aviso não contém telefone e o pedido permanece gravado.
 
+### 5.23 Monitoramento de erros sem PII (D-047)
+
+- **Dado** DSN vazio na API e no build.
+- **Quando** a aplicação inicia e uma requisição falha.
+- **Então** nenhum SDK é inicializado e nenhum evento tenta sair do processo.
+- **Dado** erro de domínio `422` no cliente HTTP.
+- **Quando** a requisição termina.
+- **Então** o navegador registra apenas breadcrumb com método, rota sanitizada, status e duração arredondada; não há `captureException`.
+- **Dado** evento do Sentry com `user`, `request`, tags, breadcrumbs, stacktrace e contexto contendo telefone, e-mail, CEP, query e token.
+- **Quando** `BeforeSend` roda no Go ou no Vue.
+- **Então** `user`/`request` são removidos, chaves sensíveis são descartadas e os padrões restantes são mascarados; os testes não dependem de rede.
+- **Dado** painel com CSP sem `connect-src` do Sentry ou código com tracing/Replay/DSN literal.
+- **Quando** `make sentry-check` roda.
+- **Então** a validação falha com o motivo e bloqueia o CI.
+
 ---
 
 ## 6. Backend
@@ -392,6 +407,7 @@ pnpm lint
 - Pedido ponta a ponta: cardápio → personalização → carrinho → checkout → confirmação → fila → detalhe → `Confirmar pedido`, em desktop e mobile (US-040 a US-043, US-070 a US-072); o link de handoff continua disponível após recarregar a confirmação.
 - Cenários de falha em `e2e/failure-scenarios.spec.ts`: `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE`, retirada com taxa zero, troco congelado, idempotência, `409` em transição inválida e `UNAUTHORIZED` após logout.
 - CRUD de catálogo e configuração da loja cobertos por Vitest; E2E dessas telas ainda pendente.
+- Monitoramento de erros coberto por testes Go/Vitest do sanitizador, da captura só de 5xx e do recoverer, além do validador estático executado por `make test-sentry` e `make sentry-check`.
 
 ---
 
@@ -410,6 +426,10 @@ pnpm lint
 | Sessão | Expira, rotaciona e logout invalida |
 | Card | Nenhum campo de cartão é recebido |
 | Headers | CSP, nosniff, referrer, permissions |
+| Sentry | DSN vazio não inicializa SDK; nenhum teste envia rede |
+| Sentry PII | `BeforeSend` remove user/request e mascara telefone, e-mail, CEP, query e token nos dois lados |
+| Sentry escopo | 4xx e panics de regra de negócio não viram evento; 5xx/panic e timeout são capturados |
+| Sentry build | Validador rejeita DSN literal, tracing, Replay, source maps e CSP sem `connect-src` do Sentry |
 | Dependências | Scanner sem vulnerabilidade crítica conhecida |
 
 ---

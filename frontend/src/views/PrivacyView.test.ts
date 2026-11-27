@@ -35,7 +35,7 @@ describe('PrivacyView', () => {
     expect(wrapper.get('h1').text()).toBe('Privacidade')
     expect(wrapper.get('[role="note"]').text()).toContain('Versão vigente')
     expect(wrapper.get('.info-page__date').text()).toContain('Publicada em 25/11/2026.')
-    expect(wrapper.get('.info-page__date').text()).toContain('Atualizada em 26/11/2026.')
+    expect(wrapper.get('.info-page__date').text()).toContain('Atualizada em 27/11/2026.')
     expect(text).not.toContain('Rascunho')
     expect(text).not.toContain('pendente de E0')
     expect(text).not.toContain('sujeito a aprovação')
@@ -87,6 +87,18 @@ describe('PrivacyView', () => {
     expect(text).toContain('token opaco de acesso aos pedidos')
     expect(text).toContain('Authorization')
     expect(text).toContain('histórico de pedidos: permitir que você consulte novamente')
+  })
+
+  it('descreve o monitoramento de erros sem prometer dados pessoais', async () => {
+    const wrapper = await mountPrivacy()
+    const text = wrapper.text()
+
+    expect(text).toContain('relatórios de falhas inesperadas da API e do navegador')
+    expect(text).toContain('Sentry: serviço de monitoramento de erros')
+    expect(text).toContain('eventos de erro no Sentry: até 30 dias')
+    expect(text).toContain('não coleta identificação de usuário')
+    expect(text).not.toContain('Session Replay')
+    expect(text).not.toContain('rastreamento de performance ativo')
   })
 
   it('apaga as preferências salvas neste navegador', async () => {

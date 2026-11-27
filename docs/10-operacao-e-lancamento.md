@@ -275,6 +275,16 @@ Alertas precisam de destinatário e runbook. Sem alerta acionável, não criar.
 | Criação de pedido p95 | ≤ 800 ms |
 | Taxa de erro 5xx | < 0,5% |
 
+### 8.5 Monitoramento de erros (Sentry)
+
+- Projetos separados para API e web, com `SENTRY_DSN` e `VITE_SENTRY_DSN` definidos no ambiente/build de cada deploy (D-047). O DSN do web é incorporado ao bundle; por isso usa um projeto sem permissões administrativas.
+- `SENTRY_ENVIRONMENT` e `SENTRY_RELEASE` identificam o deploy. Sem DSN, nada é enviado.
+- Apenas `5xx`, panics, timeout de rede e erro de carregamento de rota geram evento. `4xx`, health checks e reconexões WebSocket não geram.
+- Antes do envio, `BeforeSend` remove `user`/`request`, descarta chaves sensíveis e máscara telefone, e-mail, CEP, link `wa.me`, query e tokens. Não há tracing, Session Replay, source maps ou upload com `SENTRY_AUTH_TOKEN`.
+- O shutdown da API executa `sentry.Flush` com `SENTRY_FLUSH_TIMEOUT_SECONDS` (padrão 2 s). Falha do SDK ou do envio nunca altera o pedido nem impede a inicialização.
+- O proxy abre `connect-src` para `https://*.sentry.io`; se o projeto contratado usar domínio próprio, o CSP dos dois arquivos Nginx precisa ser ajustado junto.
+- `make sentry-check` e `make test-sentry` rodam no CI. Nos painéis, o alerta de 5xx do §8.3 continua sendo o gatilho operacional; o Sentry é a ferramenta de diagnóstico, não mais um destino de PII.
+
 ---
 
 ## 9. Segurança operacional
@@ -315,7 +325,8 @@ Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem s
 - preferências do checkout no navegador (entrega, zona, nome, telefone, endereço e pagamento), sem observação nem troco; podem ser apagadas em `/privacidade` (D-037);
 - perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038). Com a opção habilitada, o checkout consulta esse perfil pelo telefone informado para preencher o próximo pedido, com limites por IP e telefone e sem devolver histórico ou taxa (D-039);
 - token opaco de histórico no navegador e seu hash SHA-256 no pedido; sem cadastro, senha ou consulta por telefone (D-041);
-- destino de webhook configurado pelo `owner`, que recebe o telefone do cliente, o WhatsApp da loja e a mensagem do pedido em cada evento persistido (D-042, D-046). O envio é best-effort e o operador é responsável pelo destino e pelo tratamento desses dados.
+- destino de webhook configurado pelo `owner`, que recebe o telefone do cliente, o WhatsApp da loja e a mensagem do pedido em cada evento persistido (D-042, D-046). O envio é best-effort e o operador é responsável pelo destino e pelo tratamento desses dados;
+- eventos de erro no Sentry: mensagem sanitizada, rota sem query/identificador, método, status e duração, sem identificação de usuário, headers, corpo ou dados do pedido (D-047). A política completa está em `/privacidade`.
 
 Não coletar CPF, e-mail de cliente ou dados de cartão.
 
@@ -350,6 +361,7 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 - Preferências do checkout: até o cliente apagar em `/privacidade` ou limpar os dados do navegador.
 - Token de acesso ao histórico: até o cliente apagar em `/privacidade`, limpar os dados do navegador ou trocar de dispositivo; depois disso o histórico local deixa de estar disponível.
 - Logs: 30 dias, sem PII.
+- Eventos de erro no Sentry: até 30 dias, conforme a configuração da conta contratada, sem PII do pedido.
 - Backups: 30 dias; respeitar retenção ao restaurar.
 
 ### 10.5 Incidente de dados
@@ -439,6 +451,8 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 - [ ] Cookies `Secure`/`HttpOnly`/`SameSite`.
 - [ ] Rate limit ativo.
 - [ ] Logs sem PII.
+- [ ] DSNs configurados em ambientes separados e `make sentry-check` aprovado.
+- [ ] CSP com `connect-src` compatível com o domínio de ingestão do Sentry.
 - [ ] Alertas com destinatário.
 - [ ] Rollback definido.
 

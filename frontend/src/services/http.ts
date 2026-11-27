@@ -1,3 +1,5 @@
+import { reportHttpError } from '../features/monitoring/sentry'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 const DEFAULT_HTTP_TIMEOUT_MS = 10_000
 const TIMEOUT_MESSAGE = 'A conexão demorou muito. Verifique sua conexão e tente novamente.'
@@ -67,8 +69,23 @@ async function withTimeout<T>(request: (signal: AbortSignal) => Promise<T>): Pro
   }
 }
 
+/** Mede e reporta a falha sem expor headers, corpo ou URL completa. */
+async function performRequest<T>(
+  method: string,
+  path: string,
+  request: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const started = performance.now()
+  try {
+    return await withTimeout(request)
+  } catch (error: unknown) {
+    reportHttpError({ method, path, error, durationMs: performance.now() - started })
+    throw error
+  }
+}
+
 export async function get<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  return withTimeout(async (signal) => {
+  return performRequest('GET', path, async (signal) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       headers: {
         Accept: 'application/json',
@@ -122,7 +139,7 @@ export async function post<T>(
     headers['Idempotency-Key'] = options.idempotencyKey
   }
 
-  return withTimeout(async (signal) => {
+  return performRequest('POST', path, async (signal) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
       headers,
@@ -150,7 +167,7 @@ export async function postData<T>(
 
 /** POST multipart para upload; o navegador define o Content-Type com o boundary. */
 export async function postForm<T>(path: string, formData: FormData): Promise<T> {
-  return withTimeout(async (signal) => {
+  return performRequest('POST', path, async (signal) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
       headers: { Accept: 'application/json' },
@@ -174,7 +191,7 @@ export async function postFormData<T>(path: string, formData: FormData): Promise
 
 /** POST sem corpo, para endpoints que respondem 204 (ex.: logout). */
 export async function postEmpty(path: string): Promise<void> {
-  return withTimeout(async (signal) => {
+  return performRequest('POST', path, async (signal) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
       headers: {
@@ -191,7 +208,7 @@ export async function postEmpty(path: string): Promise<void> {
 }
 
 export async function patch<T>(path: string, value: unknown): Promise<T> {
-  return withTimeout(async (signal) => {
+  return performRequest('PATCH', path, async (signal) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: 'PATCH',
       headers: {

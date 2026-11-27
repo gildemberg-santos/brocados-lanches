@@ -7,8 +7,8 @@ include .env
 export
 endif
 
-.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-config test-e2e \
-	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check config-check build build-api build-web \
+.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-config test-sentry test-e2e \
+	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check config-check sentry-check build build-api build-web \
 	seed seed-reset seed-check migrate-reference-check migrate-reference bench test-load up up-offline down logs ps
 
 help:
@@ -27,6 +27,7 @@ help:
 		'  make fmt         Formata Go e frontend' \
 		'  make fmt-check   Verifica formatação sem alterar arquivos' \
 		'  make config-check  Valida os proxies de desenvolvimento e produção do WebSocket' \
+		'  make sentry-check  Valida a integração de erros (sem DSN, PII ou tracing)' \
 		'  make seed        Aplica os dados fictícios no banco de desenvolvimento' \
 		'  make seed-reset  Esvazia as coleções semeadas e reaplica os dados fictícios' \
 		'  make seed-check  Valida o seed.json sem acessar o MongoDB' \
@@ -54,7 +55,7 @@ dev-api:
 dev-web:
 	cd frontend && pnpm dev
 
-test: test-docs test-design test-config seed-check test-api test-web
+test: test-docs test-design test-config test-sentry seed-check test-api test-web
 
 test-api:
 	cd backend && go test -race ./...
@@ -74,6 +75,9 @@ test-design:
 
 test-config:
 	python3 -m unittest discover -s scripts -p 'test_check_realtime_proxy.py'
+
+test-sentry:
+	python3 -m unittest discover -s scripts -p 'test_check_sentry.py'
 
 # Benchmarks não entram em make test: são executados sob demanda e não têm
 # limite de latency fixado, para não tornar o CI instável.
@@ -141,6 +145,9 @@ design-check:
 
 config-check:
 	python3 scripts/check_realtime_proxy.py
+
+sentry-check:
+	python3 scripts/check_sentry.py
 
 build: build-api build-web
 

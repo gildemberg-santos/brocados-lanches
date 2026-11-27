@@ -36,6 +36,9 @@ jobs:
       - name: Validar proxies de tempo real
         run: make config-check
 
+      - name: Validar integração do Sentry
+        run: make sentry-check
+
       - name: Testar validadores de documentação
         run: make test-docs
 
@@ -44,6 +47,9 @@ jobs:
 
       - name: Testar validador de proxies de tempo real
         run: make test-config
+
+      - name: Testar validador do Sentry
+        run: make test-sentry
 
   backend:
     name: Backend

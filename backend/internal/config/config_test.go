@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestLoadDefaults(t *testing.T) {
 	cfg, err := Load(func(string) string { return "" })
@@ -38,15 +41,28 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.HasAdminBootstrap() {
 		t.Error("HasAdminBootstrap() = true without environment variables")
 	}
+	if cfg.SentryDSN != "" {
+		t.Errorf("SentryDSN = %q, want empty (disabled)", cfg.SentryDSN)
+	}
+	if cfg.SentryEnvironment != "development" {
+		t.Errorf("SentryEnvironment = %q, want development", cfg.SentryEnvironment)
+	}
+	if cfg.SentryFlushTimeout != 2*time.Second {
+		t.Errorf("SentryFlushTimeout = %s, want 2s", cfg.SentryFlushTimeout)
+	}
 }
 
 func TestLoadOverrides(t *testing.T) {
 	env := map[string]string{
-		"APP_ENV":             "production",
-		"PORT":                "9090",
-		"MONGO_URI":           "mongodb+srv://cluster.example.com",
-		"MONGO_DB":            "brocados",
-		"ORDER_ACCESS_SECRET": "segredo-de-producao-com-mais-de-32-caracteres",
+		"APP_ENV":                      "production",
+		"PORT":                         "9090",
+		"MONGO_URI":                    "mongodb+srv://cluster.example.com",
+		"MONGO_DB":                     "brocados",
+		"ORDER_ACCESS_SECRET":          "segredo-de-producao-com-mais-de-32-caracteres",
+		"SENTRY_DSN":                   "https://key@sentry.example.com/1",
+		"SENTRY_ENVIRONMENT":           "producao",
+		"SENTRY_RELEASE":               "abc123",
+		"SENTRY_FLUSH_TIMEOUT_SECONDS": "5",
 	}
 
 	cfg, err := Load(func(key string) string { return env[key] })
@@ -59,6 +75,12 @@ func TestLoadOverrides(t *testing.T) {
 	}
 	if cfg.Addr() != ":9090" {
 		t.Errorf("Addr() = %q, want :9090", cfg.Addr())
+	}
+	if cfg.SentryDSN == "" || cfg.SentryEnvironment != "producao" || cfg.SentryRelease != "abc123" {
+		t.Errorf("unexpected sentry config: %+v", cfg)
+	}
+	if cfg.SentryFlushTimeout != 5*time.Second {
+		t.Errorf("SentryFlushTimeout = %s, want 5s", cfg.SentryFlushTimeout)
 	}
 }
 
@@ -105,6 +127,8 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		{name: "invalid mongodb uri alias", env: map[string]string{"MONGODB_URI": "http://localhost:27017"}},
 		{name: "invalid cookie name", env: map[string]string{"ADMIN_SESSION_COOKIE": "cookie com espaco"}},
 		{name: "partial bootstrap", env: map[string]string{"ADMIN_BOOTSTRAP_EMAIL": "dono@example.com"}},
+		{name: "invalid sentry flush timeout", env: map[string]string{"SENTRY_FLUSH_TIMEOUT_SECONDS": "abc"}},
+		{name: "sentry flush timeout too high", env: map[string]string{"SENTRY_FLUSH_TIMEOUT_SECONDS": "31"}},
 		{
 			name: "missing production order access secret",
 			env:  map[string]string{"APP_ENV": "production"},
