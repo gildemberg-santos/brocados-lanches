@@ -137,7 +137,7 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 | `QuantityStepper` | default, min, max | Botões ≥ 44 px; valor acessível; não permitir zero silencioso |
 | `PriceText` | normal, destaque, riscado | Formatar BRL; nunca calcular no componente |
 | `StatusBadge` | aberto, fechado, pending, confirmed, preparing, ready, out_for_delivery, delivered, picked_up, cancelled | Texto + cor/ícone; não só cor |
-| `Toast` | sucesso, erro, info | `aria-live`; não substitui erro de formulário |
+| `Toast` / `StatusToast` | sucesso, erro, info | `aria-live`; não substitui erro de formulário; o toast de status some em 4 s ou por fechamento manual |
 | `Modal` / `ConfirmDialog` | default, danger | Foco preso; ESC fecha; retorna foco |
 | `Drawer` / `BottomSheet` | carrinho, filtros, admin | Foco preso; scroll lock; fechar por gesto e botão |
 | `EmptyState` | catálogo, carrinho, pedidos | Explica o vazio e oferece ação |
@@ -299,6 +299,7 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 - Itens e total nesta entrega.
 - Contato da loja e atualização manual previstos para a US-051.
 - Enquanto a página está aberta, o status é atualizado automaticamente por WebSocket e o texto discreto abaixo do título informa se a conexão está ativa ou em reconexão (D-040); estados finais encerram a assinatura.
+- Mudança real de status exibe `StatusToast` com número e novo status e toca um alerta curto; conexão, reconexão, carga inicial e eventos repetidos não avisam (D-052).
 - Estado inválido/não encontrado sem revelar dados.
 
 ### 5.8 Contato e privacidade
@@ -409,8 +410,9 @@ Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065/US-025). O
 - Ações de transição válidas.
 - Cancelamento com motivo.
 - Aviso discreto de conexão em tempo real; criações e transições feitas por outro operador recarregam a fila e o detalhe sem recarga da página (D-040).
+- Mudança de status em qualquer pedido da fila ou no detalhe aberto exibe `StatusToast` e som curto, inclusive na transição feita pelo operador; o evento do servidor não duplica o aviso. Eventos de conexão, exclusão e carga inicial não avisam (D-052).
 
-Implementado em `frontend/src/views/admin/AdminOrdersView.vue` e `frontend/src/views/admin/AdminOrderDetailView.vue` (US-070 a US-072, US-074). As datas dos filtros usam UTC; a exibição usa `America/Fortaleza`.
+Implementado em `frontend/src/views/admin/AdminOrdersView.vue` e `frontend/src/views/admin/AdminOrderDetailView.vue` (US-070 a US-072, US-074, US-078). As datas dos filtros usam UTC; a exibição usa `America/Fortaleza`.
 
 ### 6.9 Usuários — `/admin/usuarios` (owner)
 
@@ -511,7 +513,7 @@ Regras:
 ## 10. Movimento e feedback
 
 - Transições curtas (150–250 ms).
-- Toast 2–4 s; erro crítico permanece até ação.
+- Toast 2–4 s; erro crítico permanece até ação. O toast de mudança de status some em 4 s ou quando fechado, e seu som é gerado por Web Audio sem asset externo; bloqueio de autoplay não impede a notificação visual (D-052).
 - Skeleton em vez de spinner em listas.
 - Respeitar `prefers-reduced-motion`.
 - Não usar `animate-ping` contínuo em produção.

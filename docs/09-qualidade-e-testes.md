@@ -295,6 +295,21 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Quando** a exclusão é persistida.
 - **Então** chega `order.deleted` sem PII; o canal público não recebe o sinal e o acompanhamento passa a devolver `404`.
 
+### 5.27 Notificação visual e sonora de status (D-052)
+
+- **Dado** acompanhamento público, fila ou detalhe do painel com pedido já carregado.
+- **Quando** chega `order.updated` com status diferente do conhecido.
+- **Então** aparece `StatusToast` com número e novo status, o som é tocado uma vez e o refetch HTTP atualiza a tela.
+- **Dado** mensagem `connected`, reconexão, carga inicial, pedido de outra tela ou evento repetido.
+- **Quando** o cliente processa o sinal.
+- **Então** nenhum toast nem som é disparado.
+- **Dado** operador que confirma uma transição no detalhe.
+- **Quando** a API responde `200` com o novo status.
+- **Então** o toast e o som aparecem imediatamente, e o `order.updated` seguinte não repete o aviso.
+- **Dado** navegador sem Web Audio ou com autoplay bloqueado.
+- **Quando** o som é solicitado.
+- **Então** a chamada falha silenciosamente e a notificação visual permanece.
+
 ---
 
 ## 6. Backend
@@ -368,6 +383,7 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 - `ProductCard`: esgotado, preço, imagem.
 - `CartLine`: opções, remoção, quantidade.
 - `StatusBadge`: texto além de cor.
+- `StatusToast`: `aria-live`, mensagem, fechamento manual e expiração em 4 s.
 - `DataTable`: vazio, erro, paginação (ainda não abstraído).
 - `AdminCatalogFilters`: busca, situação e limpeza.
 - `AdminCatalogList`: dados, ações, paginação, erro e vazio.

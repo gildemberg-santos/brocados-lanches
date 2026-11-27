@@ -4,6 +4,7 @@ import { defineComponent, h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { playNotificationSound } from '../features/orders/notificationSound'
 import { ApiError } from '../services/http'
 import { fetchTrackedOrder } from '../services/orders'
 import {
@@ -16,11 +17,15 @@ import type { PublicStoreStatus } from '../types/store'
 import type { TrackedOrder } from '../types/order'
 import OrderView from './OrderView.vue'
 
+vi.mock('../features/orders/notificationSound', () => ({
+  playNotificationSound: vi.fn(() => true),
+}))
 vi.mock('../services/orders', () => ({ fetchTrackedOrder: vi.fn() }))
 vi.mock('../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi.fn()) }))
 vi.mock('../services/store', () => ({ fetchStoreStatus: vi.fn() }))
 
 const mockedFetchTrackedOrder = vi.mocked(fetchTrackedOrder)
+const mockedPlayNotificationSound = vi.mocked(playNotificationSound)
 const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const StubView = defineComponent({ name: 'StubView', render: () => h('div') })
 const tracked: TrackedOrder = {
@@ -139,6 +144,35 @@ describe('OrderView', () => {
 
     expect(mockedFetchTrackedOrder).toHaveBeenCalledTimes(2)
     expect(wrapper.get('h2').text()).toContain('Pronto')
+  })
+
+  it('mostra notificação com som apenas na mudança de status', async () => {
+    const wrapper = await mountOrder()
+    const event: OrderEvent = {
+      type: 'order.updated',
+      publicId: 'public-123',
+      orderNumber: 1042,
+      status: 'ready',
+      updatedAt: '2026-11-27T12:00:00Z',
+    }
+
+    emitOrderEvent({ type: 'connected' })
+    expect(wrapper.find('.status-toast').exists()).toBe(false)
+    expect(mockedPlayNotificationSound).not.toHaveBeenCalled()
+
+    mockedFetchTrackedOrder.mockResolvedValue({ ...tracked, status: 'ready' })
+    emitOrderEvent(event)
+    await flushPromises()
+
+    expect(wrapper.get('.status-toast').text()).toContain(`Pedido #${1042}: Pronto`)
+    expect(mockedPlayNotificationSound).toHaveBeenCalledTimes(1)
+
+    emitOrderEvent(event)
+    await flushPromises()
+    expect(mockedPlayNotificationSound).toHaveBeenCalledTimes(1)
+
+    await wrapper.get('[aria-label="Fechar notificação"]').trigger('click')
+    expect(wrapper.find('.status-toast').exists()).toBe(false)
   })
 
   it('ignora eventos de outro pedido e estados finais encerram a assinatura', async () => {

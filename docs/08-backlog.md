@@ -334,6 +334,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-075 | Webhook de notificações | P2 | M | US-040, US-072 | **Concluída** — Configuração owner-only, POST best-effort com `{number, storeNumber, message}` em toda criação/transição persistida, sem retry e sem PII em logs; D-042, D-046 |
 | US-076 | Seleção de eventos do webhook | P2 | S | US-075 | **Concluída** — Owner habilita criação e cada status mapeado no painel; servidor valida e filtra o disparo, configuração antiga continua enviando todos e cabeçalho permanece genérico; D-048 |
 | US-077 | Exclusão manual de pedido | P2 | S | US-070 | **Concluída** — Owner exclui fisicamente qualquer pedido na fila após confirmação; API responde `204`, auditoria sem PII e evento `order.deleted` apenas no painel; D-051 |
+| US-078 | Notificação visual e sonora de status | P2 | S | US-074 | **Concluída** — Mudança real de status gera `StatusToast` e som curto no acompanhamento e no painel; conexão, carga inicial e duplicatas silenciosas; D-052 |
 
 **Tarefas técnicas:**
 
@@ -350,6 +351,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Criar tela de integrações com URL e ativação, papéis e testes (US-075).
 - [x] Persistir e validar a seleção de eventos, filtrar o notificador e expor checkboxes no painel owner-only (US-076).
 - [x] Excluir pedido no banco com confirmação no painel, auditoria mínima e evento administrativo sem PII (US-077).
+- [x] Notificar mudança real de status com toast acessível e som gerado no navegador, sem aviso em conexão ou duplicata (US-078).
 
 ---
 
