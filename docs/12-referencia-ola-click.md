@@ -95,11 +95,11 @@ O site exibe uma chave Pix e orienta enviar o comprovante pelo WhatsApp. A V1 de
 
 | Seção | Itens | Faixa de preço | Esgotados no snapshot |
 |---|---:|---:|---:|
-| PROMOÇÃO 🔥 | 3 | R$ 49,99–199,99 | 0 |
+| Promoção 🔥 | 3 | R$ 49,99–199,99 | 0 |
 | Hambúrguer artesanal 🍔 | 18 | R$ 15,99–34,99 | 4 |
 | Hambúrguer tradicionais 🍔 | 4 | R$ 15,00–40,00 | 0 |
 | Porções | 8 | R$ 10,00–29,99 | 1 |
-| BEBIDAS 🥤 | 5 | R$ 6,00–13,00 | 3 |
+| Bebidas 🥤 | 5 | R$ 6,00–13,00 | 3 |
 | Pastel | 2 | R$ 8,00–8,00 | 0 |
 | **Total** | **40** | — | **8** |
 

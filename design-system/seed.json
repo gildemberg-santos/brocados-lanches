@@ -58,7 +58,7 @@
   "categories": [
     {
       "id": "cat_1",
-      "name": "PROMOÇÃO",
+      "name": "Promoção",
       "active": true
     },
     {
@@ -73,7 +73,7 @@
     },
     {
       "id": "cat_4",
-      "name": "BEBIDAS",
+      "name": "Bebidas",
       "active": true
     },
     {
