@@ -35,6 +35,7 @@ type StoreSettings struct {
 	WhatsApp     string
 	Instagram    string
 	Address      string
+	Webhook      WebhookSettings
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -72,6 +73,9 @@ func (s StoreSettings) Validate() error {
 		}
 	}
 	if err := validateRequiredString("address", s.Address, MaxAddressLength); err != nil {
+		return err
+	}
+	if err := s.Webhook.Validate(); err != nil {
 		return err
 	}
 	return validateOpeningHours(s.OpeningHours)

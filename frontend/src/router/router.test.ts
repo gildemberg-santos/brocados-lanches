@@ -44,10 +44,16 @@ describe('router', () => {
   })
 
   it('marks owner-only admin routes with role metadata', () => {
-    const route = router.getRoutes().find((candidate) => candidate.name === 'admin-users')
+    const usersRoute = router.getRoutes().find((candidate) => candidate.name === 'admin-users')
 
-    expect(route?.path).toBe('/admin/usuarios')
-    expect(route?.meta.roles).toEqual(['owner'])
+    expect(usersRoute?.path).toBe('/admin/usuarios')
+    expect(usersRoute?.meta.roles).toEqual(['owner'])
+
+    const webhookRoute = router.getRoutes().find((candidate) => candidate.name === 'admin-webhook')
+
+    expect(webhookRoute?.path).toBe('/admin/integracoes/webhook')
+    expect(webhookRoute?.meta.roles).toEqual(['owner'])
+    expect(typeof webhookRoute?.components?.default).toBe('function')
   })
 
   it('registers the 403 admin route', () => {

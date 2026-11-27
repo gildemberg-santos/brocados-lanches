@@ -314,7 +314,8 @@ Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem s
 - dados de autenticação do admin (nome/e-mail/senha com hash);
 - preferências do checkout no navegador (entrega, zona, nome, telefone, endereço e pagamento), sem observação nem troco; podem ser apagadas em `/privacidade` (D-037);
 - perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038). Com a opção habilitada, o checkout consulta esse perfil pelo telefone informado para preencher o próximo pedido, com limites por IP e telefone e sem devolver histórico ou taxa (D-039);
-- token opaco de histórico no navegador e seu hash SHA-256 no pedido; sem cadastro, senha ou consulta por telefone (D-041).
+- token opaco de histórico no navegador e seu hash SHA-256 no pedido; sem cadastro, senha ou consulta por telefone (D-041);
+- destino de webhook configurado pelo `owner`, que recebe número de telefone e mensagem do pedido em cada evento persistido (D-042). O envio é best-effort e o operador é responsável pelo destino e pelo tratamento desses dados.
 
 Não coletar CPF, e-mail de cliente ou dados de cartão.
 
@@ -325,6 +326,7 @@ Não coletar CPF, e-mail de cliente ou dados de cartão.
 - entregar/retirar;
 - conveniência: reaproveitar escolhas no próximo pedido no navegador e no perfil por telefone, com opt-out no checkout e exclusão pelos canais da loja;
 - histórico: consultar novamente, neste navegador, os pedidos feitos aqui por meio do token opaco;
+- integração: notificar automações externas configuradas pelo `owner` sobre pedidos criados e atualizados (D-042);
 - cumprir obrigação legal;
 - segurança e auditoria.
 

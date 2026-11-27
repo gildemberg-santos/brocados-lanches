@@ -348,6 +348,16 @@ O hub (`internal/realtime`) distribui sinais mínimos — identificador opaco, n
 
 As assinaturas vivem na memória do processo. Em uma implantação com mais de uma réplica da API, o hub precisa ser substituído por um barramento compartilhado (ou as réplicas precisam de afinidade) para que operadores conectados a instâncias diferentes recebam os mesmos sinais. As telas reconectam com backoff e continuam funcionando com o carregamento inicial via HTTP se o WebSocket estiver indisponível.
 
+### 6.7 Webhook de notificações
+
+Além do WebSocket, os mesmos handlers pós-persistência acionam um notificador HTTP externo (`internal/platform/webhook`). A configuração fica em `store_settings.webhook` e é administrada por `owner` em `/admin/integrations/webhook`. O disparo é genérico: `order.created` na criação e `order.updated` em qualquer transição persistida, sem lista fixa de status e sem duplicação em replay de idempotência.
+
+O notificador lê a configuração, monta `{number, message}` com o snapshot congelado do pedido e envia um único POST com timeout de 3 s, sem retry e sem fila persistida. Redirecionamentos não são seguidos para que um `307/308` não repita o corpo com PII em destino não configurado. A chamada roda em goroutine com contexto desvinculado da requisição: indisponibilidade do destino, resposta de erro ou URL inválida nunca alteram o pedido gravado. Logs registram só categoria do erro, status HTTP e tipo do evento — nunca URL completa, corpo, telefone, nome ou endereço. Respostas 3xx também são registradas como falha, pois o redirecionamento não é seguido.
+
+Os dois PATCH do documento único são disjuntos: a configuração operacional da loja atualiza apenas os campos da loja e o PATCH owner-only atualiza somente `webhook`. Assim, uma leitura obsoleta em uma tela não restaura a configuração da outra.
+
+Diferente do WebSocket, o webhook é um canal externo e carrega PII no corpo; por isso a URL não é devolvida a `operator`, não entra em auditoria e o usuário aceitou explicitamente o risco de SSRF e de envio a terceiros (D-042).
+
 ---
 
 ## 7. Cálculo de preço e disponibilidade

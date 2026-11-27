@@ -32,6 +32,8 @@ type Dependencies struct {
 	AdminStore       AdminStoreService
 	AdminOrders      AdminOrderService
 	AdminUsers       AdminUsersService
+	Webhooks         AdminWebhookService
+	Notifier         OrderNotifier
 	Events           *realtime.Hub
 	LoginLimiter     *ratelimit.Limiter
 	Limiters         Limiters
@@ -87,7 +89,7 @@ func NewRouter(deps Dependencies) http.Handler {
 			limitByIP(limiters.CustomerLookups, handleCustomerProfileLookup(deps.CustomerProfiles, limiters.CustomerPhones, logger)),
 		)
 		router.Post("/orders/quote", limitByIP(limiters.Quotes, handleQuote(deps.Orders, logger)))
-		router.Post("/orders", limitByIP(limiters.Orders, handleCreateOrder(deps.Orders, limiters.OrderPhones, deps.Events, logger)))
+		router.Post("/orders", limitByIP(limiters.Orders, handleCreateOrder(deps.Orders, limiters.OrderPhones, deps.Events, deps.Notifier, logger)))
 		router.Get("/orders/history", limitByIP(limiters.Tracking, handleOrderHistory(deps.Orders, limiters.HistoryTokens, logger)))
 		router.Get("/orders/{publicId}", limitByIP(limiters.Tracking, handleTrackOrder(deps.Orders, logger)))
 		router.Get("/orders/{publicId}/events", limitByIP(limiters.Tracking, handlePublicOrderEvents(deps.Events, logger)))
@@ -139,7 +141,7 @@ func NewRouter(deps Dependencies) http.Handler {
 				protected.Get("/orders", handleAdminListOrders(deps.AdminOrders, logger))
 				protected.Get("/orders/events", handleAdminOrderEvents(deps.Events, logger))
 				protected.Get("/orders/{id}", handleAdminGetOrder(deps.AdminOrders, logger))
-				protected.Patch("/orders/{id}/status", handleAdminUpdateOrderStatus(deps.AdminOrders, deps.Events, logger))
+				protected.Patch("/orders/{id}/status", handleAdminUpdateOrderStatus(deps.AdminOrders, deps.Events, deps.Notifier, logger))
 			})
 
 			admin.Group(func(protected chi.Router) {
@@ -149,6 +151,9 @@ func NewRouter(deps Dependencies) http.Handler {
 				protected.Post("/users", handleAdminCreateUser(deps.AdminUsers, logger))
 				protected.Patch("/users/{id}", handleAdminUpdateUser(deps.AdminUsers, logger))
 				protected.Get("/audit-logs", handleAdminListAuditLogs(deps.AdminUsers, logger))
+
+				protected.Get("/integrations/webhook", handleAdminGetWebhook(deps.Webhooks, logger))
+				protected.Patch("/integrations/webhook", handleAdminUpdateWebhook(deps.Webhooks, logger))
 			})
 		})
 	}

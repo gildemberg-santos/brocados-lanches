@@ -96,6 +96,7 @@ make test-e2e          # Playwright com API isolada em brocados_test
 | Pedidos admin | Filtros, paginação, detalhe, PII mascarada; fila e detalhe no painel com estados de carregamento/vazio/erro | US-070, US-071 |
 | Status | Todas as transições válidas e inválidas, motivo, concorrência; ações contextuais e confirmação no painel | US-072 |
 | Auditoria | Mutação gera log, owner lê, sem PII | US-073 |
+| Webhook | URL absoluta com qualquer esquema e host, exigência de URL quando ativo, payload `{number, message}`, cabeçalho de evento, replay sem duplicata, falha de transporte sem bloqueio, 403 para operator, auditoria sem URL e formulário owner-only | US-075 |
 | SEO | Título, descrição, JSON-LD, sitemap | US-081 |
 | A11y | Teclado, foco, rótulos, contraste, 44 px, reduced motion | US-082 |
 | LGPD | PII fora de log, retenção, acompanhamento mínimo | US-080, US-093 |
@@ -218,6 +219,18 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Dado** `publicId` inválido ou de outro pedido.
 - **Quando** o cliente consulta.
 - **Então** `404` genérico, sem revelar existência ou dados.
+
+### 5.19 Falha de webhook
+
+- **Dado** webhook ativo apontando para destino indisponível ou que responde `500`.
+- **Quando** o pedido é criado ou o status é transicionado.
+- **Então** a operação persiste normalmente e o log registra apenas categoria/status, sem URL, corpo ou PII.
+
+### 5.20 Replay de webhook
+
+- **Dado** um `POST /orders` repetido com a mesma `Idempotency-Key`.
+- **Quando** o servidor devolve o pedido gravado (`200` com `Idempotent-Replayed`).
+- **Então** nenhum evento de webhook é publicado para esse replay.
 
 ---
 

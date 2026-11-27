@@ -16,6 +16,7 @@ export const adminNavItems: readonly AdminNavItem[] = [
   { label: 'Adicionais', name: 'admin-addons' },
   { label: 'Locais e taxas', name: 'admin-zones' },
   { label: 'Loja', name: 'admin-store' },
+  { label: 'Webhook', name: 'admin-webhook', roles: ['owner'] },
   { label: 'Conta', name: 'admin-account' },
   { label: 'Usuários', name: 'admin-users', roles: ['owner'] },
   { label: 'Auditoria', name: 'admin-audit', roles: ['owner'] },

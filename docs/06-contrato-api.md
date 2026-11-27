@@ -641,6 +641,43 @@ Exemplo de resposta/corpo parcial:
 - Horários são avaliados em `America/Fortaleza`; o status efetivo exige kill switch ligado **e** horário vigente.
 - A escrita usa `_id: "main"` com upsert; `createdAt` é preservado.
 
+### 11.1 Integrações — webhook de notificações (owner)
+
+| Método | Rota | Papel | Função |
+|---|---|---|---|
+| GET | `/admin/integrations/webhook` | owner | Configuração atual em `{ "data": ... }` |
+| PATCH | `/admin/integrations/webhook` | owner | Atualiza URL e estado da integração |
+
+Resposta/corpo parcial:
+
+```json
+{
+  "url": "https://integracao.exemplo.com/pedidos",
+  "active": true,
+  "createdAt": "2026-11-26T12:00:00Z",
+  "updatedAt": "2026-11-26T12:00:00Z"
+}
+```
+
+- `PATCH` é parcial e rejeita corpo vazio; `url` aceita qualquer URL absoluta, com qualquer esquema e qualquer host, inclusive IP e `localhost`. Não há allowlist de host, exigência de `http`/`https` ou bloqueio de rede interna: o operador assume o risco de SSRF e de envio de PII a terceiros (D-042). Esquemas não HTTP são aceitos na configuração e falham apenas no envio.
+- Ativar sem URL retorna `422 VALIDATION_ERROR`. A URL é validada novamente no servidor, mesmo já validada no painel.
+- A configuração fica no documento `store_settings` (`webhook`), sem nova coleção. A auditoria registra `entity: webhook_settings` e apenas `active` + `urlConfigured` antes/depois; a URL nunca entra em auditoria ou log.
+- A leitura é restrita a `owner` para não expor o destino ao papel `operator`.
+- O disparo é best-effort e assíncrono: um único POST por evento, timeout de 3 s, sem retry, sem fila persistida e sem seguir redirecionamentos. Falha de conexão, timeout, resposta 3xx/4xx/5xx ou configuração inválida nunca altera o resultado da criação/transição; 3xx é registrado como falha no log.
+- O PATCH da loja (`/admin/store`) não altera `webhook`; o PATCH da integração não altera campos operacionais da loja. Não há sobrescrita entre configurações lidas em momentos diferentes.
+- Corpo exato (sem campos adicionais):
+
+```json
+{
+  "number": "+5511999991234",
+  "message": "Mensagem formatada para envio ao cliente"
+}
+```
+
+- `number` é o telefone do cliente congelado no pedido; `message` reaproveita o texto do handoff do WhatsApp e inclui o status legível após transições. O cabeçalho `X-Brocados-Event` traz `order.created` para criação e `order.updated` para qualquer transição persistida. Não existe cadastro de statuses: um status futuro entra automaticamente pelo evento genérico.
+- O evento é ignorado em replay de `Idempotency-Key` (resposta `200` com `Idempotent-Replayed: true`), para não duplicar notificação.
+- Os logs registram apenas categoria do erro, status HTTP e tipo do evento: sem URL completa, corpo, telefone, nome ou endereço.
+
 ---
 
 ## 12. Admin — pedidos

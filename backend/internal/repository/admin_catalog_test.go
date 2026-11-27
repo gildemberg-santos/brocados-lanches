@@ -115,6 +115,10 @@ func TestAdminStoreRepositoryUpdateAndAudit(t *testing.T) {
 	settings := domain.StoreSettings{
 		Name: "Brocados Lanches", IsOpen: true, DeliveryTime: "30-90 min",
 		WhatsApp: "+5585992358708", Address: "Rua das Palmeiras, 123, Aquiraz-CE",
+		Webhook: domain.WebhookSettings{
+			URL: "https://hook.invalid/pedidos", Active: true,
+			CreatedAt: testTime(), UpdatedAt: testTime(),
+		},
 		CreatedAt: testTime(), UpdatedAt: testTime(),
 	}
 	audit := adminTestAudit(domain.AuditActionUpdate, domain.AuditEntityStore, domain.StoreSettingsID)
@@ -136,9 +140,45 @@ func TestAdminStoreRepositoryUpdateAndAudit(t *testing.T) {
 	if !stored.CreatedAt.Equal(testTime()) {
 		t.Errorf("createdAt = %s, want preserved", stored.CreatedAt)
 	}
+	// O PATCH da loja não possui o subdocumento da integração.
+	if stored.Webhook.URL != "" || stored.Webhook.Active {
+		t.Fatalf("webhook after store update = %+v, want zero value", stored.Webhook)
+	}
+
+	webhookAudit := adminTestAudit(domain.AuditActionUpdate, domain.AuditEntityWebhook, domain.StoreSettingsID)
+	if err := repository.AdminUpdateWebhookSettings(ctx, settings, webhookAudit); err != nil {
+		t.Fatalf("AdminUpdateWebhookSettings() error = %v", err)
+	}
+	stored, err = repository.GetStoreSettings(ctx)
+	if err != nil {
+		t.Fatalf("GetStoreSettings() after webhook update: %v", err)
+	}
+	if stored.Webhook.URL != settings.Webhook.URL || !stored.Webhook.Active ||
+		!stored.Webhook.CreatedAt.Equal(testTime()) || !stored.Webhook.UpdatedAt.Equal(testTime()) {
+		t.Fatalf("webhook round-trip = %+v, want %+v", stored.Webhook, settings.Webhook)
+	}
+	if stored.IsOpen {
+		t.Fatal("atualização do webhook restaurou campo operacional da loja")
+	}
+
+	// Um PATCH da loja com valor obsoleto do webhook não pode sobrescrever a
+	// configuração gravada pelo owner.
+	settings.Webhook = domain.WebhookSettings{URL: "https://antigo.invalid/hook"}
+	settings.UpdatedAt = testTime()
+	if err := repository.AdminUpdateStoreSettings(ctx, settings, audit); err != nil {
+		t.Fatalf("AdminUpdateStoreSettings() with stale webhook error = %v", err)
+	}
+	stored, err = repository.GetStoreSettings(ctx)
+	if err != nil || stored.Webhook.URL != "https://hook.invalid/pedidos" || !stored.Webhook.Active {
+		t.Fatalf("webhook sobrescrito por PATCH da loja: %+v, %v", stored.Webhook, err)
+	}
 
 	count, err := database.Collection(CollectionAuditLogs).CountDocuments(ctx, bson.D{{Key: "entity", Value: domain.AuditEntityStore}})
-	if err != nil || count != 2 {
-		t.Fatalf("audit count = %d, err = %v; want 2", count, err)
+	if err != nil || count != 3 {
+		t.Fatalf("store audit count = %d, err = %v; want 3", count, err)
+	}
+	count, err = database.Collection(CollectionAuditLogs).CountDocuments(ctx, bson.D{{Key: "entity", Value: domain.AuditEntityWebhook}})
+	if err != nil || count != 1 {
+		t.Fatalf("webhook audit count = %d, err = %v; want 1", count, err)
 	}
 }

@@ -20,6 +20,12 @@ func BuildWhatsAppURL(store domain.StoreSettings, order domain.Order) (string, e
 		return "", fmt.Errorf("invalid store whatsapp number")
 	}
 
+	return "https://wa.me/" + number + "?text=" + url.QueryEscape(BuildOrderMessage(order)), nil
+}
+
+// BuildOrderMessage monta o texto congelado do pedido. É usado no handoff do
+// WhatsApp e no corpo dos webhooks, sem depender de catálogo atual.
+func BuildOrderMessage(order domain.Order) string {
 	var message strings.Builder
 	fmt.Fprintf(&message, "Pedido #%d\n", order.Number)
 	message.WriteString("Itens:\n")
@@ -63,8 +69,7 @@ func BuildWhatsAppURL(store domain.StoreSettings, order domain.Order) (string, e
 	} else {
 		message.WriteString("Retirada na loja\n")
 	}
-
-	return "https://wa.me/" + number + "?text=" + url.QueryEscape(message.String()), nil
+	return message.String()
 }
 
 func paymentLabel(payment domain.OrderPayment) string {

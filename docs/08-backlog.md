@@ -328,6 +328,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-072 | Transições de status | P0 | G | US-071 | **Concluída** — Matriz válida, `409` inválido, motivo de cancelamento, auditoria e ações contextuais no painel |
 | US-073 | Auditoria | P1 | M | US-072 | **Concluída** — Owner consulta mutações sem PII; filtros por ator/entidade/ação/data; tela somente leitura e testes |
 | US-074 | Atualização em tempo real | P2 | M | US-070 | **Concluída** — WebSocket autenticado na fila/detalhe e público no acompanhamento; eventos mínimos sem PII, reconexão com backoff e refetch HTTP; D-040 |
+| US-075 | Webhook de notificações | P2 | M | US-040, US-072 | **Concluída** — Configuração owner-only, POST best-effort com `{number, message}` em toda criação/transição persistida, sem retry e sem PII em logs; D-042 |
 
 **Tarefas técnicas:**
 
@@ -339,6 +340,9 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Testar todas as transições e concorrência.
 - [x] Implementar `GET /admin/audit-logs` e a tela somente leitura (US-073).
 - [x] Publicar mudanças de status em WebSocket e assinar os canais na fila, no detalhe e no acompanhamento (US-074).
+- [x] Persistir configuração de webhook e criar endpoint owner-only com auditoria sem URL (US-075).
+- [x] Disparar POST assíncrono e best-effort na criação e em toda transição persistida, sem duplicar replay (US-075).
+- [x] Criar tela de integrações com URL e ativação, papéis e testes (US-075).
 
 ---
 

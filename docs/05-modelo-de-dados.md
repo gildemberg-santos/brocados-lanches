@@ -59,6 +59,7 @@ Documento único `_id: "main"`.
 | `whatsapp` | string | sim | E.164, sem máscara, ex.: `+5585992358708` |
 | `instagram` | string | não | Handle ou URL |
 | `address` | string | sim | Endereço completo |
+| `webhook` | object | não | Configuração de notificações (D-042); ausente equivale a desativado |
 | `createdAt` | datetime | sim | UTC |
 | `updatedAt` | datetime | sim | UTC |
 
@@ -81,6 +82,21 @@ Regras:
 - `close` pode ser menor que `open` para virada de meia-noite.
 - A avaliação usa `America/Fortaleza`.
 - Feriados e exceções não fazem parte da V1; se entrarem, usar `exceptions[]` com data e intervalos.
+
+`webhook`:
+
+```json
+{
+  "url": "https://integracao.exemplo.com/pedidos",
+  "active": true,
+  "createdAt": "2026-11-26T12:00:00Z",
+  "updatedAt": "2026-11-26T12:00:00Z"
+}
+```
+
+- `url` aceita qualquer esquema absoluto e qualquer host, inclusive endereço interno; não há allowlist, restrição a `http`/`https` ou bloqueio de SSRF (D-042). Ativo exige URL preenchida; esquemas não HTTP falham apenas no envio.
+- O corpo do POST contém `number` (telefone do cliente) e `message`; por isso o campo é sensível e a leitura pela API é restrita a `owner`.
+- O envio é best-effort, assíncrono, sem retry e sem fila persistida; uma falha nunca altera o pedido já gravado.
 
 ### 3.2 `categories`
 
@@ -378,7 +394,7 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 | `_id` | ObjectID | sim | |
 | `actorId` | ObjectID | sim | Usuário admin |
 | `action` | string | sim | `create` ou `update` |
-| `entity` | string | sim | `categories`, `products`, `addons`, `delivery_zones` ou `store_settings` |
+| `entity` | string | sim | `categories`, `products`, `addons`, `delivery_zones`, `store_settings`, `webhook_settings` ou `orders` |
 | `entityId` | string | sim | ID alvo |
 | `before` | object | não | Snapshot mínimo |
 | `after` | object | não | Snapshot mínimo |
@@ -393,7 +409,7 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 Regras:
 
 - Não guardar senha, token, telefone, endereço ou observação.
-- `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`.
+- `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`; em `webhook_settings`, somente `active` e `urlConfigured` (nunca a URL).
 - A mutação e a auditoria são gravadas na mesma transação quando o MongoDB suporta; em standalone, em sequência.
 - Retenção de 12 meses; após isso, arquivar ou anonimizar.
 

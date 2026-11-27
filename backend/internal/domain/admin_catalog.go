@@ -41,6 +41,7 @@ const (
 	AuditEntityAddon        = "addons"
 	AuditEntityDeliveryZone = "delivery_zones"
 	AuditEntityStore        = "store_settings"
+	AuditEntityWebhook      = "webhook_settings"
 	AuditEntityOrder        = "orders"
 	AuditEntityAdminUser    = "admin_users"
 )

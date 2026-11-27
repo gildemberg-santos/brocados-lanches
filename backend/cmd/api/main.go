@@ -16,6 +16,7 @@ import (
 	"github.com/brocados-lanches/api/internal/config"
 	"github.com/brocados-lanches/api/internal/httpapi"
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
+	"github.com/brocados-lanches/api/internal/platform/webhook"
 	"github.com/brocados-lanches/api/internal/realtime"
 	"github.com/brocados-lanches/api/internal/repository"
 	"github.com/brocados-lanches/api/internal/service"
@@ -144,6 +145,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	adminWebhookService, err := service.NewAdminWebhookService(catalogRepository)
+	if err != nil {
+		return err
+	}
+	webhookNotifier, err := webhook.NewNotifier(adminWebhookService, logger, service.BuildWebhookMessage)
+	if err != nil {
+		return err
+	}
 	if cfg.HasAdminBootstrap() {
 		created, err := adminAuthService.BootstrapOwner(
 			startupContext,
@@ -179,6 +188,8 @@ func run() error {
 			AdminStore:       adminStoreService,
 			AdminOrders:      adminOrderService,
 			AdminUsers:       adminUsersService,
+			Webhooks:         adminWebhookService,
+			Notifier:         webhookNotifier,
 			Events:           eventsHub,
 			AdminCookie: httpapi.AdminCookieConfig{
 				Name:   cfg.AdminCookieNameEffective(),

@@ -187,7 +187,12 @@ func handleAdminGetOrder(orders AdminOrderService, logger *slog.Logger) http.Han
 	}
 }
 
-func handleAdminUpdateOrderStatus(orders AdminOrderService, hub *realtime.Hub, logger *slog.Logger) http.HandlerFunc {
+func handleAdminUpdateOrderStatus(
+	orders AdminOrderService,
+	hub *realtime.Hub,
+	notifier OrderNotifier,
+	logger *slog.Logger,
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if orders == nil {
 			writeUnconfigured(w, r, logger, "admin order service")
@@ -210,6 +215,12 @@ func handleAdminUpdateOrderStatus(orders AdminOrderService, hub *realtime.Hub, l
 			return
 		}
 		publishOrderEvent(hub, realtime.EventOrderUpdated, order)
+		if notifier != nil {
+			notifier.Notify(r.Context(), domain.WebhookEvent{
+				Type:  domain.WebhookEventOrderUpdated,
+				Order: order,
+			})
+		}
 		writeJSON(w, http.StatusOK, adminItemEnvelope[adminOrderDetailResponse]{
 			Data: newAdminOrderDetailResponse(order),
 		})

@@ -389,6 +389,14 @@ Implementado em `frontend/src/views/admin/AdminZonesView.vue` (US-064), com avis
 
 Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065/US-025). O formulário valida E.164, horários `HH:MM` e sobreposição de intervalos antes do PATCH; o envio com `PATCH` vazio é bloqueado no cliente e o badge mostra o status calculado no servidor.
 
+### 6.7.1 Integrações — `/admin/integracoes/webhook` (owner)
+
+- Seção “Integrações → Webhook de Notificações” dentro das configurações da loja.
+- Campo de URL e opção “Webhook ativo” com os estados de carregamento, vazio, erro e sucesso do padrão do painel.
+- Aviso explícito de que o POST contém telefone do cliente e que falhas não bloqueiam o pedido.
+- Validação de UX aceita qualquer URL absoluta, sem exigir HTTPS ou permitir apenas `http`/`https`; o servidor permanece autoritativo (D-042).
+- Implementado em `frontend/src/views/admin/AdminWebhookView.vue` (US-075), com rota e item de menu restritos a `owner`.
+
 ### 6.8 Pedidos — `/admin/pedidos`
 
 - Filtros por status, data e fulfillment.

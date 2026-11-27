@@ -14,17 +14,25 @@ import (
 // CollectionStoreSettings é a coleção do documento único de configuração da loja.
 const CollectionStoreSettings = "store_settings"
 
+type webhookSettingsDocument struct {
+	URL       string    `bson:"url"`
+	Active    bool      `bson:"active"`
+	CreatedAt time.Time `bson:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt"`
+}
+
 type storeSettingsDocument struct {
-	ID           string                 `bson:"_id"`
-	Name         string                 `bson:"name"`
-	IsOpen       bool                   `bson:"isOpen"`
-	OpeningHours []openingHoursDocument `bson:"openingHours"`
-	DeliveryTime string                 `bson:"deliveryTime"`
-	WhatsApp     string                 `bson:"whatsapp"`
-	Instagram    string                 `bson:"instagram"`
-	Address      string                 `bson:"address"`
-	CreatedAt    time.Time              `bson:"createdAt"`
-	UpdatedAt    time.Time              `bson:"updatedAt"`
+	ID           string                  `bson:"_id"`
+	Name         string                  `bson:"name"`
+	IsOpen       bool                    `bson:"isOpen"`
+	OpeningHours []openingHoursDocument  `bson:"openingHours"`
+	DeliveryTime string                  `bson:"deliveryTime"`
+	WhatsApp     string                  `bson:"whatsapp"`
+	Instagram    string                  `bson:"instagram"`
+	Address      string                  `bson:"address"`
+	Webhook      webhookSettingsDocument `bson:"webhook,omitempty"`
+	CreatedAt    time.Time               `bson:"createdAt"`
+	UpdatedAt    time.Time               `bson:"updatedAt"`
 }
 
 type openingHoursDocument struct {
@@ -47,8 +55,14 @@ func (d storeSettingsDocument) toDomain() domain.StoreSettings {
 		WhatsApp:     d.WhatsApp,
 		Instagram:    d.Instagram,
 		Address:      d.Address,
-		CreatedAt:    d.CreatedAt,
-		UpdatedAt:    d.UpdatedAt,
+		Webhook: domain.WebhookSettings{
+			URL:       d.Webhook.URL,
+			Active:    d.Webhook.Active,
+			CreatedAt: d.Webhook.CreatedAt,
+			UpdatedAt: d.Webhook.UpdatedAt,
+		},
+		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
 	}
 
 	for _, day := range d.OpeningHours {

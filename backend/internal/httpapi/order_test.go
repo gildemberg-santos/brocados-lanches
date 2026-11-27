@@ -86,10 +86,19 @@ const validQuoteBody = `{
 
 func newOrderTestRouter(orders OrderService) http.Handler {
 	return NewRouter(Dependencies{
-		Pinger: fakePinger{},
-		Orders: orders,
-		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Pinger:   fakePinger{},
+		Orders:   orders,
+		Notifier: &fakeOrderNotifier{},
+		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
+}
+
+type fakeOrderNotifier struct {
+	events []domain.WebhookEvent
+}
+
+func (f *fakeOrderNotifier) Notify(_ context.Context, event domain.WebhookEvent) {
+	f.events = append(f.events, event)
 }
 
 func performQuoteRequest(handler http.Handler, body string) *httptest.ResponseRecorder {
@@ -474,13 +483,51 @@ func TestCreateOrderIdempotentReplay(t *testing.T) {
 		replayed: true,
 		store:    domain.StoreSettings{WhatsApp: "(85) 99999-9999"},
 	}
-	response := performCreateOrderRequest(newOrderTestRouter(orders), testOrderHeaderKey, validOrderBody)
+	notifier := &fakeOrderNotifier{}
+	router := NewRouter(Dependencies{
+		Pinger:   fakePinger{},
+		Orders:   orders,
+		Notifier: notifier,
+		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
+	response := performCreateOrderRequest(router, testOrderHeaderKey, validOrderBody)
 
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", response.Code)
 	}
 	if response.Header().Get("Idempotent-Replayed") != "true" {
 		t.Error("missing Idempotent-Replayed header")
+	}
+	if len(notifier.events) != 0 {
+		t.Fatalf("replay não deve gerar webhook: %d eventos", len(notifier.events))
+	}
+}
+
+func TestCreateOrderNotifiesWebhookWithPersistedOrder(t *testing.T) {
+	orders := &fakeOrderService{
+		created: createdOrderFixture(),
+		store:   domain.StoreSettings{WhatsApp: "(85) 99999-9999"},
+	}
+	notifier := &fakeOrderNotifier{}
+	router := NewRouter(Dependencies{
+		Pinger:   fakePinger{},
+		Orders:   orders,
+		Notifier: notifier,
+		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
+
+	response := performCreateOrderRequest(router, testOrderHeaderKey, validOrderBody)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", response.Code)
+	}
+	if len(notifier.events) != 1 {
+		t.Fatalf("eventos = %d, esperado 1", len(notifier.events))
+	}
+	if notifier.events[0].Type != domain.WebhookEventOrderCreated {
+		t.Fatalf("tipo = %q", notifier.events[0].Type)
+	}
+	if notifier.events[0].Order.Number != 1042 {
+		t.Fatalf("pedido = %+v", notifier.events[0].Order)
 	}
 }
 

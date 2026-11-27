@@ -181,7 +181,13 @@ func newQuoteData(quote domain.Quote) quoteData {
 }
 
 // handleCreateOrder persiste o pedido antes de devolver o link do WhatsApp.
-func handleCreateOrder(orders OrderService, phoneLimiter *ratelimit.Limiter, hub *realtime.Hub, logger *slog.Logger) http.HandlerFunc {
+func handleCreateOrder(
+	orders OrderService,
+	phoneLimiter *ratelimit.Limiter,
+	hub *realtime.Hub,
+	notifier OrderNotifier,
+	logger *slog.Logger,
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if orders == nil {
 			writeError(w, r, logger, errors.New("order service is not configured"))
@@ -217,6 +223,12 @@ func handleCreateOrder(orders OrderService, phoneLimiter *ratelimit.Limiter, hub
 		}
 		if !replayed {
 			publishOrderEvent(hub, realtime.EventOrderCreated, order)
+			if notifier != nil {
+				notifier.Notify(r.Context(), domain.WebhookEvent{
+					Type:  domain.WebhookEventOrderCreated,
+					Order: order,
+				})
+			}
 		}
 
 		whatsappURL := ""

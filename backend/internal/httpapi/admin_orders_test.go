@@ -65,6 +65,7 @@ func newAdminOrdersTestRouter(auth AdminAuthService, orders AdminOrderService) h
 		AdminAuth:   auth,
 		AdminCookie: AdminCookieConfig{Name: "brocados_admin"},
 		AdminOrders: orders,
+		Notifier:    &fakeOrderNotifier{},
 		Logger:      slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 }
@@ -231,13 +232,26 @@ func TestAdminGetOrderDoesNotFailWhenProfileLookupFails(t *testing.T) {
 
 func TestAdminUpdateOrderStatus(t *testing.T) {
 	orders := &fakeAdminOrdersHandlerService{order: adminOrderDetailFixture()}
-	router := newAdminOrdersTestRouter(newAdminOperatorAuth(), orders)
+	notifier := &fakeOrderNotifier{}
+	router := NewRouter(Dependencies{
+		AdminAuth:   newAdminOperatorAuth(),
+		AdminCookie: AdminCookieConfig{Name: "brocados_admin"},
+		AdminOrders: orders,
+		Notifier:    notifier,
+		Logger:      slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
 
 	body := `{"status":"cancelled","reason":"cliente desistiu"}`
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, newAdminRequest(http.MethodPatch, "/api/v1/admin/orders/"+adminOrderDetailFixture().ID+"/status", body))
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200; body = %s", response.Code, response.Body.String())
+	}
+	if len(notifier.events) != 1 {
+		t.Fatalf("eventos = %d, esperado 1", len(notifier.events))
+	}
+	if notifier.events[0].Type != domain.WebhookEventOrderUpdated || notifier.events[0].Order.Status != domain.OrderStatusCancelled {
+		t.Fatalf("evento inesperado: %+v", notifier.events[0])
 	}
 	if orders.actorID != testActorIDForHTTP || orders.id != adminOrderDetailFixture().ID ||
 		orders.request.Status != domain.OrderStatusCancelled || orders.request.Reason != "cliente desistiu" {

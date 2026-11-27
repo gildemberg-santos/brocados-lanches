@@ -17,12 +17,6 @@ import (
 func (r *CatalogRepository) AdminUpdateStoreSettings(ctx context.Context, settings domain.StoreSettings, audit domain.AuditLog) error {
 	document := newStoreSettingsDocument(settings)
 
-	session, err := r.storeSettings.Database().Client().StartSession()
-	if err != nil {
-		return fmt.Errorf("start store settings session: %w", err)
-	}
-	defer session.EndSession(ctx)
-
 	write := func(writeCtx context.Context) error {
 		update := bson.D{
 			{Key: "$set", Value: bson.D{
@@ -43,6 +37,36 @@ func (r *CatalogRepository) AdminUpdateStoreSettings(ctx context.Context, settin
 		}
 		return nil
 	}
+
+	return r.withStoreSettingsTransaction(ctx, write, audit)
+}
+
+// AdminUpdateWebhookSettings grava somente o subdocumento webhook. Assim um
+// PATCH da loja não sobrescreve a integração e um PATCH da integração não
+// restaura campos operacionais lidos antes de uma mutação concorrente.
+func (r *CatalogRepository) AdminUpdateWebhookSettings(ctx context.Context, settings domain.StoreSettings, audit domain.AuditLog) error {
+	document := newStoreSettingsDocument(settings)
+
+	write := func(writeCtx context.Context) error {
+		update := bson.D{{Key: "$set", Value: bson.D{
+			{Key: "webhook", Value: document.Webhook},
+			{Key: "updatedAt", Value: document.UpdatedAt.UTC()},
+		}}}
+		if _, err := r.storeSettings.UpdateOne(writeCtx, bson.D{{Key: "_id", Value: domain.StoreSettingsID}}, update); err != nil {
+			return fmt.Errorf("update webhook settings: %w", err)
+		}
+		return nil
+	}
+
+	return r.withStoreSettingsTransaction(ctx, write, audit)
+}
+
+func (r *CatalogRepository) withStoreSettingsTransaction(ctx context.Context, write func(context.Context) error, audit domain.AuditLog) error {
+	session, err := r.storeSettings.Database().Client().StartSession()
+	if err != nil {
+		return fmt.Errorf("start store settings session: %w", err)
+	}
+	defer session.EndSession(ctx)
 
 	transactionStarted := false
 	writesStarted := false
@@ -85,8 +109,14 @@ func newStoreSettingsDocument(settings domain.StoreSettings) storeSettingsDocume
 		WhatsApp:     settings.WhatsApp,
 		Instagram:    settings.Instagram,
 		Address:      settings.Address,
-		CreatedAt:    settings.CreatedAt.UTC(),
-		UpdatedAt:    settings.UpdatedAt.UTC(),
+		Webhook: webhookSettingsDocument{
+			URL:       settings.Webhook.URL,
+			Active:    settings.Webhook.Active,
+			CreatedAt: settings.Webhook.CreatedAt.UTC(),
+			UpdatedAt: settings.Webhook.UpdatedAt.UTC(),
+		},
+		CreatedAt: settings.CreatedAt.UTC(),
+		UpdatedAt: settings.UpdatedAt.UTC(),
 	}
 	if document.UpdatedAt.IsZero() {
 		document.UpdatedAt = time.Now().UTC()

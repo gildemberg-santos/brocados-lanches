@@ -38,6 +38,7 @@ describe('regras de autenticação administrativa', () => {
     expect(operatorItems).toContain('admin-products')
     expect(operatorItems).not.toContain('admin-users')
     expect(operatorItems).not.toContain('admin-audit')
+    expect(operatorItems).not.toContain('admin-webhook')
     expect(visibleAdminNav('owner').map((item) => item.name)).toContain('admin-users')
     expect(
       canAccessAdminNav({ label: 'Usuários', name: 'admin-users', roles: ['owner'] }, null),
