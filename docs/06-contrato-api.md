@@ -209,7 +209,7 @@ Content-Type: application/json
 }
 ```
 
-Perfil ausente ou desativado por opt-out retorna `{"data":{"found":false}}`, sem distinção entre os dois casos. A resposta nunca inclui `feeCents`, `orderCount`, `lastOrderPublicId`, `note`, `changeForCents`, histórico de pedidos ou `phoneKey`. Zona retornada é apenas sugestão: o cliente descarta zona inativa e a taxa continua sendo calculada por `POST /orders/quote` e revalidada em `POST /orders`.
+Perfil ausente ou desativado por opt-out retorna `{"data":{"found":false}}`, sem distinção entre os dois casos. A resposta nunca inclui `feeCents`, `orderCount`, `lastOrderPublicId`, `note`, `changeForCents`, histórico de pedidos ou `phoneKey`. Campos de endereço opcionais, como `complement`, são devolvidos como string vazia quando não preenchidos — o checkout pode preencher o formulário e enviar o pedido sem tratar `undefined`. Zona retornada é apenas sugestão: o cliente descarta zona inativa e a taxa continua sendo calculada por `POST /orders/quote` e revalidada em `POST /orders`.
 
 `422 VALIDATION_ERROR` para telefone incompleto ou fora do formato; `400 VALIDATION_ERROR` para JSON inválido ou campo desconhecido. Limites em `§15`.
 

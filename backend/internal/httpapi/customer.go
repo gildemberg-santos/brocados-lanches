@@ -42,7 +42,7 @@ type customerProfileData struct {
 type customerAddressData struct {
 	Street     string `json:"street"`
 	Number     string `json:"number"`
-	Complement string `json:"complement,omitempty"`
+	Complement string `json:"complement"`
 	District   string `json:"district"`
 	City       string `json:"city"`
 	State      string `json:"state"`

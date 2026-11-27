@@ -25,6 +25,24 @@ func TestNormalizePhoneKey(t *testing.T) {
 	}
 }
 
+func TestNormalizePhoneKeyMatchesStoredProfileKey(t *testing.T) {
+	const storedKey = "5585991365507"
+	for _, phone := range []string{
+		"(85) 991365507",
+		"85991365507",
+		"+5585991365507",
+		"+55 85 99136-5507",
+		"(85) 99136-5507",
+	} {
+		if got := NormalizePhoneKey(phone); got != storedKey {
+			t.Errorf("NormalizePhoneKey(%q) = %q, want %q", phone, got, storedKey)
+		}
+		if !IsValidBrazilianPhone(phone) {
+			t.Errorf("IsValidBrazilianPhone(%q) = false, want true", phone)
+		}
+	}
+}
+
 func TestNewCustomerProfileFromOrderKeepsOnlyConvenienceData(t *testing.T) {
 	now := time.Date(2026, 11, 26, 12, 0, 0, 0, time.UTC)
 	changeForCents := int64(10000)

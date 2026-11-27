@@ -61,6 +61,19 @@ describe('checkout', () => {
     expect(normalizePhone(formatPhone('+5585999999999'))).toBe('+5585999999999')
   })
 
+  it('keeps the registered phone stable when typing, masking and reading it back from the database', () => {
+    const storedPhone = '+5585991365507'
+
+    expect(formatPhone(storedPhone)).toBe('(85) 99136-5507')
+
+    for (const typed of ['(85) 991365507', '85991365507', '+55 85 99136-5507']) {
+      const masked = formatPhone(typed)
+      expect(masked).toBe('(85) 99136-5507')
+      expect(normalizePhone(masked)).toBe(storedPhone)
+      expect(isValidBrazilianPhone(typed)).toBe(true)
+    }
+  })
+
   it('rejects phone numbers that cannot reach a Brazilian WhatsApp account', () => {
     expect(isValidBrazilianPhone('(85) 99999-9999')).toBe(true)
     expect(isValidBrazilianPhone('+558532321234')).toBe(true)
@@ -90,6 +103,24 @@ describe('checkout', () => {
     expect(request.address?.city).toBe('Aquiraz')
     expect(request.payment).toEqual({ method: 'cash', changeForCents: 10000 })
     expect(request.note).toBe('Deixar na portaria')
+  })
+
+  it('builds a request even when the profile omitted optional address fields', () => {
+    const form = {
+      ...initialCheckoutForm,
+      zoneId: 'zona-1',
+      customerName: 'Maria Silva',
+      phone: '(85) 991365507',
+      street: 'Rua Manuel Alves da Cunha',
+      number: '60',
+      complement: undefined as unknown as string,
+      district: 'Tabajarra',
+      zipCode: '61700000',
+    }
+
+    const request = buildCreateOrderRequest([item], form)
+
+    expect(request.address?.complement).toBe('')
   })
 
   it('omits address and fee-related fields on pickup', () => {

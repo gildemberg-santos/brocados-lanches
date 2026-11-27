@@ -139,25 +139,25 @@ export function buildCreateOrderRequest(items: CartItem[], form: CheckoutForm): 
   const request: CreateOrderRequest = {
     ...buildQuoteRequest(items, form),
     customer: {
-      name: form.customerName.trim(),
+      name: (form.customerName ?? '').trim(),
       phone: normalizePhone(form.phone),
     },
     payment: {
       method: form.paymentMethod,
     },
-    note: form.note.trim(),
+    note: (form.note ?? '').trim(),
     saveCustomerProfile: form.saveCustomerProfile,
   }
 
   if (form.fulfillment === 'delivery') {
     request.address = {
-      street: form.street.trim(),
-      number: form.number.trim(),
-      complement: form.complement.trim(),
-      district: form.district.trim(),
-      city: form.city.trim(),
-      state: form.state.trim().toUpperCase(),
-      zipCode: form.zipCode.trim(),
+      street: (form.street ?? '').trim(),
+      number: (form.number ?? '').trim(),
+      complement: (form.complement ?? '').trim(),
+      district: (form.district ?? '').trim(),
+      city: (form.city ?? '').trim(),
+      state: (form.state ?? '').trim().toUpperCase(),
+      zipCode: (form.zipCode ?? '').trim(),
     }
   }
   if (form.paymentMethod === 'cash') {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import type { CustomerProfileLookup } from '../../types/order'
 import { initialCheckoutForm } from './checkout'
 import type { CheckoutForm } from './checkout'
 import { applyCustomerProfile, canLookupCustomer } from './customer'
@@ -62,6 +63,23 @@ describe('perfil de conveniência no checkout', () => {
       note: 'Sem cebola',
       changeFor: '50,00',
     })
+  })
+
+  it('mantém o complemento vazio quando o perfil não informa o campo', () => {
+    const profile = {
+      address: {
+        street: 'Rua Manuel Alves da Cunha',
+        number: '60',
+        district: 'Tabajarra',
+        city: 'Aquiraz',
+        state: 'CE',
+        zipCode: '61700000',
+      },
+    } as unknown as CustomerProfileLookup
+
+    const result = applyCustomerProfile(initialCheckoutForm, profile)
+
+    expect(result.complement).toBe('')
   })
 
   it('preenche o nome somente quando o cliente ainda não o informou', () => {

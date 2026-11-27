@@ -30,13 +30,15 @@ export function applyCustomerProfile(
     next.zoneId = activeZoneIds.includes(profile.zone.id) ? profile.zone.id : ''
   }
   if (profile.address) {
-    next.street = profile.address.street
-    next.number = profile.address.number
-    next.complement = profile.address.complement
-    next.district = profile.address.district
-    next.city = profile.address.city
-    next.state = profile.address.state
-    next.zipCode = profile.address.zipCode
+    // A API omite campos vazios opcionais; o formulário exige strings para
+    // formatar e enviar o pedido sem quebrar no trim.
+    next.street = profile.address.street ?? ''
+    next.number = profile.address.number ?? ''
+    next.complement = profile.address.complement ?? ''
+    next.district = profile.address.district ?? ''
+    next.city = profile.address.city ?? ''
+    next.state = profile.address.state ?? ''
+    next.zipCode = profile.address.zipCode ?? ''
   }
   if (profile.paymentMethod && paymentMethods.includes(profile.paymentMethod)) {
     next.paymentMethod = profile.paymentMethod

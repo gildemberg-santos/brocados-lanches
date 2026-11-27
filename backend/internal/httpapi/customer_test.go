@@ -82,6 +82,7 @@ func TestCustomerProfileLookupSuccess(t *testing.T) {
 		t.Errorf("chamadas = %d, telefone = %q", customers.calls, customers.phone)
 	}
 
+	rawBody := response.Body.String()
 	var body customerLookupEnvelope
 	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
 		t.Fatalf("decode body: %v", err)
@@ -92,10 +93,13 @@ func TestCustomerProfileLookupSuccess(t *testing.T) {
 	if body.Data.Profile.Name != "Maria Silva" || body.Data.Profile.Zone.ID != "zona-1" {
 		t.Errorf("profile = %+v", body.Data.Profile)
 	}
-	if strings.Contains(response.Body.String(), "feeCents") ||
-		strings.Contains(response.Body.String(), "phoneKey") ||
-		strings.Contains(response.Body.String(), "orderCount") {
-		t.Errorf("resposta expôs campo interno: %s", response.Body.String())
+	if strings.Contains(rawBody, "feeCents") ||
+		strings.Contains(rawBody, "phoneKey") ||
+		strings.Contains(rawBody, "orderCount") {
+		t.Errorf("resposta expôs campo interno: %s", rawBody)
+	}
+	if !strings.Contains(rawBody, `"complement":""`) {
+		t.Errorf("resposta deve incluir complement vazio: %s", rawBody)
 	}
 }
 
