@@ -109,6 +109,10 @@ func (n *Notifier) deliver(base context.Context, event domain.WebhookEvent) {
 	if !settings.Active || strings.TrimSpace(settings.URL) == "" {
 		return
 	}
+	if !settings.EventEnabled(event.Key()) {
+		n.logger.Debug("webhook skipped: event not enabled", "event", event.Key())
+		return
+	}
 	storeNumber := strings.TrimSpace(notification.StoreNumber)
 	if storeNumber == "" {
 		// Sem o número da loja o destino não poderia notificar os dois;

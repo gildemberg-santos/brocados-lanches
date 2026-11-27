@@ -183,7 +183,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	webhookNotifier, err := webhook.NewNotifier(adminWebhookService, logger, service.BuildWebhookMessage)
+	webhookNotifier, err := webhook.NewNotifier(adminWebhookService, logger, service.NewWebhookMessageBuilder(cfg.AdminBaseURL))
 	if err != nil {
 		return err
 	}

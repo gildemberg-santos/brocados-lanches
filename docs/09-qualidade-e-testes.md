@@ -97,6 +97,7 @@ make test-e2e          # Playwright com API isolada em brocados_test
 | Status | Todas as transições válidas e inválidas, motivo, concorrência; ações contextuais e confirmação no painel | US-072 |
 | Auditoria | Mutação gera log, owner lê, sem PII | US-073 |
 | Webhook | URL absoluta com qualquer esquema e host, exigência de URL quando ativo, payload `{number, storeNumber, message}` com os dois destinatários e número da loja ausente sem envio, cabeçalho de evento, replay sem duplicata, falha de transporte sem bloqueio, 403 para operator, auditoria sem URL e formulário owner-only | US-075, D-046 |
+| Seleção de eventos do webhook | Chaves válidas/repetidas/desconhecidas, lista vazia, configuração legada com todos os eventos, filtro do notificador por criação/status, cabeçalho inalterado, auditoria sem URL e checkboxes no painel | US-076, D-048 |
 | SEO | Título, descrição, JSON-LD, sitemap | US-081 |
 | A11y | Teclado, foco, rótulos, contraste, 44 px, reduced motion | US-082 |
 | LGPD | PII fora de log, retenção, acompanhamento mínimo | US-080, US-093 |
@@ -245,7 +246,19 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Então** o POST traz `number` com o telefone do cliente e `storeNumber` com o da loja, em um único evento, sem PII em log (D-046).
 - **Dado** loja sem `whatsapp` preenchido: nenhum POST é enviado, o aviso não contém telefone e o pedido permanece gravado.
 
-### 5.23 Monitoramento de erros sem PII (D-047)
+### 5.23 Seleção de eventos do webhook (D-048)
+
+- **Dado** webhook ativo com `events: ["order.created", "order.confirmed"]`.
+- **Quando** o pedido é criado, transiciona para `confirmed` e depois para `preparing`.
+- **Então** apenas os dois primeiros eventos geram POST, com `X-Brocados-Event` igual a `order.created` e `order.updated`, respectivamente.
+- **Dado** configuração antiga sem o campo `events`.
+- **Quando** qualquer criação ou transição persistida ocorre.
+- **Então** o envio continua como antes, e a API devolve a lista completa de eventos para o painel.
+- **Dado** `events: []` ou uma chave desconhecida/repetida no `PATCH`.
+- **Quando** a configuração é salva e um pedido é criado.
+- **Então** a lista vazia não envia nada sem alterar `active`, e a chave inválida é rejeitada com `422 VALIDATION_ERROR` sem gravar nem disparar.
+
+### 5.24 Monitoramento de erros sem PII (D-047)
 
 - **Dado** DSN vazio na API e no build.
 - **Quando** a aplicação inicia e uma requisição falha.

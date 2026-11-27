@@ -15,8 +15,11 @@ import (
 const CollectionStoreSettings = "store_settings"
 
 type webhookSettingsDocument struct {
-	URL       string    `bson:"url"`
-	Active    bool      `bson:"active"`
+	URL    string `bson:"url"`
+	Active bool   `bson:"active"`
+	// Sem omitempty: nil (configuração legada) e lista vazia (nenhum evento)
+	// precisam ser gravados de forma distinta.
+	Events    []string  `bson:"events"`
 	CreatedAt time.Time `bson:"createdAt"`
 	UpdatedAt time.Time `bson:"updatedAt"`
 }
@@ -58,6 +61,7 @@ func (d storeSettingsDocument) toDomain() domain.StoreSettings {
 		Webhook: domain.WebhookSettings{
 			URL:       d.Webhook.URL,
 			Active:    d.Webhook.Active,
+			Events:    d.Webhook.Events,
 			CreatedAt: d.Webhook.CreatedAt,
 			UpdatedAt: d.Webhook.UpdatedAt,
 		},

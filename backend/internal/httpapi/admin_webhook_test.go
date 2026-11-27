@@ -35,12 +35,16 @@ func (f *fakeAdminWebhookHandlerService) Update(_ context.Context, actorID strin
 	if patch.Active != nil {
 		updated.Active = *patch.Active
 	}
+	if patch.Events != nil {
+		updated.Events = append([]string(nil), (*patch.Events)...)
+	}
 	return updated, f.err
 }
 
 func TestAdminGetWebhookReturnsSettingsEnvelope(t *testing.T) {
 	service := &fakeAdminWebhookHandlerService{settings: domain.WebhookSettings{
 		URL: "https://hooks.exemplo.invalid/path", Active: true,
+		Events: []string{domain.WebhookEventKeyCreated, domain.WebhookEventKeyCancelled},
 	}}
 	handler := handleAdminGetWebhook(service, slog.Default())
 
@@ -49,8 +53,24 @@ func TestAdminGetWebhookReturnsSettingsEnvelope(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d", response.Code)
 	}
-	if !strings.Contains(response.Body.String(), `"url":"https://hooks.exemplo.invalid/path"`) {
-		t.Fatalf("resposta inesperada: %s", response.Body.String())
+	body := response.Body.String()
+	if !strings.Contains(body, `"url":"https://hooks.exemplo.invalid/path"`) {
+		t.Fatalf("resposta inesperada: %s", body)
+	}
+	if !strings.Contains(body, `"events":["order.created","order.cancelled"]`) {
+		t.Fatalf("seleção de eventos ausente: %s", body)
+	}
+}
+
+func TestAdminGetWebhookExpandsLegacyEventSelection(t *testing.T) {
+	service := &fakeAdminWebhookHandlerService{settings: domain.WebhookSettings{
+		URL: "https://hooks.exemplo.invalid/path", Active: true,
+	}}
+	response := httptest.NewRecorder()
+	handleAdminGetWebhook(service, slog.Default()).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/v1/admin/integrations/webhook", nil))
+
+	if !strings.Contains(response.Body.String(), `"events":["order.created","order.confirmed"`) {
+		t.Fatalf("configuração legada deveria mostrar todos os eventos: %s", response.Body.String())
 	}
 }
 
@@ -66,7 +86,7 @@ func TestAdminUpdateWebhookUsesAuthenticatedActor(t *testing.T) {
 	request := newAdminRequest(
 		http.MethodPatch,
 		"/api/v1/admin/integrations/webhook",
-		`{"url":"http://127.0.0.1:5678/hook","active":true}`,
+		`{"url":"http://127.0.0.1:5678/hook","active":true,"events":["order.created","order.delivered"]}`,
 	)
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
@@ -79,6 +99,10 @@ func TestAdminUpdateWebhookUsesAuthenticatedActor(t *testing.T) {
 	}
 	if service.received.URL == nil || *service.received.URL != "http://127.0.0.1:5678/hook" {
 		t.Fatalf("url não recebida: %+v", service.received)
+	}
+	if service.received.Events == nil || len(*service.received.Events) != 2 ||
+		(*service.received.Events)[1] != domain.WebhookEventKeyDelivered {
+		t.Fatalf("eventos não recebidos: %+v", service.received)
 	}
 }
 

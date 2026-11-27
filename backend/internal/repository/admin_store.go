@@ -112,6 +112,7 @@ func newStoreSettingsDocument(settings domain.StoreSettings) storeSettingsDocume
 		Webhook: webhookSettingsDocument{
 			URL:       settings.Webhook.URL,
 			Active:    settings.Webhook.Active,
+			Events:    copyWebhookEvents(settings.Webhook.Events),
 			CreatedAt: settings.Webhook.CreatedAt.UTC(),
 			UpdatedAt: settings.Webhook.UpdatedAt.UTC(),
 		},
@@ -137,4 +138,15 @@ func newStoreSettingsDocument(settings domain.StoreSettings) storeSettingsDocume
 		document.OpeningHours = append(document.OpeningHours, hours)
 	}
 	return document
+}
+
+// copyWebhookEvents preserva a distinção entre seleção vazia (não enviar nada)
+// e configuração legada (nil), que equivale a todos os eventos.
+func copyWebhookEvents(events []string) []string {
+	if events == nil {
+		return nil
+	}
+	copied := make([]string, len(events))
+	copy(copied, events)
+	return copied
 }

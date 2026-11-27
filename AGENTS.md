@@ -23,6 +23,8 @@ Em 26/11/2026, o checkout passou a identificar o cliente no primeiro passo. Com 
 
 Em 27/11/2026, o monitoramento de erros passou a usar Sentry somente para falhas inesperadas: `5xx`/panics na API e `5xx`/timeout/erro de carregamento de rota no navegador; `4xx` de regra de negócio, health checks e reconexões WebSocket não viram evento (D-047). `SENTRY_DSN` e `VITE_SENTRY_DSN` ficam por ambiente, sem valor no repositório, e DSN vazio desliga o SDK. O `BeforeSend` remove `user`/`request`, descarta chaves sensíveis e máscara telefone, e-mail, CEP, query, token e link `wa.me` nos dois lados; não há tracing, Session Replay, captura de props, source maps nem `SENTRY_AUTH_TOKEN`. O CSP dos proxies abre `connect-src` para `https://*.sentry.io`, e `scripts/check_sentry.py` valida essas invariantes no CI.
 
+Em 27/11/2026, o painel passou a permitir escolher quais eventos do pedido disparam webhook: criação e cada um dos sete status mapeados (`confirmed`, `preparing`, `ready`, `out_for_delivery`, `picked_up`, `delivered`, `cancelled`) têm uma opção em `/admin/integracoes/webhook`, somente para `owner` (D-048). A seleção é persistida em `store_settings.webhook.events`, validada no servidor e aplicada pelo notificador antes do POST; configurações antigas sem o campo continuam enviando todos os eventos, e uma lista vazia desativa todos sem mudar o `active`. O cabeçalho `X-Brocados-Event` permanece genérico (`order.created`/`order.updated`); a chave específica do status é usada apenas no filtro interno e na auditoria, sem PII. Em 27/11/2026, a mensagem do webhook passou a incluir o link `<ADMIN_BASE_URL>/admin/pedidos/<id>` (D-049): em desenvolvimento a base é `http://localhost:5173`, e em produção `ADMIN_BASE_URL` deve ser HTTPS ou o link é omitido até o domínio ser decidido. O link usa o `id` hexadecimal, não o `publicId`. O desenvolvimento da API usa Air para hot reload via `make dev-api`, com `backend/.air.toml` observando `cmd`, `internal` e `.env`.
+
 Em 25/11/2026, uma auditoria de conformidade comparou as telas com o protótipo e com `docs/07-design-system-e-experiencia.md`. Os desvios, a severidade e as tarefas de correção estão registrados em `docs/14-auditoria-design-system.md` e no Épico 12 de `docs/08-backlog.md`. O Épico 12 foi concluído em 25/11/2026, com as decisões de design registradas em `docs/13-decisoes-e-pendencias.md` (D-029 a D-031); privacidade, termos e créditos foram publicados em 25/11/2026 (D-033), com o canal do titular nos canais já existentes em `/contato` e os créditos liberados para indexação.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
@@ -179,7 +181,7 @@ O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o junto com
 | `make setup` | Instala dependências de backend e frontend |
 | `make vendor` | Atualiza `backend/vendor` após mudar dependências Go |
 | `make dev` | Sobe API e frontend em modo desenvolvimento |
-| `make dev-api` | Só a API |
+| `make dev-api` | Só a API, com hot reload via Air |
 | `make dev-web` | Só o frontend |
 | `make test` | Documentação, design system, proxies, Sentry, seed, backend e frontend |
 | `make test-api` | `go test -race ./...` |
@@ -459,7 +461,7 @@ Regras:
 - `publicId` é aleatório e não sequencial (128 bits, base64url).
 - `number` é sequencial e exibido como `#1042`; nunca use para acesso público.
 - Pedido guarda snapshot; não faça `lookup` de preço atual para renderizar histórico.
-- `store_settings` guarda `name`, `isOpen`, `openingHours`, `deliveryTime`, `whatsapp`, `instagram`, `address`, `createdAt`, `updatedAt`.
+- `store_settings` guarda `name`, `isOpen`, `openingHours`, `deliveryTime`, `whatsapp`, `instagram`, `address`, `webhook` (url, ativação e eventos habilitados), `createdAt`, `updatedAt`.
 - Horário é avaliado em `America/Fortaleza`; status efetivo = horário permite **e** `isOpen` ligado.
 - `products.imageUrl` aceita URL absoluta ou caminho relativo (`/products/...` do seed ou `/api/v1/uploads/{id}` dos uploads); o tipo servido vem da assinatura do arquivo, nunca do `Content-Type` do cliente (D-045).
 - Pagamento V1: `pix`, `card`, `cash` — todos pagos na entrega/retirada, sem gateway online. Nenhum dado de cartão é armazenado.

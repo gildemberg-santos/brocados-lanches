@@ -48,7 +48,9 @@ func TestAdminWebhookGetNotificationReadsStoreOnce(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetNotification: %v", err)
 	}
-	if notification.Settings != repo.settings.Webhook {
+	if notification.Settings.URL != repo.settings.Webhook.URL ||
+		notification.Settings.Active != repo.settings.Webhook.Active ||
+		len(notification.Settings.Events) != len(repo.settings.Webhook.Events) {
 		t.Fatalf("configuração inesperada: %+v", notification.Settings)
 	}
 	if notification.StoreNumber != "+5585992358708" {
@@ -144,5 +146,79 @@ func TestAdminWebhookGetPropagatesRepositoryError(t *testing.T) {
 	}
 	if _, err := service.Get(context.Background()); err == nil {
 		t.Fatal("esperava erro do repositório")
+	}
+}
+
+func TestAdminWebhookUpdatePersistsAndAuditsEventSelection(t *testing.T) {
+	now := time.Date(2026, 11, 27, 12, 0, 0, 0, time.UTC)
+	repo := &fakeAdminWebhookRepository{settings: domain.StoreSettings{
+		Name: "Brocados",
+		Webhook: domain.WebhookSettings{
+			URL:    "https://antigo.invalid/hook",
+			Active: true,
+			Events: []string{domain.WebhookEventKeyCreated},
+		},
+	}}
+	service, err := NewAdminWebhookService(repo)
+	if err != nil {
+		t.Fatalf("NewAdminWebhookService: %v", err)
+	}
+	service.now = func() time.Time { return now }
+
+	events := []string{domain.WebhookEventKeyConfirmed, domain.WebhookEventKeyCancelled}
+	updated, err := service.Update(context.Background(), "owner-1", domain.WebhookSettingsPatch{Events: &events})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if len(updated.Events) != 2 || updated.Events[0] != domain.WebhookEventKeyConfirmed {
+		t.Fatalf("events atualizados = %v", updated.Events)
+	}
+	if len(repo.received.Webhook.Events) != 2 || repo.received.Webhook.Events[1] != domain.WebhookEventKeyCancelled {
+		t.Fatalf("eventos não foram gravados: %v", repo.received.Webhook.Events)
+	}
+	before, okBefore := repo.audit.Before["events"].([]string)
+	after, okAfter := repo.audit.After["events"].([]string)
+	if !okBefore || !okAfter || len(before) != 1 || before[0] != domain.WebhookEventKeyCreated ||
+		len(after) != 2 || after[0] != domain.WebhookEventKeyConfirmed {
+		t.Fatalf("auditoria de eventos inesperada: before=%v after=%v", repo.audit.Before, repo.audit.After)
+	}
+}
+
+func TestAdminWebhookUpdateRejectsInvalidEventSelection(t *testing.T) {
+	repo := &fakeAdminWebhookRepository{settings: domain.StoreSettings{
+		Webhook: domain.WebhookSettings{URL: "https://hooks.exemplo.invalid", Active: true},
+	}}
+	service, err := NewAdminWebhookService(repo)
+	if err != nil {
+		t.Fatalf("NewAdminWebhookService: %v", err)
+	}
+
+	events := []string{"order.futuro"}
+	_, err = service.Update(context.Background(), "owner-1", domain.WebhookSettingsPatch{Events: &events})
+	var validation *domain.ValidationError
+	if !errors.As(err, &validation) || validation.Field != "events[0]" {
+		t.Fatalf("erro = %v, want ValidationError em events[0]", err)
+	}
+	if repo.updates != 0 {
+		t.Fatal("configuração inválida foi gravada")
+	}
+}
+
+func TestAdminWebhookUpdatePreservesEventSelectionWithoutPatch(t *testing.T) {
+	events := []string{domain.WebhookEventKeyDelivered}
+	repo := &fakeAdminWebhookRepository{settings: domain.StoreSettings{
+		Webhook: domain.WebhookSettings{URL: "https://hooks.exemplo.invalid", Active: true, Events: events},
+	}}
+	service, err := NewAdminWebhookService(repo)
+	if err != nil {
+		t.Fatalf("NewAdminWebhookService: %v", err)
+	}
+
+	url := "https://novo.exemplo.invalid/hook"
+	if _, err := service.Update(context.Background(), "owner-1", domain.WebhookSettingsPatch{URL: &url}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if len(repo.received.Webhook.Events) != 1 || repo.received.Webhook.Events[0] != domain.WebhookEventKeyDelivered {
+		t.Fatalf("seleção de eventos foi perdida: %v", repo.received.Webhook.Events)
 	}
 }

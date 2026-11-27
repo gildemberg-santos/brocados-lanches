@@ -94,9 +94,11 @@ func (s *AdminWebhookService) Update(ctx context.Context, actorID string, patch 
 }
 
 // webhookSnapshot evita gravar URL, telefone ou mensagem no log de auditoria.
+// As chaves de evento são identificadores, não dados pessoais.
 func webhookSnapshot(settings domain.WebhookSettings) map[string]any {
 	return map[string]any{
 		"active":        settings.Active,
 		"urlConfigured": settings.URL != "",
+		"events":        settings.EnabledEvents(),
 	}
 }

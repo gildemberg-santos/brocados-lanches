@@ -684,7 +684,7 @@ Exemplo de resposta/corpo parcial:
 | Método | Rota | Papel | Função |
 |---|---|---|---|
 | GET | `/admin/integrations/webhook` | owner | Configuração atual em `{ "data": ... }` |
-| PATCH | `/admin/integrations/webhook` | owner | Atualiza URL e estado da integração |
+| PATCH | `/admin/integrations/webhook` | owner | Atualiza URL, estado e eventos habilitados |
 
 Resposta/corpo parcial:
 
@@ -692,6 +692,7 @@ Resposta/corpo parcial:
 {
   "url": "https://integracao.exemplo.com/pedidos",
   "active": true,
+  "events": ["order.created", "order.confirmed", "order.delivered"],
   "createdAt": "2026-11-26T12:00:00Z",
   "updatedAt": "2026-11-26T12:00:00Z"
 }
@@ -699,7 +700,9 @@ Resposta/corpo parcial:
 
 - `PATCH` é parcial e rejeita corpo vazio; `url` aceita qualquer URL absoluta, com qualquer esquema e qualquer host, inclusive IP e `localhost`. Não há allowlist de host, exigência de `http`/`https` ou bloqueio de rede interna: o operador assume o risco de SSRF e de envio de PII a terceiros (D-042). Esquemas não HTTP são aceitos na configuração e falham apenas no envio.
 - Ativar sem URL retorna `422 VALIDATION_ERROR`. A URL é validada novamente no servidor, mesmo já validada no painel.
-- A configuração fica no documento `store_settings` (`webhook`), sem nova coleção. A auditoria registra `entity: webhook_settings` e apenas `active` + `urlConfigured` antes/depois; a URL nunca entra em auditoria ou log.
+- `events` é opcional no `PATCH` e aceita somente as chaves estáveis `order.created`, `order.confirmed`, `order.preparing`, `order.ready`, `order.out_for_delivery`, `order.picked_up`, `order.delivered` e `order.cancelled`. Chave desconhecida ou repetida retorna `422 VALIDATION_ERROR` com `details[].field` apontando `events[n]`. Ausência de `events` preserva a seleção atual; `events: []` desabilita todas as notificações sem alterar `active` (D-048).
+- Configurações gravadas antes da seleção por evento não têm o campo no banco e são devolvidas com todos os eventos na lista; o comportamento legado de notificar toda criação/transição é preservado até o primeiro `PATCH` que envie `events`.
+- A configuração fica no documento `store_settings` (`webhook`), sem nova coleção. A auditoria registra `entity: webhook_settings` e `active`, `urlConfigured` e a lista efetiva de `events` antes/depois; a URL nunca entra em auditoria ou log.
 - A leitura é restrita a `owner` para não expor o destino ao papel `operator`.
 - O disparo é best-effort e assíncrono: um único POST por evento, timeout de 3 s, sem retry, sem fila persistida e sem seguir redirecionamentos. Falha de conexão, timeout, resposta 3xx/4xx/5xx ou configuração inválida nunca altera o resultado da criação/transição; 3xx é registrado como falha no log.
 - Configuração e número da loja são lidos juntos do documento `store_settings`; sem `whatsapp` preenchido o envio é ignorado e registrado como aviso sem PII, para não entregar um payload com apenas um destinatário (D-046).
@@ -714,7 +717,7 @@ Resposta/corpo parcial:
 }
 ```
 
-- `number` é o telefone do cliente congelado no pedido e `storeNumber` é o `whatsapp` da loja configurado em `/admin/store`; ambos os destinatários são notificados no mesmo evento (D-046). `message` reaproveita o texto do handoff do WhatsApp e inclui o status legível após transições. O texto usa negrito do WhatsApp (`*...*`), emojis de seção, vírgula decimal e quebras de linha. Exemplo para o pedido #20:
+- `number` é o telefone do cliente congelado no pedido e `storeNumber` é o `whatsapp` da loja configurado em `/admin/store`; ambos os destinatários são notificados no mesmo evento (D-046). `message` reaproveita o texto do handoff do WhatsApp, inclui o status legível após transições e termina com o link do pedido no painel quando `ADMIN_BASE_URL` está definida (D-049). O texto usa negrito do WhatsApp (`*...*`), emojis de seção, vírgula decimal e quebras de linha. Exemplo para o pedido #20:
 
 ```text
 *Pedido #20* 🍔
@@ -737,9 +740,11 @@ Gildemberg Santos Gomes
 Rua Manuel Alves da Cunha, 60
 Tabajarra, Aquiraz/CE
 CEP 61700-000
+
+🔗 Ver pedido no painel: http://localhost:5173/admin/pedidos/6b0913ed4c6162f4586e7774
 ```
 
-Em transições, o texto termina com `✅ Status: Confirmado` (ou o rótulo do status correspondente). O cabeçalho `X-Brocados-Event` traz `order.created` para criação e `order.updated` para qualquer transição persistida. Não existe cadastro de statuses: um status futuro entra automaticamente pelo evento genérico.
+Em transições, o texto inclui `✅ Status: Confirmado` (ou o rótulo do status correspondente) antes do link. O link usa o `id` hexadecimal do pedido, não o `publicId`, e é montado como `<ADMIN_BASE_URL>/admin/pedidos/<id>`; no desenvolvimento o padrão é `http://localhost:5173`, enquanto em produção a variável deve ser definida com HTTPS ou o link é omitido até o domínio ser decidido (D-049). O cabeçalho `X-Brocados-Event` continua trazendo `order.created` para criação e `order.updated` para qualquer transição persistida: a seleção do painel não altera esse contrato (D-048). Internamente, o notificador converte cada transição para a chave `order.<status>` e só envia o POST se essa chave estiver habilitada; com seleção explícita, um status futuro sem opção correspondente não é enviado, e com configuração legada (sem `events`) todos são enviados.
 - O evento é ignorado em replay de `Idempotency-Key` (resposta `200` com `Idempotent-Replayed: true`), para não duplicar notificação.
 - Os logs registram apenas categoria do erro, status HTTP e tipo do evento: sem URL completa, corpo, telefone, nome ou endereço.
 

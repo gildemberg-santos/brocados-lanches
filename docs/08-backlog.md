@@ -332,6 +332,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-073 | Auditoria | P1 | M | US-072 | **Concluída** — Owner consulta mutações sem PII; filtros por ator/entidade/ação/data; tela somente leitura e testes |
 | US-074 | Atualização em tempo real | P2 | M | US-070 | **Concluída** — WebSocket autenticado na fila/detalhe e público no acompanhamento; eventos mínimos sem PII, reconexão com backoff e refetch HTTP; D-040 |
 | US-075 | Webhook de notificações | P2 | M | US-040, US-072 | **Concluída** — Configuração owner-only, POST best-effort com `{number, storeNumber, message}` em toda criação/transição persistida, sem retry e sem PII em logs; D-042, D-046 |
+| US-076 | Seleção de eventos do webhook | P2 | S | US-075 | **Concluída** — Owner habilita criação e cada status mapeado no painel; servidor valida e filtra o disparo, configuração antiga continua enviando todos e cabeçalho permanece genérico; D-048 |
 
 **Tarefas técnicas:**
 
@@ -346,6 +347,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Persistir configuração de webhook e criar endpoint owner-only com auditoria sem URL (US-075).
 - [x] Disparar POST assíncrono e best-effort na criação e em toda transição persistida, sem duplicar replay (US-075).
 - [x] Criar tela de integrações com URL e ativação, papéis e testes (US-075).
+- [x] Persistir e validar a seleção de eventos, filtrar o notificador e expor checkboxes no painel owner-only (US-076).
 
 ---
 

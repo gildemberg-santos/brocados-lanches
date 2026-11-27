@@ -227,6 +227,7 @@ make dev
 - Frontend com Vite: `http://localhost:5173`
 - O Vite faz proxy de `/api`, `/healthz` e `/readyz` para a API.
 - Para subir apenas o MongoDB via Docker: `docker compose up -d mongo`.
+- `make dev-api` usa Air (hot reload): alterar arquivos `.go` em `backend/cmd` ou `backend/internal` reconstrói e reinicia a API automaticamente. Se o Air não estiver instalado, instale com `go install github.com/air-verse/air@v1.67.4`.
 
 Também é possível rodar os lados separadamente:
 
@@ -245,6 +246,7 @@ make dev-web
 | `PORT` | `8080` | Porta interna da API |
 | `MONGO_URI` | `mongodb://localhost:27017` | Conexão usada fora do Compose; `MONGODB_URI` é aceito como alias |
 | `MONGO_DB` | `brocados_dev` | Banco da API |
+| `ADMIN_BASE_URL` | `http://localhost:5173` em dev; vazio em prod | Base do link do pedido enviado no webhook; em produção exige HTTPS |
 | `ORDER_ACCESS_SECRET` | valor fictício apenas em dev | Segredo HMAC para tokens de histórico; obrigatório com pelo menos 32 caracteres em produção |
 | `API_PORT` | `8080` | Porta publicada da API |
 | `WEB_PORT` | `8081` | Porta publicada da web |

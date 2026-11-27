@@ -21,15 +21,17 @@ type OrderNotifier interface {
 }
 
 type adminWebhookRequest struct {
-	URL    *string `json:"url"`
-	Active *bool   `json:"active"`
+	URL    *string   `json:"url"`
+	Active *bool     `json:"active"`
+	Events *[]string `json:"events"`
 }
 
 type adminWebhookResponse struct {
-	URL       string `json:"url"`
-	Active    bool   `json:"active"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
+	URL       string   `json:"url"`
+	Active    bool     `json:"active"`
+	Events    []string `json:"events"`
+	CreatedAt string   `json:"createdAt"`
+	UpdatedAt string   `json:"updatedAt"`
 }
 
 func handleAdminGetWebhook(service AdminWebhookService, logger *slog.Logger) http.HandlerFunc {
@@ -63,7 +65,7 @@ func handleAdminUpdateWebhook(service AdminWebhookService, logger *slog.Logger) 
 			writeError(w, r, logger, domain.ErrUnauthorized)
 			return
 		}
-		patch := domain.WebhookSettingsPatch{URL: request.URL, Active: request.Active}
+		patch := domain.WebhookSettingsPatch{URL: request.URL, Active: request.Active, Events: request.Events}
 		settings, err := service.Update(r.Context(), actor.ID, patch)
 		if err != nil {
 			writeError(w, r, logger, err)
@@ -77,6 +79,7 @@ func newAdminWebhookResponse(settings domain.WebhookSettings) adminWebhookRespon
 	return adminWebhookResponse{
 		URL:       settings.URL,
 		Active:    settings.Active,
+		Events:    settings.EnabledEvents(),
 		CreatedAt: formatAdminTime(settings.CreatedAt),
 		UpdatedAt: formatAdminTime(settings.UpdatedAt),
 	}

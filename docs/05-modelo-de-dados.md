@@ -89,12 +89,14 @@ Regras:
 {
   "url": "https://integracao.exemplo.com/pedidos",
   "active": true,
+  "events": ["order.created", "order.confirmed"],
   "createdAt": "2026-11-26T12:00:00Z",
   "updatedAt": "2026-11-26T12:00:00Z"
 }
 ```
 
 - `url` aceita qualquer esquema absoluto e qualquer host, inclusive endereço interno; não há allowlist, restrição a `http`/`https` ou bloqueio de SSRF (D-042). Ativo exige URL preenchida; esquemas não HTTP falham apenas no envio.
+- `events` contém as chaves habilitadas pelo `owner` (D-048): `order.created`, `order.confirmed`, `order.preparing`, `order.ready`, `order.out_for_delivery`, `order.picked_up`, `order.delivered` e `order.cancelled`. Sem o campo (documentos antigos) todos os eventos são enviados; com `events: []`, nenhum é enviado. As chaves são validadas na gravação, sem duplicatas.
 - O corpo do POST contém `number` (telefone do cliente congelado no pedido), `storeNumber` (`whatsapp` da loja, lido junto com a configuração) e `message`; por isso o campo é sensível e a leitura pela API é restrita a `owner` (D-046).
 - O envio é best-effort, assíncrono, sem retry e sem fila persistida; uma falha nunca altera o pedido já gravado.
 
@@ -409,7 +411,7 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 Regras:
 
 - Não guardar senha, token, telefone, endereço ou observação.
-- `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`; em `webhook_settings`, somente `active` e `urlConfigured` (nunca a URL).
+- `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`; em `webhook_settings`, somente `active`, `urlConfigured` e a lista efetiva de `events` (nunca a URL).
 - A mutação e a auditoria são gravadas na mesma transação quando o MongoDB suporta; em standalone, em sequência.
 - Retenção de 12 meses; após isso, arquivar ou anonimizar.
 

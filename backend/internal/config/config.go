@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,11 @@ type Config struct {
 	MongoDB  string
 
 	OrderAccessSecret string
+
+	// AdminBaseURL compõe o link do pedido incluído na mensagem do webhook.
+	// Em desenvolvimento aponta para o Vite; em produção é configurável e,
+	// quando vazio, o link é omitido até o domínio ser definido.
+	AdminBaseURL string
 
 	AdminCookieName        string
 	AdminCookieSecure      bool
@@ -38,6 +44,8 @@ func Load(getenv func(string) string) (Config, error) {
 		MongoURI: mongoURI(getenv),
 		MongoDB:  value(getenv("MONGO_DB"), "brocados_dev"),
 	}
+
+	cfg.AdminBaseURL = value(getenv("ADMIN_BASE_URL"), defaultAdminBaseURL(cfg.Env))
 
 	cfg.OrderAccessSecret = value(getenv("ORDER_ACCESS_SECRET"), "")
 	if cfg.OrderAccessSecret == "" {
@@ -74,6 +82,9 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if strings.TrimSpace(cfg.MongoDB) == "" {
 		return Config{}, fmt.Errorf("MONGO_DB is required")
+	}
+	if err := validateAdminBaseURL(cfg.AdminBaseURL, cfg.Env); err != nil {
+		return Config{}, err
 	}
 	if cfg.Env == "production" && len(cfg.OrderAccessSecret) < 32 {
 		return Config{}, fmt.Errorf("ORDER_ACCESS_SECRET must have at least 32 characters in production")
@@ -114,6 +125,32 @@ func mongoURI(getenv func(string) string) string {
 		return uri
 	}
 	return value(getenv("MONGODB_URI"), "mongodb://localhost:27017")
+}
+
+// defaultAdminBaseURL usa o Vite no desenvolvimento e omite o link em produção
+// enquanto o domínio definitivo não é decidido (D-049).
+func defaultAdminBaseURL(env string) string {
+	if env == "production" {
+		return ""
+	}
+	return "http://localhost:5173"
+}
+
+func validateAdminBaseURL(raw, env string) error {
+	if raw == "" {
+		return nil
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return fmt.Errorf("ADMIN_BASE_URL must be an absolute http(s) URL")
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("ADMIN_BASE_URL must use http or https")
+	}
+	if env == "production" && parsed.Scheme != "https" {
+		return fmt.Errorf("ADMIN_BASE_URL must use https in production")
+	}
+	return nil
 }
 
 func value(raw, fallback string) string {

@@ -29,6 +29,9 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.OrderAccessSecret == "" {
 		t.Error("OrderAccessSecret is empty in development")
 	}
+	if cfg.AdminBaseURL != "http://localhost:5173" {
+		t.Errorf("AdminBaseURL = %q, want Vite development URL", cfg.AdminBaseURL)
+	}
 	if cfg.AdminCookieName != "brocados_admin" {
 		t.Errorf("AdminCookieName = %q, want brocados_admin", cfg.AdminCookieName)
 	}
@@ -59,6 +62,7 @@ func TestLoadOverrides(t *testing.T) {
 		"MONGO_URI":                    "mongodb+srv://cluster.example.com",
 		"MONGO_DB":                     "brocados",
 		"ORDER_ACCESS_SECRET":          "segredo-de-producao-com-mais-de-32-caracteres",
+		"ADMIN_BASE_URL":               "https://admin.exemplo.com",
 		"SENTRY_DSN":                   "https://key@sentry.example.com/1",
 		"SENTRY_ENVIRONMENT":           "producao",
 		"SENTRY_RELEASE":               "abc123",
@@ -72,6 +76,9 @@ func TestLoadOverrides(t *testing.T) {
 
 	if cfg.Env != "production" || cfg.Port != "9090" {
 		t.Errorf("unexpected env/port: %+v", cfg)
+	}
+	if cfg.AdminBaseURL != "https://admin.exemplo.com" {
+		t.Errorf("AdminBaseURL = %q, want configured URL", cfg.AdminBaseURL)
 	}
 	if cfg.Addr() != ":9090" {
 		t.Errorf("Addr() = %q, want :9090", cfg.Addr())
@@ -126,6 +133,16 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		{name: "invalid mongo uri", env: map[string]string{"MONGO_URI": "http://localhost:27017"}},
 		{name: "invalid mongodb uri alias", env: map[string]string{"MONGODB_URI": "http://localhost:27017"}},
 		{name: "invalid cookie name", env: map[string]string{"ADMIN_SESSION_COOKIE": "cookie com espaco"}},
+		{name: "admin base url without scheme", env: map[string]string{"ADMIN_BASE_URL": "admin.exemplo.com"}},
+		{name: "admin base url with unsupported scheme", env: map[string]string{"ADMIN_BASE_URL": "ftp://admin.exemplo.com"}},
+		{
+			name: "production admin base url without https",
+			env: map[string]string{
+				"APP_ENV":             "production",
+				"ORDER_ACCESS_SECRET": "segredo-de-producao-com-mais-de-32-caracteres",
+				"ADMIN_BASE_URL":      "http://admin.exemplo.com",
+			},
+		},
 		{name: "partial bootstrap", env: map[string]string{"ADMIN_BOOTSTRAP_EMAIL": "dono@example.com"}},
 		{name: "invalid sentry flush timeout", env: map[string]string{"SENTRY_FLUSH_TIMEOUT_SECONDS": "abc"}},
 		{name: "sentry flush timeout too high", env: map[string]string{"SENTRY_FLUSH_TIMEOUT_SECONDS": "31"}},
@@ -170,6 +187,9 @@ func TestLoadAdminCookieInProduction(t *testing.T) {
 	}
 	if cfg.AdminCookieNameEffective() != "__Host-brocados_admin" {
 		t.Errorf("AdminCookieNameEffective() = %q, want __Host-brocados_admin", cfg.AdminCookieNameEffective())
+	}
+	if cfg.AdminBaseURL != "" {
+		t.Errorf("AdminBaseURL = %q, want empty until the production domain is defined", cfg.AdminBaseURL)
 	}
 }
 

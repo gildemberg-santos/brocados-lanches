@@ -17,7 +17,7 @@ help:
 		'  make setup       Instala dependências de backend e frontend' \
 		'  make vendor      Atualiza backend/vendor após mudar dependências Go' \
 		'  make dev         Sobe API e frontend em modo desenvolvimento' \
-		'  make dev-api     Sobe apenas a API' \
+		'  make dev-api     Sobe apenas a API com hot reload (Air)' \
 		'  make dev-web     Sobe apenas o frontend' \
 		'  make test        Roda documentação, design, configuração de proxy, seed, backend e frontend' \
 		'  make test-e2e    Semena brocados_test e roda o Playwright (exige MongoDB)' \
@@ -50,7 +50,7 @@ dev:
 	$(MAKE) -j2 dev-api dev-web
 
 dev-api:
-	cd backend && go run ./cmd/api
+	cd backend && air -c .air.toml
 
 dev-web:
 	cd frontend && pnpm dev

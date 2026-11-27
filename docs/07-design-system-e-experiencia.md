@@ -395,9 +395,10 @@ Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065/US-025). O
 
 - Seção “Integrações → Webhook de Notificações” dentro das configurações da loja.
 - Campo de URL e opção “Webhook ativo” com os estados de carregamento, vazio, erro e sucesso do padrão do painel.
-- Aviso explícito de que o POST contém telefone do cliente e que falhas não bloqueiam o pedido.
+- Grupo “Eventos enviados” com um checkbox por momento mapeado: pedido criado, confirmado, em preparo, pronto, saído para entrega, retirado, entregue e cancelado. Configurações antigas aparecem com todos marcados; nenhum marcado exibe aviso explícito e salva lista vazia (D-048).
+- Aviso explícito de que o POST contém telefone do cliente e que falhas não bloqueiam o pedido, além da nota de que o cabeçalho do evento permanece genérico.
 - Validação de UX aceita qualquer URL absoluta, sem exigir HTTPS ou permitir apenas `http`/`https`; o servidor permanece autoritativo (D-042).
-- Implementado em `frontend/src/views/admin/AdminWebhookView.vue` (US-075), com rota e item de menu restritos a `owner`.
+- Implementado em `frontend/src/views/admin/AdminWebhookView.vue` (US-075 e US-076), com rota e item de menu restritos a `owner`.
 
 ### 6.8 Pedidos — `/admin/pedidos`
 

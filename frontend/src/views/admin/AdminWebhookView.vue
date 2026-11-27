@@ -5,21 +5,27 @@ import BaseButton from '../../components/BaseButton.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ErrorState from '../../components/ErrorState.vue'
 import LoadingSkeleton from '../../components/LoadingSkeleton.vue'
+import { WEBHOOK_EVENT_OPTIONS, normalizeWebhookEvents } from '../../features/admin/webhookEvents'
 import type { WebhookFieldErrors } from '../../features/admin/webhookForm'
 import { validateWebhookInput } from '../../features/admin/webhookForm'
 import { useAdminWebhookStore } from '../../stores/adminWebhook'
 import type { AdminWebhookInput } from '../../types/adminWebhook'
+import { WEBHOOK_EVENT_KEYS } from '../../types/adminWebhook'
 
 const store = useAdminWebhookStore()
 const errors = ref<WebhookFieldErrors>({ url: undefined })
-const form = ref<AdminWebhookInput>({ url: '', active: false })
+const form = ref<AdminWebhookInput>({ url: '', active: false, events: [...WEBHOOK_EVENT_KEYS] })
 
 watch(
   () => store.settings,
   (settings) => {
     errors.value = { url: undefined }
     if (settings) {
-      form.value = { url: settings.url, active: settings.active }
+      form.value = {
+        url: settings.url,
+        active: settings.active,
+        events: normalizeWebhookEvents(settings.events),
+      }
     }
   },
   { immediate: true },
@@ -30,7 +36,11 @@ async function submit(): Promise<void> {
   if (errors.value.url) {
     return
   }
-  await store.save({ url: form.value.url.trim(), active: form.value.active })
+  await store.save({
+    url: form.value.url.trim(),
+    active: form.value.active,
+    events: [...form.value.events],
+  })
 }
 
 onMounted(() => {
@@ -45,9 +55,9 @@ onMounted(() => {
     <p class="admin-page__kicker">Painel administrativo · Configurações da loja</p>
     <h1>Integrações · Webhook de notificações</h1>
     <p class="admin-page__lead">
-      A cada pedido criado ou atualizado, o servidor envia um POST com número e mensagem. O envio é
-      assíncrono e não bloqueia o pedido. A URL e o corpo podem conter dados pessoais: configure
-      apenas um destino confiável.
+      O servidor envia um POST com número e mensagem apenas para os eventos habilitados abaixo. O
+      envio é assíncrono e não bloqueia o pedido. A URL e o corpo podem conter dados pessoais:
+      configure apenas um destino confiável.
     </p>
 
     <LoadingSkeleton v-if="store.state === 'loading'" label="Carregando integração" :count="2" />
@@ -81,6 +91,29 @@ onMounted(() => {
           {{ errors.url }}
         </p>
       </div>
+
+      <fieldset class="webhook-form__events">
+        <legend>Eventos enviados</legend>
+        <p class="webhook-form__hint">
+          Selecione os momentos em que a automação deve ser avisada. O cabeçalho do POST continua
+          genérico: <code>order.created</code> na criação e <code>order.updated</code> nas
+          transições.
+        </p>
+        <label
+          v-for="option in WEBHOOK_EVENT_OPTIONS"
+          :key="option.key"
+          class="webhook-form__check"
+        >
+          <input v-model="form.events" type="checkbox" :value="option.key" />
+          <span>
+            <strong>{{ option.label }}</strong>
+            <small>{{ option.description }}</small>
+          </span>
+        </label>
+        <p v-if="form.events.length === 0" class="webhook-form__hint" role="status">
+          Nenhum evento selecionado: nenhuma notificação será enviada.
+        </p>
+      </fieldset>
 
       <p v-if="store.saveError" class="webhook-form__message" role="alert">{{ store.saveError }}</p>
       <p v-if="store.saveSuccess" class="webhook-form__message" role="status">
@@ -154,6 +187,38 @@ onMounted(() => {
   background: var(--bg-input);
   color: var(--text-main);
   font: inherit;
+}
+
+.webhook-form__events {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+}
+
+.webhook-form__events legend {
+  padding: 0 6px;
+  font-size: var(--font-size-h2);
+  font-weight: 800;
+}
+
+.webhook-form__hint {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
+}
+
+.webhook-form__events .webhook-form__check span {
+  display: grid;
+  gap: 2px;
+}
+
+.webhook-form__events .webhook-form__check small {
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
+  font-weight: 400;
 }
 
 .webhook-form__error,

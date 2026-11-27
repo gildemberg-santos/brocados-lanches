@@ -223,6 +223,70 @@ func TestDeliverDoesNotFailOnTransportError(t *testing.T) {
 	}
 }
 
+func TestDeliverHonorsSelectedEventsAndKeepsGenericHeader(t *testing.T) {
+	var events []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		events = append(events, r.Header.Get(eventHeader))
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	notifier, err := NewNotifier(
+		&stubSettings{settings: domain.WebhookSettings{
+			URL: server.URL, Active: true,
+			Events: []string{domain.WebhookEventKeyCreated, domain.WebhookEventKeyConfirmed},
+		}},
+		slog.Default(),
+		func(domain.WebhookEvent) string { return "mensagem" },
+	)
+	if err != nil {
+		t.Fatalf("NewNotifier: %v", err)
+	}
+
+	notifier.deliver(context.Background(), domain.WebhookEvent{Type: domain.WebhookEventOrderCreated, Order: testOrder()})
+	notifier.deliver(context.Background(), domain.WebhookEvent{Type: domain.WebhookEventOrderUpdated, Order: testOrder()})
+	notifier.deliver(context.Background(), domain.WebhookEvent{
+		Type: domain.WebhookEventOrderUpdated,
+		Order: domain.Order{
+			Status: domain.OrderStatusPreparing,
+		},
+	})
+
+	if len(events) != 2 {
+		t.Fatalf("entregas = %d, want 2 (evento não selecionado deveria ser ignorado)", len(events))
+	}
+	if events[0] != domain.WebhookEventOrderCreated || events[1] != domain.WebhookEventOrderUpdated {
+		t.Fatalf("cabeçalhos = %v, want created/updated", events)
+	}
+}
+
+func TestDeliverWithLegacySettingsSendsEveryEvent(t *testing.T) {
+	var deliveries int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		deliveries++
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	notifier, err := NewNotifier(
+		&stubSettings{settings: domain.WebhookSettings{URL: server.URL, Active: true}},
+		slog.Default(),
+		func(domain.WebhookEvent) string { return "mensagem" },
+	)
+	if err != nil {
+		t.Fatalf("NewNotifier: %v", err)
+	}
+	notifier.deliver(context.Background(), domain.WebhookEvent{
+		Type: domain.WebhookEventOrderUpdated, Order: testOrder(),
+	})
+	notifier.deliver(context.Background(), domain.WebhookEvent{
+		Type: domain.WebhookEventOrderUpdated, Order: domain.Order{Status: "status_futuro"},
+	})
+	if deliveries != 2 {
+		t.Fatalf("entregas = %d, want 2 (configuração legada envia qualquer status)", deliveries)
+	}
+}
+
 func TestNewNotifierRequiresDependencies(t *testing.T) {
 	if _, err := NewNotifier(nil, slog.Default(), func(domain.WebhookEvent) string { return "" }); err == nil {
 		t.Fatal("esperava erro sem leitor de configuração")
