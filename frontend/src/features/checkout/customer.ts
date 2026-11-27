@@ -1,11 +1,11 @@
 import type { CustomerProfileLookup, PaymentMethod } from '../../types/order'
-import { normalizePhone, type CheckoutForm } from './checkout'
+import { isValidBrazilianPhone, type CheckoutForm } from './checkout'
 
 const paymentMethods: readonly PaymentMethod[] = ['cash', 'card', 'pix']
 
 /** Só consulta o servidor com telefone brasileiro completo. */
 export function canLookupCustomer(phone: string): boolean {
-  return /^\+55\d{10,11}$/.test(normalizePhone(phone))
+  return isValidBrazilianPhone(phone)
 }
 
 /**

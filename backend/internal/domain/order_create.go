@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -42,9 +41,6 @@ const (
 	MaxOrderNoteLength      = 280
 	MaxChangeForCents       = 10000000 // R$ 100.000,00
 )
-
-// PhonePattern aceita números com ou sem "+", espaços, parênteses e hífen.
-var phonePattern = regexp.MustCompile(`^\+?[0-9][0-9()\s-]{7,23}$`)
 
 // OrderRequest contém apenas escolhas e dados necessários à execução do pedido.
 // Preço, taxa, total e disponibilidade nunca vêm do cliente.
@@ -310,8 +306,8 @@ func validatePhone(value string) error {
 	if trimmed == "" {
 		return invalid("customer.phone", CodeRequired, "is required")
 	}
-	if utf8.RuneCountInString(trimmed) > MaxPhoneLength || !phonePattern.MatchString(trimmed) {
-		return invalid("customer.phone", CodeInvalid, "must be a valid phone number")
+	if utf8.RuneCountInString(trimmed) > MaxPhoneLength || !IsValidBrazilianPhone(trimmed) {
+		return invalid("customer.phone", CodeInvalid, "must be a valid Brazilian phone number")
 	}
 	return nil
 }

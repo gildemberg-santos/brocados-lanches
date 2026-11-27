@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
@@ -44,7 +43,7 @@ func (s *CustomerService) Lookup(ctx context.Context, phone string) (*domain.Cus
 		}
 	}
 	phoneKey := domain.NormalizePhoneKey(phone)
-	if len(phoneKey) < 12 || len(phoneKey) > 13 || !strings.HasPrefix(phoneKey, "55") {
+	if !domain.IsValidBrazilianPhone(phone) {
 		return nil, &domain.ValidationError{
 			Field:   "phone",
 			Code:    domain.CodeInvalid,

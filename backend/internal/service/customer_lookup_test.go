@@ -95,7 +95,7 @@ func TestCustomerServiceLookupValidation(t *testing.T) {
 		t.Fatalf("NewCustomerService() error = %v", err)
 	}
 
-	for _, phone := range []string{"", "123", "859999", "+551199999", strings.Repeat("9", domain.MaxPhoneLength+1)} {
+	for _, phone := range []string{"", "123", "859999", "+551199999", "+5555859913655", strings.Repeat("9", domain.MaxPhoneLength+1)} {
 		_, err := service.Lookup(context.Background(), phone)
 		if !errors.Is(err, domain.ErrValidation) {
 			t.Errorf("Lookup(%q) error = %v, want validation", phone, err)

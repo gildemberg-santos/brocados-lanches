@@ -232,6 +232,12 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Quando** o servidor devolve o pedido gravado (`200` com `Idempotent-Replayed`).
 - **Então** nenhum evento de webhook é publicado para esse replay.
 
+### 5.21 Telefone impossível
+
+- **Dado** telefone com DDI duplicado, DDD inexistente ou celular de 9 dígitos começando com `8`.
+- **Quando** o cliente tenta finalizar o checkout ou consultar `POST /customers/profile`.
+- **Então** o frontend bloqueia com erro no campo e o servidor responde `422 VALIDATION_ERROR`; nenhum pedido é criado e nenhum número inválido é usado como destinatário do webhook.
+
 ---
 
 ## 6. Backend

@@ -46,13 +46,27 @@ func TestOrderRequestValidateRequiresDeliveryAddress(t *testing.T) {
 }
 
 func TestOrderRequestValidateRejectsInvalidPhone(t *testing.T) {
-	request := orderRequestFixture()
-	request.Customer.Phone = "123"
+	tests := []struct {
+		name  string
+		phone string
+	}{
+		{"curto", "123"},
+		{"DDI duplicado", "+5555859913655"},
+		{"celular inválido", "+55 85 89999-9999"},
+		{"DDD inexistente", "+55 00 99999-9999"},
+	}
 
-	err := request.Validate()
-	var validationError *ValidationError
-	if !errors.As(err, &validationError) || validationError.Field != "customer.phone" {
-		t.Fatalf("error = %v, want invalid phone", err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := orderRequestFixture()
+			request.Customer.Phone = test.phone
+
+			err := request.Validate()
+			var validationError *ValidationError
+			if !errors.As(err, &validationError) || validationError.Field != "customer.phone" {
+				t.Fatalf("error = %v, want invalid phone", err)
+			}
+		})
 	}
 }
 

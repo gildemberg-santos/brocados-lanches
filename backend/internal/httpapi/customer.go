@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/brocados-lanches/api/internal/domain"
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
@@ -113,8 +112,7 @@ func decodeCustomerLookupRequest(w http.ResponseWriter, r *http.Request) (custom
 			Message: "is too long",
 		}
 	}
-	phoneKey := domain.NormalizePhoneKey(request.Phone)
-	if len(phoneKey) < 12 || len(phoneKey) > 13 || !strings.HasPrefix(phoneKey, "55") {
+	if !domain.IsValidBrazilianPhone(request.Phone) {
 		return customerLookupRequest{}, &domain.ValidationError{
 			Field:   "phone",
 			Code:    domain.CodeInvalid,

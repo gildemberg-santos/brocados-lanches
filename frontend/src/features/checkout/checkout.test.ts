@@ -9,6 +9,7 @@ import {
   createIdempotencyKey,
   formatPhone,
   initialCheckoutForm,
+  isValidBrazilianPhone,
   normalizePhone,
   orderStatusLabel,
   parseCentsInput,
@@ -58,6 +59,15 @@ describe('checkout', () => {
     expect(formatPhone('+5585999999999')).toBe('(85) 99999-9999')
     expect(formatPhone('55 85 99999-9999')).toBe('(85) 99999-9999')
     expect(normalizePhone(formatPhone('+5585999999999'))).toBe('+5585999999999')
+  })
+
+  it('rejects phone numbers that cannot reach a Brazilian WhatsApp account', () => {
+    expect(isValidBrazilianPhone('(85) 99999-9999')).toBe(true)
+    expect(isValidBrazilianPhone('+558532321234')).toBe(true)
+    expect(isValidBrazilianPhone('+5555859913655')).toBe(false)
+    expect(isValidBrazilianPhone('+55 85 89999-9999')).toBe(false)
+    expect(isValidBrazilianPhone('+55 00 99999-9999')).toBe(false)
+    expect(isValidBrazilianPhone('123')).toBe(false)
   })
 
   it('builds a create request with customer, address and payment', () => {
@@ -111,6 +121,22 @@ describe('checkout', () => {
       changeFor: '100,00',
     }
     expect(validateCheckoutForm(complete, 6200)).toEqual({})
+  })
+
+  it('blocks checkout when the phone has a duplicated country code', () => {
+    const form = {
+      ...initialCheckoutForm,
+      zoneId: 'zona-1',
+      customerName: 'Maria Silva',
+      phone: '+5555859913655',
+      street: 'Rua das Flores',
+      number: '450',
+      district: 'Tapera',
+      zipCode: '61700000',
+      changeFor: '100,00',
+    }
+
+    expect(validateCheckoutForm(form, 6200).phone).toBeDefined()
   })
 
   it('validates fields for pickup without address', () => {

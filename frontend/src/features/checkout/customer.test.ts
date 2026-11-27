@@ -20,6 +20,7 @@ describe('perfil de conveniência no checkout', () => {
     expect(canLookupCustomer('(85) 97777-7777')).toBe(true)
     expect(canLookupCustomer('859777')).toBe(false)
     expect(canLookupCustomer('+341999999999')).toBe(false)
+    expect(canLookupCustomer('+5555859913655')).toBe(false)
     expect(canLookupCustomer('')).toBe(false)
   })
 

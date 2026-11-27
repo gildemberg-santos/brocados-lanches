@@ -170,6 +170,8 @@ Somente zonas ativas, ordenadas por `sortOrder` e, em empate, por `name`. A taxa
 
 Consulta de conveniência usada pelo checkout depois que o cliente autoriza o tratamento e informa um telefone brasileiro completo. Não cria, altera nem apaga perfil, não consulta pedidos e não serve para marketing. O telefone vai no corpo — nunca na URL — e toda resposta usa `Cache-Control: no-store`.
 
+O telefone aceito é nacional (DDD + 8 ou 9 dígitos) ou E.164 com DDI `55`. O DDD precisa existir no plano de numeração da Anatel; celular tem 9 dígitos e começa com `9`, telefone fixo tem 8 dígitos e começa de `2` a `5`. Número com DDI duplicado, DDD inexistente ou prefixo inválido retorna `422 VALIDATION_ERROR`. A mesma regra vale para `customer.phone` em `POST /orders` e para o `number` enviado ao webhook (D-043).
+
 ### Request
 
 ```http
@@ -331,7 +333,7 @@ O `Authorization` é opcional na criação. Quando ausente, o servidor emite um 
 }
 ```
 
-`saveCustomerProfile` é opcional; ausência significa `true`. Quando `false`, o servidor desativa o perfil de conveniência daquele telefone e remove os dados dele, sem afetar o pedido gravado. Preço, taxa, total e disponibilidade nunca vêm do cliente; a preferência também não entra no hash de idempotência.
+`saveCustomerProfile` é opcional; ausência significa `true`. Quando `false`, o servidor desativa o perfil de conveniência daquele telefone e remove os dados dele, sem afetar o pedido gravado. Preço, taxa, total e disponibilidade nunca vêm do cliente; a preferência também não entra no hash de idempotência. `customer.phone` segue a regra de telefone brasileiro descrita em `§5.1`; um número impossível é rejeitado antes da gravação e, portanto, nunca chega como destinatário do webhook.
 
 Para retirada:
 

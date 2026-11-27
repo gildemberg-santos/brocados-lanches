@@ -74,6 +74,14 @@ export function normalizePhone(value: string): string {
   return digits === '' ? '' : `+${digits}`
 }
 
+/** DDDs em uso conforme Anatel; celular tem 9 dígitos e começa com 9, fixo tem 8. */
+const BRAZILIAN_PHONE_PATTERN =
+  /^\+55(1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[134579]|8[1-9]|9[1-9])(9\d{8}|[2-5]\d{7})$/
+
+export function isValidBrazilianPhone(value: string): boolean {
+  return BRAZILIAN_PHONE_PATTERN.test(normalizePhone(value))
+}
+
 export function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, '')
   // Quem cola o número em E.164 (+55) não pode ter o DDD trocado pelo 55 do país.
@@ -171,9 +179,8 @@ export function validateCheckoutForm(
   if (form.customerName.trim().length < 3) {
     errors.customerName = 'Informe seu nome completo.'
   }
-  const phone = normalizePhone(form.phone)
-  if (!/^\+55\d{10,11}$/.test(phone)) {
-    errors.phone = 'Informe um telefone com DDD.'
+  if (!isValidBrazilianPhone(form.phone)) {
+    errors.phone = 'Informe um telefone brasileiro válido, com DDD.'
   }
 
   if (form.fulfillment === 'delivery') {

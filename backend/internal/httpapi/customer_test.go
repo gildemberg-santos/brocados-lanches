@@ -124,6 +124,7 @@ func TestCustomerProfileLookupValidation(t *testing.T) {
 		{name: "JSON inválido", body: `{`, wantStatus: http.StatusBadRequest},
 		{name: "campo extra", body: `{"phone":"85999999999","name":"Maria"}`, wantStatus: http.StatusBadRequest},
 		{name: "telefone inválido", body: `{"phone":"123"}`, wantStatus: http.StatusUnprocessableEntity},
+		{name: "DDI duplicado", body: `{"phone":"+5555859913655"}`, wantStatus: http.StatusUnprocessableEntity},
 	}
 
 	for _, test := range tests {
