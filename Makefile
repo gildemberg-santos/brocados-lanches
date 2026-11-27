@@ -7,8 +7,8 @@ include .env
 export
 endif
 
-.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-config test-sentry test-e2e \
-	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check config-check sentry-check build build-api build-web \
+.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-config test-sentry test-analytics test-e2e \
+	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check config-check sentry-check analytics-check build build-api build-web \
 	seed seed-reset seed-check migrate-reference-check migrate-reference bench test-load up up-offline down logs ps
 
 help:
@@ -28,6 +28,7 @@ help:
 		'  make fmt-check   Verifica formatação sem alterar arquivos' \
 		'  make config-check  Valida os proxies de desenvolvimento e produção do WebSocket' \
 		'  make sentry-check  Valida a integração de erros (sem DSN, PII ou tracing)' \
+		'  make analytics-check  Valida o GTM, o nonce do CSP e a política de privacidade' \
 		'  make seed        Aplica os dados fictícios no banco de desenvolvimento' \
 		'  make seed-reset  Esvazia as coleções semeadas e reaplica os dados fictícios' \
 		'  make seed-check  Valida o seed.json sem acessar o MongoDB' \
@@ -55,7 +56,7 @@ dev-api:
 dev-web:
 	cd frontend && pnpm dev
 
-test: test-docs test-design test-config test-sentry seed-check test-api test-web
+test: test-docs test-design test-config test-sentry test-analytics seed-check test-api test-web
 
 test-api:
 	cd backend && go test -race ./...
@@ -78,6 +79,9 @@ test-config:
 
 test-sentry:
 	python3 -m unittest discover -s scripts -p 'test_check_sentry.py'
+
+test-analytics:
+	python3 -m unittest discover -s scripts -p 'test_check_analytics.py'
 
 # Benchmarks não entram em make test: são executados sob demanda e não têm
 # limite de latency fixado, para não tornar o CI instável.
@@ -148,6 +152,9 @@ config-check:
 
 sentry-check:
 	python3 scripts/check_sentry.py
+
+analytics-check:
+	python3 scripts/check_analytics.py
 
 build: build-api build-web
 

@@ -49,7 +49,12 @@ if [ -f scripts/check_sentry.py ]; then
   python3 scripts/check_sentry.py || fail "validação do Sentry falhou"
 fi
 
-# 6. Testes automatizados disponíveis neste estágio do projeto.
+# 6. Analytics: snippet do GTM, nonce do CSP e política de privacidade.
+if [ -f scripts/check_analytics.py ]; then
+  python3 scripts/check_analytics.py || fail "validação do GTM falhou"
+fi
+
+# 7. Testes automatizados disponíveis neste estágio do projeto.
 if [ -f Makefile ]; then
   if grep -q '^lint:' Makefile; then
     make lint || fail "make lint falhou"
@@ -59,4 +64,4 @@ if [ -f Makefile ]; then
   fi
 fi
 
-printf 'pre-commit: design system, documentação, Sentry e testes validados.\n'
+printf 'pre-commit: design system, documentação, Sentry, GTM e testes validados.\n'

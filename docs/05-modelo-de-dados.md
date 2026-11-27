@@ -545,7 +545,7 @@ Toda transição inválida retorna `409 CONFLICT`.
 | Auditoria | 12 meses | Arquivar/anonimizar |
 | Imagens enviadas | Enquanto referenciadas | Remover órfãs em rotina de manutenção; não há TTL automático na V1 |
 | Logs | 30 dias | Expirar |
-| Analytics | Conforme consentimento | Sem PII |
+| Analytics (GTM) | Definida pelo provedor e pelo container (D-050) | Sem PII enviado pela loja; retenção não controlada aqui |
 
 A política foi publicada em 25/11/2026 com o canal do titular em `/contato`. O procedimento de exclusão/anonimização está em `10-operacao-e-lancamento.md`.
 

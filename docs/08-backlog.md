@@ -363,7 +363,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-081 | SEO e dados estruturados | P1 | M | US-023 | Parcial: título/descrição/robots por rota, JSON-LD `Restaurant`/`Menu`/`Product` e `robots.txt` entregues; faltam sitemap e canonical (domínio pendente) |
 | US-082 | Acessibilidade | P1 | G | US-023, US-033, US-061 | Parcial: rótulos/`aria-describedby` no checkout, alvos de 44 px no rodapé, aviso de conexão e foco preservados; auditoria axe pendente |
 | US-083 | Imagens e performance | P1 | M | US-023 | Concluída no seed: WebP/AVIF, dimensões, lazy, fontes self-hosted e validação no design-check; fotos definitivas dependem do cliente |
-| US-084 | Consentimento e analytics | P2 | M | US-080 | Sem PII; opt-in; eventos documentados |
+| US-084 | Consentimento e analytics | P2 | M | US-080 | Concluída em 27/11/2026 com waiver: GTM padrão em todas as visitas, sem PII no `dataLayer`, nonce por resposta e política de privacidade atualizada (D-050) |
 
 **Status em 25/11/2026:** o cliente HTTP central aplica timeout configurável (`VITE_HTTP_TIMEOUT_MS`, padrão 10 s) e o cabeçalho exibe aviso de conexão perdida sem PII; a home mostra status efetivo, prazo e contato a partir de `GET /store`; o dashboard do painel usa indicadores reais com estado neutro quando a fonte falha.
 
@@ -379,6 +379,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Self-host de fontes com licenças e `font-display: swap`.
 - [x] Gerar variantes WebP/AVIF das imagens do seed e validar no `make design-check`.
 - [x] Retenção documentada e canal do titular publicado em `/contato` em 25/11/2026 (D-033).
+- [x] Google Tag Manager instalado em 27/11/2026 com nonce por resposta e validação no CI (D-050).
 
 ---
 

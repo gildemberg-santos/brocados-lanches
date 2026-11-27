@@ -285,6 +285,15 @@ Alertas precisam de destinatário e runbook. Sem alerta acionável, não criar.
 - O proxy abre `connect-src` para `https://*.sentry.io`; se o projeto contratado usar domínio próprio, o CSP dos dois arquivos Nginx precisa ser ajustado junto.
 - `make sentry-check` e `make test-sentry` rodam no CI. Nos painéis, o alerta de 5xx do §8.3 continua sendo o gatilho operacional; o Sentry é a ferramenta de diagnóstico, não mais um destino de PII.
 
+### 8.6 Medição de uso com Google Tag Manager (D-050)
+
+- O container `GTM-NLTLDV4N` é carregado com o snippet padrão em todas as visitas, sem banner de consentimento, por decisão explícita do solicitante. O waiver e seus riscos estão em `../adr/0008-google-tag-manager.md`.
+- O código da loja não envia PII, dados do pedido nem token ao `dataLayer`; apenas o snippet publica `gtm.start`. Tags adicionais configuradas no container são de responsabilidade de quem administra o GTM.
+- O nonce do `<script>` inline é gerado por resposta: no Vite com `AsyncLocalStorage` e `randomBytes`, no Nginx com `$request_id` e `sub_filter` substituindo `__CSP_NONCE__` no HTML servido, inclusive no fallback da SPA.
+- O CSP dos dois proxies permite `https://www.googletagmanager.com` em `script-src`/`connect-src` e `https://www.google-analytics.com` em `connect-src`/`img-src`; nenhum `'unsafe-inline'` é adicionado a `script-src`.
+- Qualquer tag do container que use outro domínio será bloqueada até o CSP ser ajustado nos dois arquivos Nginx. A falha no carregamento do GTM não impede a aplicação de funcionar.
+- `make analytics-check` e `make test-analytics` rodam no CI e validam também as afirmações de `/privacidade`.
+
 ---
 
 ## 9. Segurança operacional
@@ -454,6 +463,7 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 - [ ] Logs sem PII.
 - [ ] DSNs configurados em ambientes separados e `make sentry-check` aprovado.
 - [ ] CSP com `connect-src` compatível com o domínio de ingestão do Sentry.
+- [ ] GTM carregado com nonce por resposta e `make analytics-check` aprovado.
 - [ ] Alertas com destinatário.
 - [ ] Rollback definido.
 

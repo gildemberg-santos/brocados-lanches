@@ -273,6 +273,12 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Dado** painel com CSP sem `connect-src` do Sentry ou código com tracing/Replay/DSN literal.
 - **Quando** `make sentry-check` roda.
 - **Então** a validação falha com o motivo e bloqueia o CI.
+- **Dado** snippet do GTM sem container, com nonce fixo, com `unsafe-inline` no `script-src` ou política de privacidade que nega analytics.
+- **Quando** `make analytics-check` roda.
+- **Então** a validação falha com o motivo e bloqueia o CI.
+- **Dado** duas respostas HTML do Vite com o placeholder `__CSP_NONCE__`.
+- **Quando** o plugin de CSP processa cada uma.
+- **Então** cada resposta recebe um nonce diferente no header e no snippet, e nenhuma PII é enviada ao `dataLayer` pelo código da loja.
 
 ### 5.26 Exclusão manual de pedido (D-051)
 
@@ -459,6 +465,7 @@ pnpm lint
 | Sentry PII | `BeforeSend` remove user/request e mascara telefone, e-mail, CEP, query e token nos dois lados |
 | Sentry escopo | 4xx e panics de regra de negócio não viram evento; 5xx/panic e timeout são capturados |
 | Sentry build | Validador rejeita DSN literal, tracing, Replay, source maps e CSP sem `connect-src` do Sentry |
+| GTM | Snippet padrão, nonce por resposta, hosts do Google no CSP e política de privacidade declarada; nenhum dado do pedido no `dataLayer` |
 | Dependências | Scanner sem vulnerabilidade crítica conhecida |
 
 ---

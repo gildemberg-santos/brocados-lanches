@@ -2,6 +2,8 @@ import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
+import { cspNoncePlugin } from './csp.ts'
+
 // No desenvolvimento o Vite roda em outra porta da API. O proxy alinha o
 // Origin ao Host repassado para não falsificar a proteção CSRF do backend.
 const apiProxy = {
@@ -13,7 +15,7 @@ const apiProxy = {
 }
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [cspNoncePlugin(), vue(), tailwindcss()],
   server: {
     host: '0.0.0.0',
     port: 5173,

@@ -116,8 +116,16 @@ onMounted(() => {
           componentes nem gravações de tela; antes do envio, padrões de telefone, e-mail, CEP e link
           do WhatsApp são removidos.
         </li>
+        <li>
+          medição de navegação pelo Google Tag Manager: o container é carregado em todas as visitas
+          e não recebe nome, telefone, endereço, observação, troco nem token de acesso; o provedor
+          pode tratar dados técnicos da visita conforme sua própria política;
+        </li>
       </ul>
-      <p>Não usamos analytics, pixels de rastreamento, mapas de calor nem publicidade.</p>
+      <p>
+        Usamos o Google Tag Manager para medir a navegação em todas as visitas. Não usamos pixels de
+        rastreamento, mapas de calor nem publicidade.
+      </p>
     </section>
 
     <section aria-labelledby="privacy-purpose-title">
@@ -163,12 +171,18 @@ onMounted(() => {
         <li>
           Sentry: serviço de monitoramento de erros, usado somente para diagnosticar falhas
           inesperadas da API e do navegador. Os eventos são sanitizados antes do envio e não trazem
-          dados do pedido nem credenciais.
+          dados do pedido nem credenciais;
+        </li>
+        <li>
+          Google Tag Manager: ferramenta de medição de uso carregada em todas as visitas. O Google
+          pode processar dados técnicos da navegação, como endereço IP e identificadores de cookie,
+          conforme a política do provedor. A loja não envia dados do pedido ao container.
         </li>
       </ul>
       <p>
         Não vendemos dados pessoais. Não usamos gateway de pagamento, geocodificação, notificações
-        push, inteligência artificial nem serviços de analytics.
+        push, inteligência artificial nem publicidade; a única ferramenta de medição de uso é o
+        Google Tag Manager.
       </p>
       <p>
         Enquanto a página de acompanhamento está aberta, o navegador recebe atualizações automáticas
@@ -198,6 +212,10 @@ onMounted(() => {
         <li>
           eventos de erro no Sentry: até 30 dias, conforme a configuração da conta contratada, sem
           dados do pedido nem credenciais;
+        </li>
+        <li>
+          medição de navegação no Google Tag Manager: o prazo é definido pelo provedor e pela
+          configuração do container, sem consulta ou retenção pela loja;
         </li>
         <li>backups: 30 dias; ao restaurar, os prazos de retenção são reaplicados.</li>
         <li>

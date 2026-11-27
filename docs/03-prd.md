@@ -72,7 +72,7 @@ As metas serão medidas após o lançamento; ainda não há linha de base.
 | Incidentes de PII | PII encontrada em log/analytics | 0 |
 | Disponibilidade da API | monitoramento externo | ≥ 99,5% ao mês |
 
-> Métricas de conversão só podem ser coletadas com consentimento e sem PII. Ver `10-operacao-e-lancamento.md`.
+> Métricas de conversão só podem ser coletadas com consentimento e sem PII, salvo exceção explícita e registrada (D-050). O Google Tag Manager carrega em todas as visitas por decisão do solicitante, sem dados do pedido no `dataLayer`. Ver `10-operacao-e-lancamento.md` §8.6.
 
 ---
 
@@ -140,7 +140,7 @@ As metas serão medidas após o lançamento; ainda não há linha de base.
 - Aplicativo nativo, multi-loja, multimoeda e multilíngue.
 - WhatsApp Business API oficial; a V1 usa link `wa.me`.
 - MFA obrigatório; pode entrar como P2 antes do lançamento se o risco exigir.
-- Analytics de terceiros sem consentimento.
+- Tags de terceiros além do container GTM autorizado em D-050.
 - Reserva de mesa e consumo no local.
 
 ### 5.3 Premissas
@@ -263,7 +263,7 @@ As regras abaixo complementam `../AGENTS.md`; em caso de conflito, vale o `AGENT
 - Não pedir CPF, e-mail ou dados de cartão.
 - Não logar nome, telefone, endereço, observação, cookie ou token.
 - O acompanhamento público não expõe telefone, endereço, observação nem dados de terceiros.
-- Analytics só com consentimento e sem PII.
+- Analytics só com consentimento e sem PII, exceto pelo GTM autorizado em D-050.
 
 ---
 

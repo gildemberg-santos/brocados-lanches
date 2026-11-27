@@ -72,7 +72,7 @@ class CheckSentryTest(unittest.TestCase):
 
     def test_csp_sem_sentry_e_rejeitado(self) -> None:
         for relative in ("frontend/nginx.conf", "deploy/nginx.conf.template"):
-            self.replace(relative, "connect-src 'self' https://*.sentry.io;", "connect-src 'self';")
+            self.replace(relative, "connect-src 'self' https://*.sentry.io ", "connect-src 'self' ")
 
         errors = check_sentry.collect_errors(self.root)
         self.assertEqual(sum(1 for error in errors if "connect-src" in error), 2)

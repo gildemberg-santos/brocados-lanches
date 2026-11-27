@@ -15,6 +15,7 @@ Este diretório registra decisões arquiteturais relevantes da Brocados Lanches.
 | [0005](0005-design-system-e-ui.md) | Design system como fonte visual | Aceita |
 | [0006](0006-cotacao-server-side.md) | Cotação server-side antes do pedido | Aceita e implementada |
 | [0007](0007-monitoramento-de-erros.md) | Monitoramento de erros com Sentry, sem PII e sem tracing | Aceita e implementada |
+| [0008](0008-google-tag-manager.md) | Analytics com GTM em todas as visitas, com waiver e nonce no CSP | Aceita e implementada |
 
 ## Formato
 

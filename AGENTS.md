@@ -23,6 +23,8 @@ Em 26/11/2026, o checkout passou a identificar o cliente no primeiro passo. Com 
 
 Em 27/11/2026, o monitoramento de erros passou a usar Sentry somente para falhas inesperadas: `5xx`/panics na API e `5xx`/timeout/erro de carregamento de rota no navegador; `4xx` de regra de negócio, health checks e reconexões WebSocket não viram evento (D-047). `SENTRY_DSN` e `VITE_SENTRY_DSN` ficam por ambiente, sem valor no repositório, e DSN vazio desliga o SDK. O `BeforeSend` remove `user`/`request`, descarta chaves sensíveis e máscara telefone, e-mail, CEP, query, token e link `wa.me` nos dois lados; não há tracing, Session Replay, captura de props, source maps nem `SENTRY_AUTH_TOKEN`. O CSP dos proxies abre `connect-src` para `https://*.sentry.io`, e `scripts/check_sentry.py` valida essas invariantes no CI.
 
+Em 27/11/2026, o frontend passou a carregar o container `GTM-NLTLDV4N` com o snippet padrão do Google Tag Manager em todas as visitas, sem banner de consentimento para essa medição (D-050). O solicitante autorizou explicitamente a exceção à regra de opt-in, com os riscos de script de terceiro e de tratamento de dados pelo Google aceitos; nenhum dado do pedido, PII ou token é enviado ao `dataLayer` pelo código da loja. O nonce do snippet é gerado por resposta no Vite (`AsyncLocalStorage`) e no Nginx (`$request_id` + `sub_filter`), o CSP libera apenas os domínios necessários do Google, e `scripts/check_analytics.py` valida o snippet, o nonce e a política de privacidade no CI.
+
 Em 27/11/2026, o painel passou a permitir escolher quais eventos do pedido disparam webhook: criação e cada um dos sete status mapeados (`confirmed`, `preparing`, `ready`, `out_for_delivery`, `picked_up`, `delivered`, `cancelled`) têm uma opção em `/admin/integracoes/webhook`, somente para `owner` (D-048). A seleção é persistida em `store_settings.webhook.events`, validada no servidor e aplicada pelo notificador antes do POST; configurações antigas sem o campo continuam enviando todos os eventos, e uma lista vazia desativa todos sem mudar o `active`. O cabeçalho `X-Brocados-Event` permanece genérico (`order.created`/`order.updated`); a chave específica do status é usada apenas no filtro interno e na auditoria, sem PII. Em 27/11/2026, a mensagem do webhook passou a incluir o link `<ADMIN_BASE_URL>/admin/pedidos/<id>` (D-049): em desenvolvimento a base é `http://localhost:5173`, e em produção `ADMIN_BASE_URL` deve ser HTTPS ou o link é omitido até o domínio ser decidido. O link usa o `id` hexadecimal, não o `publicId`. O desenvolvimento da API usa Air para hot reload via `make dev-api`, com `backend/.air.toml` observando `cmd`, `internal` e `.env`.
 
 Em 27/11/2026, a fila do painel passou a permitir que somente `owner` exclua pedidos manualmente, em qualquer status, após confirmação explícita na tela (D-051). `DELETE /api/v1/admin/orders/{id}` remove o documento do MongoDB e responde `204`; a auditoria registra número, status, forma de entrega e total antes da exclusão, sem PII. A exclusão não dispara webhook, não apaga perfil de conveniência e publica `order.deleted` apenas no canal administrativo; o acompanhamento público passa a devolver `404` na próxima consulta do pedido removido.
@@ -207,6 +209,8 @@ O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o junto com
 | `make config-check` | Valida se Vite e nginx repassam o upgrade WebSocket |
 | `make sentry-check` | Valida DSN por ambiente, sanitização, escopo de erros e CSP do Sentry |
 | `make test-sentry` | `unittest` do validador do Sentry; entra em `make test` |
+| `make analytics-check` | Valida o snippet do GTM, o nonce do CSP e a política de privacidade |
+| `make test-analytics` | `unittest` do validador do GTM; entra em `make test` |
 | `make build` | Binário Go em `backend/bin/api` e build do frontend |
 | `make up` | Sobe MongoDB, API e web via Compose e espera os health checks |
 | `make up-offline` | Compila o frontend no host e sobe via Compose sem baixar npm no Docker |
@@ -332,7 +336,7 @@ handler → service → repository → MongoDB
 - Não comunique status só por cor. Respeite `prefers-reduced-motion`.
 - Título e metadados por rota com `@unhead/vue` (ou equivalente). Sitemap e JSON-LD `Restaurant`/`Menu` na V1.
 - A SPA limita SEO orgânico. Se SEO virar prioridade, reavalie Nuxt com o time; não migre por conta própria.
-- Analytics só com consentimento e sem PII. Não instale script de terceiro sem revisão.
+- Analytics só com consentimento e sem PII, salvo exceção explícita e registrada (D-050). Não instale script de terceiro sem revisão.
 
 ### 8.5 Gate visual
 
@@ -510,7 +514,7 @@ Nenhum commit é criado sem passar por esta sequência:
 
 1. **Documentação:** atualize o documento afetado — `AGENTS.md` para decisão de arquitetura/processo, `README.md` para estrutura ou uso, `docs/` para comportamento e contrato, `design-system/README.md` para padrão visual. Links relativos precisam resolver.
 2. **Testes:** todo arquivo novo de código (endpoint, componente, store, script, migração) nasce com teste automatizado correspondente. Todo comportamento novo ou corrigido exige teste. Correção de bug sem teste de regressão não é aceita, salvo impossibilidade técnica justificada no PR. **Todos os testes, novos e existentes, precisam passar antes do commit.**
-3. **Validação:** rode `make fmt` (ou `make fmt-check`), `make lint`, `make test`, `make docs-check`, `make design-check`, `make config-check` e `make sentry-check`. Tudo precisa passar antes do commit.
+3. **Validação:** rode `make fmt` (ou `make fmt-check`), `make lint`, `make test`, `make docs-check`, `make design-check`, `make config-check`, `make sentry-check` e `make analytics-check`. Tudo precisa passar antes do commit.
 4. **Inspeção:** revise `git diff --cached` e confirme que não há segredo, PII, arquivo gerado, cor/fonte fora do design system ou mudança fora do escopo.
 5. **Commit:** use Conventional Commits em português. Não use `--no-verify` para contornar o hook.
 
@@ -530,7 +534,7 @@ Uma entrega só termina quando:
 - [ ] Loja fechada, item esgotado, zona inativa e transição inválida têm tratamento explícito.
 - [ ] Rotas admin exigem sessão válida e autorização por papel.
 - [ ] Nenhum dado pessoal aparece em log, analytics ou mensagem de erro.
-- [ ] `make fmt`, `make lint`, `make test`, `make docs-check`, `make design-check`, `make config-check` e `make sentry-check` passam (ou a exceção está justificada).
+- [ ] `make fmt`, `make lint`, `make test`, `make docs-check`, `make design-check`, `make config-check`, `make sentry-check` e `make analytics-check` passam (ou a exceção está justificada).
 - [ ] Contrato de API e documentação foram atualizados, com links válidos.
 - [ ] Auditoria registra mutações administrativas relevantes.
 - [ ] Acessibilidade básica verificada: teclado, foco, rótulos, contraste.
@@ -576,7 +580,7 @@ Uma entrega só termina quando:
 | MFA e gestão de usuários | Sessão + papel na V1; MFA desejável antes do lançamento |
 | Impressão, KDS e som de pedido | Fora da V1 até confirmação |
 | Retenção LGPD e política de privacidade | Proposta de 24 meses para pedidos; validar com jurídico |
-| Analytics e metas de conversão | Sem ferramenta definida; nada com PII |
+| Analytics e metas de conversão | Google Tag Manager em todas as visitas por waiver explícito (D-050); nada com PII no `dataLayer` |
 | SEO orgânico | SPA na V1; reavaliar Nuxt se virar prioridade |
 
 Toda mudança nessas premissas deve atualizar este arquivo e o briefing.
@@ -604,7 +608,7 @@ Toda mudança nessas premissas deve atualizar este arquivo e o briefing.
 - `docs/12-referencia-ola-click.md` — snapshot funcional do site de referência.
 - `docs/13-decisoes-e-pendencias.md` — decisões e perguntas abertas.
 - `docs/14-auditoria-design-system.md` — auditoria de conformidade visual de 25/11/2026 e tarefas do Épico 12.
-- `docs/adr/README.md` — decisões arquiteturais, incluindo a ADR 0007 de monitoramento de erros.
+- `docs/adr/README.md` — decisões arquiteturais, incluindo a ADR 0007 de monitoramento de erros e a ADR 0008 de analytics com GTM.
 - `design-system/tokens.css` — fonte dos tokens de marca.
 - `design-system/tokens.json` — tokens para ferramentas.
 - `design-system/seed.json` — dados fictícios para desenvolvimento.

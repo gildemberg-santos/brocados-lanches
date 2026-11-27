@@ -369,6 +369,10 @@ No navegador, `Sentry.init` recebe o `app` Vue com `tracesSampleRate: 0`, `attac
 
 O DSN é configurado em `SENTRY_DSN` (API) e `VITE_SENTRY_DSN` (build do web). Com DSN vazio, os reporters são neutros e nenhum evento sai do processo. O validador `scripts/check_sentry.py` verifica essas invariantes no CI.
 
+### 6.9 Medição de uso
+
+O container `GTM-NLTLDV4N` é carregado no `<head>` com o snippet padrão em todas as visitas, sem opt-in, por autorização explícita do solicitante (D-050, ADR 0008). O código da loja não empurra PII nem dados do pedido para `dataLayer`; o container publica apenas `gtm.start`. O nonce inline é gerado por resposta no Vite (`AsyncLocalStorage`) e no Nginx (`$request_id` com `sub_filter` sobre `__CSP_NONCE__`), e o CSP permite somente os domínios do Google necessários ao carregamento e envio. O validador `scripts/check_analytics.py` verifica o snippet, o nonce, o CSP e a política publicada em `/privacidade`.
+
 ---
 
 ## 7. Cálculo de preço e disponibilidade

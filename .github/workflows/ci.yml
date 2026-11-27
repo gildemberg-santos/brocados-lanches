@@ -39,6 +39,9 @@ jobs:
       - name: Validar integração do Sentry
         run: make sentry-check
 
+      - name: Validar integração do GTM e o CSP
+        run: make analytics-check
+
       - name: Testar validadores de documentação
         run: make test-docs
 
@@ -50,6 +53,9 @@ jobs:
 
       - name: Testar validador do Sentry
         run: make test-sentry
+
+      - name: Testar validador do GTM
+        run: make test-analytics
 
   backend:
     name: Backend
