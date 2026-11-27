@@ -10,6 +10,7 @@ import (
 
 	"github.com/brocados-lanches/api/internal/domain"
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
+	"github.com/brocados-lanches/api/internal/realtime"
 	"github.com/brocados-lanches/api/internal/service"
 	"github.com/go-chi/chi/v5"
 )
@@ -171,7 +172,7 @@ func newQuoteData(quote domain.Quote) quoteData {
 }
 
 // handleCreateOrder persiste o pedido antes de devolver o link do WhatsApp.
-func handleCreateOrder(orders OrderService, phoneLimiter *ratelimit.Limiter, logger *slog.Logger) http.HandlerFunc {
+func handleCreateOrder(orders OrderService, phoneLimiter *ratelimit.Limiter, hub *realtime.Hub, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if orders == nil {
 			writeError(w, r, logger, errors.New("order service is not configured"))
@@ -199,6 +200,9 @@ func handleCreateOrder(orders OrderService, phoneLimiter *ratelimit.Limiter, log
 		if err != nil {
 			writeError(w, r, logger, err)
 			return
+		}
+		if !replayed {
+			publishOrderEvent(hub, realtime.EventOrderCreated, order)
 		}
 
 		whatsappURL := ""

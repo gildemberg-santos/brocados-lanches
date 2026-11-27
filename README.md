@@ -48,7 +48,8 @@ O esqueleto da Fase 1 já inclui:
 - API pública de catálogo com `GET /api/v1/menu` e `GET /api/v1/delivery-zones`, filtros de ativos/disponibilidade e testes de service e handler;
 - cotação server-side em `POST /api/v1/orders/quote`, sem persistência, com validação de itens/opções/adicionais/zona/status da loja e cálculo centralizado em `domain.BuildQuote`;
 - criação de pedido em `POST /api/v1/orders`, com idempotência, snapshot congelado, número sequencial, `publicId` opaco e link `wa.me` gerado após a persistência;
-- acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`;
+- acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`, com sinais de mudança em `WS /api/v1/orders/{publicId}/events`;
+- fila e detalhe administrativos acompanham criações e transições por `WS /api/v1/admin/orders/events`, com sessão e eventos sem PII;
 - autenticação administrativa em `/api/v1/admin/auth`: login/logout/me com Argon2id, sessão opaca hasheada em cookie `HttpOnly`, rotação, expiração ociosa/absoluta, CSRF por origem e rate limit de login; bootstrap do primeiro `owner` por `ADMIN_BOOTSTRAP_*`;
 - shell e guard do painel em `/admin`: login, rotas lazy, `me` no servidor, menu por papel (`owner`/`operator`), redirecionamento `401` para login e tela `403`; o proxy de desenvolvimento alinha `Origin`/`Host` à API;
 - API administrativa de catálogo em `/api/v1/admin`: `GET/POST/PATCH` de categorias, produtos, adicionais e zonas com paginação, filtros, allowlist de ordenação, validação, autorização por papel, CSRF e auditoria;
@@ -68,7 +69,7 @@ O esqueleto da Fase 1 já inclui:
 - testes de backend com `testing`/`httptest` e teste de integração opcional com MongoDB real;
 - testes de frontend com Vitest + Vue Test Utils;
 - seed de desenvolvimento e teste a partir de `design-system/seed.json`, com valores em centavos e marcação de dado fictício;
-- harness E2E com Playwright: smoke da home, navegação para o cardápio, acesso anônimo/credenciais inválidas ao painel, pedido → fila → detalhe → mudança de status e cenários críticos de falha (loja fechada, esgotado, zona inativa, retirada, troco, idempotência, transição inválida e logout) em desktop e mobile, com API isolada em `brocados_test`, seed fictício aplicado pelo `make test-e2e` e um worker por vez (cenários que criam pedido rodam só no desktop para respeitar o rate limit de IP compartilhado);
+- harness E2E com Playwright: smoke da home, navegação para o cardápio, acesso anônimo/credenciais inválidas ao painel, pedido → fila → detalhe → mudança de status, propagação da mudança para o acompanhamento por WebSocket e cenários críticos de falha (loja fechada, esgotado, zona inativa, retirada, troco, idempotência, transição inválida e logout) em desktop e mobile, com API isolada em `brocados_test`, seed fictício aplicado pelo `make test-e2e`, um worker por vez e contas administrativas separadas para respeitar os rate limits;
 - CI no GitHub Actions com jobs de documentação/design, backend, frontend e E2E;
 - Dockerfiles de API e web, Nginx same-origin e `compose.yaml` com MongoDB;
 - validação de documentação e design system no gate de commit.
@@ -296,9 +297,10 @@ Nunca armazene a URI de produção em arquivos versionados. Use variável de amb
 make fmt          # gofmt + Prettier
 make fmt-check    # verifica formatação sem alterar arquivos
 make lint         # go vet/golangci-lint + ESLint + vue-tsc
-make test         # docs, design system, seed, Go e Vitest
+make test         # docs, design system, proxies de tempo real, seed, Go e Vitest
 make docs-check   # links relativos da documentação
 make design-check # tokens, cores literais e CDNs no frontend
+make config-check # upgrade WebSocket no Vite e no nginx
 make build        # binário Go em backend/bin/api e dist do frontend
 ```
 
@@ -329,14 +331,14 @@ O workflow `.github/workflows/ci.yml` roda em pull request, push para `main` e e
 
 | Job | Verifica |
 |---|---|
-| Documentação e design system | `docs-check`, `design-check` e testes dos validadores |
+| Documentação, design e configuração | `docs-check`, `design-check`, `config-check` e testes dos validadores |
 | Backend | `gofmt`, `go vet`, `go test -race` com MongoDB 8, seed e build |
 | Frontend | Prettier, ESLint, `vue-tsc`, Vitest e build |
 | E2E | Chromium + Playwright com MongoDB 8 como serviço |
 
 O pipeline não usa secrets: as versões vêm de `backend/go.mod`, `frontend/package.json` e `frontend/pnpm-lock.yaml`. O relatório do Playwright fica como artefato quando o job E2E falha.
 
-O gate de commit executa `make lint` e `make test`. Ative o hook uma vez por clone:
+O gate de commit executa `make lint`, `make test`, `make docs-check`, `make design-check` e `make config-check`. Ative o hook uma vez por clone:
 
 ```bash
 git config core.hooksPath .githooks

@@ -10,9 +10,31 @@ const OWNER_PASSWORD = 'senha-de-teste-12345'
 
 // Login por e-mail tem limite de 5/min por IP. Um operador exclusivo dos
 // cenários de falha evita competir com os logins das demais specs.
-const OPERATOR = {
+export interface AdminCredentials {
+  name: string
+  email: string
+  password: string
+  role: 'operator' | 'owner'
+}
+
+export const OPERATOR: AdminCredentials = {
   name: 'Operador Cenários E2E',
   email: 'operador@teste.local',
+  password: 'senha-de-teste-12345',
+  role: 'operator',
+}
+
+// Contas separadas por especificação: cada e-mail tem limite próprio de 5 logins/min.
+export const CHECKOUT_OPERATOR: AdminCredentials = {
+  name: 'Operador Checkout E2E',
+  email: 'checkout@teste.local',
+  password: 'senha-de-teste-12345',
+  role: 'operator',
+}
+
+export const SESSION_OPERATOR: AdminCredentials = {
+  name: 'Operador Sessão E2E',
+  email: 'sessao@teste.local',
   password: 'senha-de-teste-12345',
   role: 'operator',
 }
@@ -122,11 +144,14 @@ export async function loginTestOperator(context: APIRequestContext): Promise<voi
   expect(response.ok()).toBeTruthy()
 }
 
-export async function ensureAdminApi(playwright: Playwright): Promise<APIRequestContext> {
+export async function ensureAdminApi(
+  playwright: Playwright,
+  operator: AdminCredentials = OPERATOR,
+): Promise<APIRequestContext> {
   const context = await playwright.request.newContext({ baseURL: API_URL })
   const loginOperator = () =>
     context.post('/api/v1/admin/auth/login', {
-      data: { email: OPERATOR.email, password: OPERATOR.password },
+      data: { email: operator.email, password: operator.password },
     })
 
   let response = await loginOperator()
@@ -134,7 +159,7 @@ export async function ensureAdminApi(playwright: Playwright): Promise<APIRequest
     const owner = await playwright.request.newContext({ baseURL: API_URL })
     try {
       await loginAdmin(owner)
-      const created = await owner.post('/api/v1/admin/users', { data: OPERATOR })
+      const created = await owner.post('/api/v1/admin/users', { data: operator })
       expect([201, 409]).toContain(created.status())
     } finally {
       await owner.dispose()

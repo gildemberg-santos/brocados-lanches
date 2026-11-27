@@ -19,7 +19,7 @@ O arquivo `design-system/brocados-lanches-design-system-v2.5.html` é um **prot�
 
 **Estado em 26/11/2026:** documentação de produto, arquitetura, dados, API, design, backlog, testes e operação concluída; protótipo, tokens, esqueleto de produção e fundação da V1 disponíveis. A fundação já tem CI no GitHub Actions, seed de desenvolvimento e harness E2E com Playwright. O esqueleto sobe API Go, frontend Vue e MongoDB via Compose; o catálogo já tem domínio, validação, repositórios, índices idempotentes, API pública de leitura (`GET /menu` e `GET /delivery-zones`), home, cardápio com busca/filtros e detalhe com personalização. O carrinho já persiste IDs/escolhas com schema versionado, valida itens contra o catálogo e tem tela com quantidade, remoção, limpeza, estado vazio e subtotal sem taxa; taxa e total são exibidos no checkout após a escolha de entrega/retirada e zona; o botão de adicionar do detalhe alimenta o carrinho. A cotação `POST /api/v1/orders/quote` valida itens, opções, adicionais, zona e status efetivo da loja, calcula subtotal/taxa/total no servidor com `domain.BuildQuote` e não persiste nada. O checkout (`/checkout`) coleta entrega/retirada, zona, endereço, pagamento e troco, exibe totais cotados após a escolha necessária e envia apenas IDs/escolhas. Após o pedido gravado, salva no navegador forma de entrega, zona, nome, telefone, endereço e pagamento para o próximo pedido; observação e troco ficam de fora e as preferências podem ser apagadas em `/privacidade` (D-037). `POST /api/v1/orders` recalcula os valores, persiste o snapshot com número sequencial, `publicId` opaco e chave idempotente, e devolve o link `wa.me` após a gravação; `GET /api/v1/orders/{publicId}` oferece acompanhamento público sem PII. A confirmação limpa o carrinho somente após `201` e permite reenviar o link de handoff na mesma sessão. A autenticação administrativa já está implementada: `POST /api/v1/admin/auth/login`, `POST /api/v1/admin/auth/logout` e `GET /api/v1/admin/auth/me` usam Argon2id, sessão opaca com hash SHA-256 em cookie `HttpOnly`, rotação no login, expiração ociosa/absoluta, CSRF por `Origin`/`Referer` e rate limit de 5/min por IP+e-mail. O bootstrap do primeiro `owner` é feito pelas variáveis `ADMIN_BOOTSTRAP_*` na inicialização e só cria usuário quando a coleção está vazia. O shell/guard do painel (US-061) já entrega `/admin/login`, rotas lazy, menu por papel e a tela de acesso negado; o cliente HTTP usa `credentials: 'include'` e o proxy de desenvolvimento alinha `Origin`/`Host` para não falsificar o CSRF. A API administrativa de catálogo (US-022) já cobre `GET/POST/PATCH` de categorias, produtos, adicionais e zonas com paginação, allowlist de ordenação, validação e auditoria; `GET/PATCH /api/v1/admin/store` (US-065) controla kill switch, horários e contato com validação em `America/Fortaleza` e auditoria sem PII. As APIs administrativas de pedidos (`GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/{id}` e `PATCH /api/v1/admin/orders/{id}/status`) já entregam fila com PII mascarada, detalhe completo e matriz de transições com `409`, `statusHistory`, timestamps e auditoria sem PII via compare-and-set. As telas de fila, detalhe e ações contextuais de status já estão implementadas no painel, assim como o CRUD de produtos, categorias, adicionais e zonas e a configuração da loja com kill switch e horários; `GET /api/v1/store` devolve o status efetivo calculado no servidor (kill switch + horário em `America/Fortaleza`) e a próxima abertura; o painel exibe esse preview na configuração da loja. As APIs `GET/POST/PATCH /admin/users` e `GET /admin/audit-logs` e as telas `/admin/usuarios`, `/admin/auditoria` e `/admin/conta` fecham a gestão do painel, com proteção do último owner e auditoria sem PII. Os rate limits do contrato (pedido, cotação, acompanhamento, cardápio e sessão administrativa), o cabeçalho `X-Request-Id`, o scrub de PII em logs, os testes de concorrência/idempotência e os metadados por rota também estão implementados; o E2E cobre o fluxo completo de compra em desktop e mobile, mas sua execução depende de MongoDB local. O seed de desenvolvimento agora replica o catálogo público (5 categorias, 37 produtos) com as imagens originais servidas localmente em `frontend/public/products/`; contato, tempo de entrega e horários da loja passaram a seguir o status publicado em `/contato` em 25/11/2026, e as 30 zonas e taxas foram fornecidas para o desenvolvimento, mantidas como referência até validação da loja. A migração versionada `20261125-dados-referencia` já está preparada para replicar essas quatro coleções em desenvolvimento ou produção sem apagar documentos, desativando apenas o que ficou fora do plano; em produção exige `APP_ENV=production`, `MONGO_DB=brocados`, `-apply` e confirmação explícita, preserva o kill switch atual e não foi executada. Desde 26/11/2026, após o pedido gravado o servidor também registra um perfil de conveniência por telefone normalizado, sem observação nem troco, com opt-out no checkout, retenção de 24 meses e resumo apenas no detalhe administrativo autenticado (D-038); a escrita é best-effort e nunca impede a criação do pedido.
 
-Em 26/11/2026, o checkout passou a identificar o cliente no primeiro passo. Com a opção de conveniência habilitada, ele aplica preferências locais quando o telefone coincide; caso contrário, consulta `POST /api/v1/customers/profile` com o telefone no corpo e preenche entrega, endereço, zona e pagamento a partir de uma resposta mínima. A consulta não devolve histórico, observação, troco ou taxa, é limitada por IP e telefone, e o opt-out responde `found: false` (D-039).
+Em 26/11/2026, o checkout passou a identificar o cliente no primeiro passo. Com a opção de conveniência habilitada, ele aplica preferências locais quando o telefone coincide; caso contrário, consulta `POST /api/v1/customers/profile` com o telefone no corpo e preenche entrega, endereço, zona e pagamento a partir de uma resposta mínima. A consulta não devolve histórico, observação, troco ou taxa, é limitada por IP e telefone, e o opt-out responde `found: false` (D-039). Desde 26/11/2026, criações e transições de status também são publicadas por WebSocket: `WS /orders/{publicId}/events` para o acompanhamento público e `WS /admin/orders/events` para a fila e o detalhe administrativos, com eventos mínimos sem PII e refetch HTTP no cliente (D-040). O hub é em memória e por instância; o proxy precisa repassar o upgrade.
 
 Em 25/11/2026, uma auditoria de conformidade comparou as telas com o protótipo e com `docs/07-design-system-e-experiencia.md`. Os desvios, a severidade e as tarefas de correção estão registrados em `docs/14-auditoria-design-system.md` e no Épico 12 de `docs/08-backlog.md`. O Épico 12 foi concluído em 25/11/2026, com as decisões de design registradas em `docs/13-decisoes-e-pendencias.md` (D-029 a D-031); privacidade, termos e créditos foram publicados em 25/11/2026 (D-033), com o canal do titular nos canais já existentes em `/contato` e os créditos liberados para indexação.
 
@@ -76,6 +76,7 @@ Em 25/11/2026, uma auditoria de conformidade comparou as telas com o protótipo 
 | Pacotes frontend | pnpm | Lockfile commitado |
 | Auth admin | Sessão em cookie `HttpOnly` | Token opaco com hash no MongoDB |
 | Logs | `log/slog` em JSON | Sem PII |
+| Tempo real | WebSocket (`github.com/coder/websocket`) | Hub em memória; eventos mínimos sem PII; canal admin autenticado |
 | Ambiente integrado | Docker Compose | MongoDB, API e web com health checks |
 
 **Não troque** framework, banco, gerenciador de pacotes ou biblioteca de estado sem decisão explícita do time.
@@ -174,12 +175,13 @@ O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o junto com
 | `make dev` | Sobe API e frontend em modo desenvolvimento |
 | `make dev-api` | Só a API |
 | `make dev-web` | Só o frontend |
-| `make test` | Documentação, design system, backend e frontend |
+| `make test` | Documentação, design system, proxies de tempo real, seed, backend e frontend |
 | `make test-api` | `go test -race ./...` |
 | `make test-web` | Vitest |
 | `make test-e2e` | Playwright; exige MongoDB e sobe a API com `brocados_test` |
 | `make test-docs` | `unittest` dos validadores de documentação |
 | `make test-design` | `unittest` do validador de design system |
+| `make test-config` | `unittest` do validador de proxies de tempo real |
 | `make seed` | Aplica `design-system/seed.json` em `brocados_dev` |
 | `make seed-reset` | Esvazia as coleções semeadas e reaplica os dados de desenvolvimento |
 | `make seed-check` | Valida o seed sem acessar o MongoDB |
@@ -190,6 +192,7 @@ O `Makefile` é o contrato de entrada. Se um alvo não existir, crie-o junto com
 | `make fmt-check` | Verifica formatação sem alterar arquivos |
 | `make design-check` | Valida tokens e uso do design system no frontend |
 | `make docs-check` | Valida links relativos da documentação |
+| `make config-check` | Valida se Vite e nginx repassam o upgrade WebSocket |
 | `make build` | Binário Go em `backend/bin/api` e build do frontend |
 | `make up` | Sobe MongoDB, API e web via Compose e espera os health checks |
 | `make up-offline` | Compila o frontend no host e sobe via Compose sem baixar npm no Docker |
@@ -349,6 +352,7 @@ handler → service → repository → MongoDB
 | POST | `/orders/quote` | Cotação server-side sem persistir pedido |
 | POST | `/orders` | Cria pedido validado no servidor |
 | GET | `/orders/{publicId}` | Acompanhamento por identificador opaco |
+| WS | `/orders/{publicId}/events` | Mudanças de status por `publicId`, sem PII |
 
 O pedido enviado pelo cliente contém apenas:
 
@@ -390,6 +394,7 @@ Preço, taxa, total e disponibilidade **nunca** vêm do cliente. A resposta incl
 | GET | `/admin/orders` | Fila com filtro por status e data |
 | GET | `/admin/orders/{id}` | Detalhe, com `customerProfile` quando houver perfil reconhecido |
 | PATCH | `/admin/orders/{id}/status` | Transição de status |
+| WS | `/admin/orders/events` | Criações e mudanças de status; exige sessão |
 | GET/POST/PATCH | `/admin/users` | Usuários admin; somente `owner` |
 | GET | `/admin/audit-logs` | Auditoria de mutações; somente `owner` |
 
@@ -450,7 +455,7 @@ Regras:
 ## 11. Testes e qualidade
 
 - Backend: testes de tabela (table-driven) para service, `httptest` para handlers e testcontainers para repositório. Rode `go test -race ./...`.
-- Scripts Python: `unittest` para os validadores de documentação e design system, executado por `make test-docs`, `make test-design` e pelo hook de commit.
+- Scripts Python: `unittest` para os validadores de documentação, design system e proxies de tempo real, executado por `make test-docs`, `make test-design`, `make test-config` e pelo hook de commit.
 - Testes de integração do repositório: pulam por padrão; use `cd backend && MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v` com um Mongo real e descartável. O job Backend do CI sobe MongoDB 8 e define a variável.
 - Frontend: Vitest + Vue Test Utils para componentes e stores; Playwright para o fluxo crítico.
 - Fluxo E2E mínimo: cardápio → personalizar → carrinho → checkout → pedido persistido → pedido aparece no admin → mudança de status.
@@ -484,7 +489,7 @@ Nenhum commit é criado sem passar por esta sequência:
 
 1. **Documentação:** atualize o documento afetado — `AGENTS.md` para decisão de arquitetura/processo, `README.md` para estrutura ou uso, `docs/` para comportamento e contrato, `design-system/README.md` para padrão visual. Links relativos precisam resolver.
 2. **Testes:** todo arquivo novo de código (endpoint, componente, store, script, migração) nasce com teste automatizado correspondente. Todo comportamento novo ou corrigido exige teste. Correção de bug sem teste de regressão não é aceita, salvo impossibilidade técnica justificada no PR. **Todos os testes, novos e existentes, precisam passar antes do commit.**
-3. **Validação:** rode `make fmt` (ou `make fmt-check`), `make lint`, `make test`, `make docs-check` e `make design-check`. Tudo precisa passar antes do commit.
+3. **Validação:** rode `make fmt` (ou `make fmt-check`), `make lint`, `make test`, `make docs-check`, `make design-check` e `make config-check`. Tudo precisa passar antes do commit.
 4. **Inspeção:** revise `git diff --cached` e confirme que não há segredo, PII, arquivo gerado, cor/fonte fora do design system ou mudança fora do escopo.
 5. **Commit:** use Conventional Commits em português. Não use `--no-verify` para contornar o hook.
 
@@ -504,7 +509,7 @@ Uma entrega só termina quando:
 - [ ] Loja fechada, item esgotado, zona inativa e transição inválida têm tratamento explícito.
 - [ ] Rotas admin exigem sessão válida e autorização por papel.
 - [ ] Nenhum dado pessoal aparece em log, analytics ou mensagem de erro.
-- [ ] `make fmt`, `make lint`, `make test`, `make docs-check` e `make design-check` passam (ou a exceção está justificada).
+- [ ] `make fmt`, `make lint`, `make test`, `make docs-check`, `make design-check` e `make config-check` passam (ou a exceção está justificada).
 - [ ] Contrato de API e documentação foram atualizados, com links válidos.
 - [ ] Auditoria registra mutações administrativas relevantes.
 - [ ] Acessibilidade básica verificada: teclado, foco, rótulos, contraste.

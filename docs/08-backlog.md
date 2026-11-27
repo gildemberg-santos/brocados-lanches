@@ -1,8 +1,8 @@
 # Backlog — Brocados Lanches V1
 
 **Versão:** 1.2  
-**Atualizado em:** 25/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-073 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual.
+**Atualizado em:** 26/11/2026  
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual.
 
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`, `14-auditoria-design-system.md`.
 
@@ -326,7 +326,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-071 | Detalhe do pedido | P0 | M | US-070 | **Concluída** — API e tela com snapshot, cliente, endereço, pagamento e histórico |
 | US-072 | Transições de status | P0 | G | US-071 | **Concluída** — Matriz válida, `409` inválido, motivo de cancelamento, auditoria e ações contextuais no painel |
 | US-073 | Auditoria | P1 | M | US-072 | **Concluída** — Owner consulta mutações sem PII; filtros por ator/entidade/ação/data; tela somente leitura e testes |
-| US-074 | Atualização em tempo real | P2 | M | US-070 | Fila atualiza sem recarregar ou polling curto; opcional |
+| US-074 | Atualização em tempo real | P2 | M | US-070 | **Concluída** — WebSocket autenticado na fila/detalhe e público no acompanhamento; eventos mínimos sem PII, reconexão com backoff e refetch HTTP; D-040 |
 
 **Tarefas técnicas:**
 
@@ -337,6 +337,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Criar ações contextuais por status e as telas admin de fila/detalhe.
 - [x] Testar todas as transições e concorrência.
 - [x] Implementar `GET /admin/audit-logs` e a tela somente leitura (US-073).
+- [x] Publicar mudanças de status em WebSocket e assinar os canais na fila, no detalhe e no acompanhamento (US-074).
 
 ---
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import AdminOrderFilters from '../../components/admin/AdminOrderFilters.vue'
@@ -10,10 +10,13 @@ import LoadingSkeleton from '../../components/LoadingSkeleton.vue'
 import PriceText from '../../components/PriceText.vue'
 import { formatOrderDateTime } from '../../features/admin-orders/format'
 import { FULFILLMENT_LABELS } from '../../features/admin-orders/orderStatus'
+import { subscribeOrderEvents, type OrderEventConnectionStatus } from '../../services/realtime'
 import { useAdminOrdersStore } from '../../stores/adminOrders'
 import type { AdminOrderListQuery } from '../../types/order'
 
 const store = useAdminOrdersStore()
+const connectionStatus = ref<OrderEventConnectionStatus>('connecting')
+let stopEvents: (() => void) | null = null
 
 function applyFilters(filters: Partial<AdminOrderListQuery>): void {
   void store.applyFilters(filters)
@@ -27,6 +30,20 @@ onMounted(() => {
   if (store.state === 'idle') {
     void store.load()
   }
+  stopEvents = subscribeOrderEvents(
+    '/api/v1/admin/orders/events',
+    (event) => {
+      if (event.type === 'order.created' || event.type === 'order.updated') {
+        void store.refreshFromEvent()
+      }
+    },
+    { onStatus: (status) => (connectionStatus.value = status) },
+  )
+})
+
+onUnmounted(() => {
+  stopEvents?.()
+  stopEvents = null
 })
 </script>
 
@@ -37,6 +54,14 @@ onMounted(() => {
     <p class="admin-page__lead">
       A fila mostra dados mascarados. Abra o pedido para ver os dados completos e atualizar o
       status.
+    </p>
+
+    <p class="admin-page__live" role="status">
+      {{
+        connectionStatus === 'connected'
+          ? 'Fila atualizada automaticamente.'
+          : 'Conexão em tempo real indisponível. Tentando reconectar.'
+      }}
     </p>
 
     <AdminOrderFilters :filters="store.filters" @apply="applyFilters" />
@@ -145,6 +170,12 @@ onMounted(() => {
 .admin-page__lead {
   margin: 0 0 8px;
   color: var(--text-sub);
+}
+
+.admin-page__live {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
 }
 
 .order-list {

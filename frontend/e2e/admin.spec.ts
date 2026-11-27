@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto'
 
 import { expect, test } from '@playwright/test'
-import type { APIRequestContext } from '@playwright/test'
+import type { APIRequestContext, Cookie, Page } from '@playwright/test'
+
+import { ensureAdminApi, uniquePhone } from './helpers/api'
 
 const API_URL = 'http://127.0.0.1:8080'
-const EMAIL = 'dono@teste.local'
-const PASSWORD = 'senha-de-teste-12345'
-const CUSTOMER_PHONE = '+5585999990001'
 
 interface MenuPayload {
   data: {
@@ -31,7 +30,10 @@ interface OrderPayload {
   data: { orderNumber: number; publicId: string }
 }
 
-async function createTestOrder(request: APIRequestContext): Promise<OrderPayload['data']> {
+type CreatedTestOrder = OrderPayload['data'] & { phone: string }
+
+async function createTestOrder(request: APIRequestContext): Promise<CreatedTestOrder> {
+  const phone = uniquePhone()
   const menuResponse = await request.get(`${API_URL}/api/v1/menu`)
   expect(menuResponse.ok()).toBeTruthy()
   const menu = (await menuResponse.json()) as MenuPayload
@@ -64,7 +66,7 @@ async function createTestOrder(request: APIRequestContext): Promise<OrderPayload
       ],
       fulfillment: 'delivery',
       zoneId: zones.data[0]?.id,
-      customer: { name: 'Cliente Teste E2E', phone: CUSTOMER_PHONE },
+      customer: { name: 'Cliente Teste E2E', phone },
       address: {
         street: 'Rua de Teste',
         number: '10',
@@ -80,18 +82,27 @@ async function createTestOrder(request: APIRequestContext): Promise<OrderPayload
   })
 
   expect(response.ok()).toBeTruthy()
-  return ((await response.json()) as OrderPayload).data
+  return { ...((await response.json()) as OrderPayload).data, phone }
 }
 
-async function login(page: import('@playwright/test').Page): Promise<void> {
-  await page.goto('/admin/login')
-  await page.getByLabel('E-mail').fill(EMAIL)
-  await page.getByLabel('Senha').fill(PASSWORD)
-  await page.getByRole('button', { name: 'Entrar' }).click()
-  await expect(page).toHaveURL(/\/admin$/)
-}
+// O login é feito uma vez por API e reaproveitado nos testes que só precisam
+// de sessão: isso evita estourar o limite de 5 logins/min por e-mail.
+let adminCookies: Cookie[] = []
 
 test.describe('acesso ao painel administrativo', () => {
+  test.beforeAll(async ({ playwright }) => {
+    const api = await ensureAdminApi(playwright)
+    try {
+      adminCookies = (await api.storageState()).cookies
+    } finally {
+      await api.dispose()
+    }
+  })
+
+  async function useAdminSession(page: Page): Promise<void> {
+    await page.context().addCookies(adminCookies)
+  }
+
   test('rota protegida redireciona visitante para login com o destino', async ({ page }) => {
     await page.goto('/admin/pedidos')
 
@@ -113,19 +124,19 @@ test.describe('acesso ao painel administrativo', () => {
   test('pedido criado aparece na fila e muda de status pelo painel', async ({ page, request }) => {
     const created = await createTestOrder(request)
 
-    await login(page)
+    await useAdminSession(page)
     await page.goto('/admin/pedidos')
     await expect(page.getByRole('heading', { level: 1, name: 'Pedidos' })).toBeVisible()
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
     ).toBeLessThanOrEqual(0)
 
-    await page.getByLabel('Buscar').fill('0001')
+    await page.getByLabel('Buscar').fill(String(created.orderNumber).padStart(4, '0'))
     await page.getByRole('button', { name: 'Filtrar' }).click()
 
     const linha = page.locator('.order-row').filter({ hasText: `#${created.orderNumber}` })
     await expect(linha).toBeVisible()
-    await expect(linha).toContainText('****0001')
+    await expect(linha).toContainText(`****${created.phone.slice(-4)}`)
 
     await linha.getByRole('link', { name: 'Ver detalhes' }).click()
     await expect(
@@ -137,7 +148,30 @@ test.describe('acesso ao painel administrativo', () => {
     ).toBeLessThanOrEqual(0)
 
     await page.getByRole('button', { name: 'Confirmar pedido' }).click()
-    await expect(page.getByRole('status')).toContainText('Status do pedido atualizado')
+    await expect(page.locator('.admin-page__success')).toContainText('Status do pedido atualizado')
     await expect(page.getByText('Confirmado', { exact: true }).first()).toBeVisible()
+  })
+
+  test('mudança de status chega ao acompanhamento sem recarregar a página', async ({
+    page,
+    request,
+  }) => {
+    const created = await createTestOrder(request)
+    await page.goto(`/pedido/${created.publicId}`)
+    await expect(page.getByText('Atualização automática ativa.')).toBeVisible()
+
+    const adminPage = await page.context().newPage()
+    await useAdminSession(adminPage)
+    await adminPage.goto('/admin/pedidos')
+    await adminPage.getByLabel('Buscar').fill(String(created.orderNumber))
+    await adminPage.getByRole('button', { name: 'Filtrar' }).click()
+    const linha = adminPage.locator('.order-row').filter({ hasText: `#${created.orderNumber}` })
+    await linha.getByRole('link', { name: 'Ver detalhes' }).click()
+    await adminPage.getByRole('button', { name: 'Confirmar pedido' }).click()
+    await expect(adminPage.locator('.admin-page__success')).toBeVisible()
+
+    await expect(page.locator('.order-hero h2')).toHaveText('Confirmado', { timeout: 15_000 })
+    expect(new URL(page.url()).pathname).toBe(`/pedido/${created.publicId}`)
+    await adminPage.close()
   })
 })

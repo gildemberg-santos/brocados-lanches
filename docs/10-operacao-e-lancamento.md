@@ -103,6 +103,7 @@ Requisitos:
 - MongoDB sem IP público;
 - API sem porta pública direta, se possível;
 - headers de segurança no proxy;
+- repasse do upgrade WebSocket em `/api` (`Upgrade`, `Connection` e `proxy_read_timeout` longo), validado por `make config-check`;
 - compressão `gzip`/`brotli`;
 - cache longo para assets com hash e curto para HTML;
 - fallback da SPA para `index.html`.

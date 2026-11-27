@@ -150,4 +150,42 @@ describe('adminOrders store', () => {
     expect(store.actionError).toContain('mudou de status')
     expect(store.actionLoading).toBe(false)
   })
+
+  it('recarrega a fila após evento sem alterar o estado de carregamento', async () => {
+    mockedList
+      .mockResolvedValueOnce({
+        data: [listItem],
+        meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+      })
+      .mockResolvedValueOnce({
+        data: [{ ...listItem, status: 'ready', updatedAt: '2026-11-26T20:00:00Z' }],
+        meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+      })
+    const store = useAdminOrdersStore()
+    await store.load()
+
+    await store.refreshFromEvent()
+
+    expect(mockedList).toHaveBeenCalledTimes(2)
+    expect(store.state).toBe('success')
+    expect(store.orders[0]?.status).toBe('ready')
+
+    mockedList.mockRejectedValueOnce(new Error('rede indisponível'))
+    await store.refreshFromEvent()
+    expect(store.orders[0]?.status).toBe('ready')
+  })
+
+  it('atualiza o detalhe aberto após evento de outro operador', async () => {
+    mockedDetail
+      .mockResolvedValueOnce(detail)
+      .mockResolvedValueOnce({ ...detail, status: 'preparing' })
+    const store = useAdminOrdersStore()
+    await store.loadDetail('order-1')
+
+    await store.refreshDetailFromEvent('order-1')
+    expect(store.detail?.status).toBe('preparing')
+
+    await store.refreshDetailFromEvent('outro-pedido')
+    expect(mockedDetail).toHaveBeenCalledTimes(2)
+  })
 })

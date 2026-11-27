@@ -325,6 +325,29 @@ stateDiagram-v2
 
 `ready → out_for_delivery` só para `delivery`; `ready → picked_up` só para `pickup`. Toda transição inválida retorna `409`.
 
+### 6.6 Atualização em tempo real
+
+```mermaid
+sequenceDiagram
+  participant OP as Operador
+  participant W as Web admin
+  participant API as API
+  participant H as Hub em memória
+  participant C as Cliente
+  OP->>W: PATCH /admin/orders/{id}/status
+  W->>API: transição autenticada
+  API->>API: valida, grava status/histórico/auditoria (CAS)
+  API->>H: publica order.updated (admin + público)
+  H-->>W: WS /admin/orders/events
+  H-->>C: WS /orders/{publicId}/events
+  W->>API: refaz GET /admin/orders e /admin/orders/{id}
+  C->>API: refaz GET /orders/{publicId}
+```
+
+O hub (`internal/realtime`) distribui sinais mínimos — identificador opaco, número, status e timestamp — sem PII, valores ou link do WhatsApp. Os handlers `POST /orders` e `PATCH /admin/orders/{id}/status` publicam depois da gravação confirmada; uma falha de publicação não desfaz o pedido. O canal administrativo exige a sessão em cookie; o público é identificado apenas pelo `publicId`.
+
+As assinaturas vivem na memória do processo. Em uma implantação com mais de uma réplica da API, o hub precisa ser substituído por um barramento compartilhado (ou as réplicas precisam de afinidade) para que operadores conectados a instâncias diferentes recebam os mesmos sinais. As telas reconectam com backoff e continuam funcionando com o carregamento inicial via HTTP se o WebSocket estiver indisponível.
+
 ---
 
 ## 7. Cálculo de preço e disponibilidade
@@ -495,7 +518,7 @@ Topologia de produção:
 Internet → TLS → Nginx → SPA + /api → Go API → MongoDB
 ```
 
-- API e web same-origin.
+- API e web same-origin, inclusive para o upgrade WebSocket (`/api/v1/.../events`); o proxy precisa repassar `Upgrade`/`Connection`.
 - MongoDB não exposto publicamente.
 - Build da web sem CDN; fontes self-hosted.
 - Build da API com `vendor/`, sem rede.

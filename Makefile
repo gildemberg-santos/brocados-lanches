@@ -7,8 +7,8 @@ include .env
 export
 endif
 
-.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-e2e \
-	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check build build-api build-web \
+.PHONY: help setup vendor dev dev-api dev-web test test-api test-web test-docs test-design test-config test-e2e \
+	lint lint-api lint-web fmt fmt-api fmt-web fmt-check docs-check design-check config-check build build-api build-web \
 	seed seed-reset seed-check migrate-reference-check migrate-reference up up-offline down logs ps
 
 help:
@@ -19,11 +19,12 @@ help:
 		'  make dev         Sobe API e frontend em modo desenvolvimento' \
 		'  make dev-api     Sobe apenas a API' \
 		'  make dev-web     Sobe apenas o frontend' \
-		'  make test        Roda documentação, design system, seed, backend e frontend' \
+		'  make test        Roda documentação, design, configuração de proxy, seed, backend e frontend' \
 		'  make test-e2e    Semena brocados_test e roda o Playwright (exige MongoDB)' \
 		'  make lint        Roda go vet/golangci-lint, ESLint e vue-tsc' \
 		'  make fmt         Formata Go e frontend' \
 		'  make fmt-check   Verifica formatação sem alterar arquivos' \
+		'  make config-check  Valida os proxies de desenvolvimento e produção do WebSocket' \
 		'  make seed        Aplica os dados fictícios no banco de desenvolvimento' \
 		'  make seed-reset  Esvazia as coleções semeadas e reaplica os dados fictícios' \
 		'  make seed-check  Valida o seed.json sem acessar o MongoDB' \
@@ -51,7 +52,7 @@ dev-api:
 dev-web:
 	cd frontend && pnpm dev
 
-test: test-docs test-design seed-check test-api test-web
+test: test-docs test-design test-config seed-check test-api test-web
 
 test-api:
 	cd backend && go test -race ./...
@@ -68,6 +69,9 @@ test-docs:
 
 test-design:
 	python3 -m unittest discover -s scripts -p 'test_check_design_system.py'
+
+test-config:
+	python3 -m unittest discover -s scripts -p 'test_check_realtime_proxy.py'
 
 seed:
 	cd backend && go run ./scripts/seed
@@ -122,6 +126,9 @@ docs-check:
 
 design-check:
 	python3 scripts/check_design_system.py
+
+config-check:
+	python3 scripts/check_realtime_proxy.py
 
 build: build-api build-web
 

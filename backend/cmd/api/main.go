@@ -16,6 +16,7 @@ import (
 	"github.com/brocados-lanches/api/internal/config"
 	"github.com/brocados-lanches/api/internal/httpapi"
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
+	"github.com/brocados-lanches/api/internal/realtime"
 	"github.com/brocados-lanches/api/internal/repository"
 	"github.com/brocados-lanches/api/internal/service"
 )
@@ -160,6 +161,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// O hub é em memória e serve apenas esta instância da API.
+	eventsHub := realtime.NewHub()
+	defer eventsHub.Close()
 
 	server := &http.Server{
 		Addr: cfg.Addr(),
@@ -174,6 +178,7 @@ func run() error {
 			AdminStore:       adminStoreService,
 			AdminOrders:      adminOrderService,
 			AdminUsers:       adminUsersService,
+			Events:           eventsHub,
 			AdminCookie: httpapi.AdminCookieConfig{
 				Name:   cfg.AdminCookieNameEffective(),
 				Secure: cfg.AdminCookieSecure,

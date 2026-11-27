@@ -8,6 +8,8 @@ const apiProxy = {
   target: 'http://127.0.0.1:8080',
   changeOrigin: true,
   headers: { Origin: 'http://127.0.0.1:8080' },
+  // Os canais de pedido usam WebSocket; sem isso o Vite não repassa o upgrade.
+  ws: true,
 }
 
 export default defineConfig({

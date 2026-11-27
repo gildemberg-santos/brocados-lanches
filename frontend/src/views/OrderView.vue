@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import BaseButton from '../components/BaseButton.vue'
@@ -11,6 +11,11 @@ import { formatOrderDateTime } from '../features/admin-orders/format'
 import { checkoutApiMessage, orderStatusLabel } from '../features/checkout/checkout'
 import { readHandoffUrl } from '../features/checkout/handoff'
 import { fetchTrackedOrder } from '../services/orders'
+import {
+  subscribeOrderEvents,
+  type OrderEvent,
+  type OrderEventConnectionStatus,
+} from '../services/realtime'
 import { useStoreStatusStore } from '../stores/storeStatus'
 import type { TrackedOrder } from '../types/order'
 
@@ -22,6 +27,10 @@ const loading = ref(true)
 const error = ref('')
 const handoffUrl = ref('')
 const linkCopied = ref(false)
+const connectionStatus = ref<OrderEventConnectionStatus>('connecting')
+let stopEvents: (() => void) | null = null
+
+const FINAL_STATUSES = new Set(['delivered', 'picked_up', 'cancelled'])
 
 const statusLabel = computed(() => (order.value ? orderStatusLabel(order.value.status) : ''))
 const isFinalStatus = computed(() =>
@@ -78,6 +87,34 @@ async function load(): Promise<void> {
   }
 }
 
+async function refreshFromEvent(event: OrderEvent): Promise<void> {
+  if (loading.value || (event.type !== 'order.created' && event.type !== 'order.updated')) return
+  if (event.publicId && event.publicId !== publicId.value) return
+  try {
+    const next = await fetchTrackedOrder(publicId.value)
+    if (next.status !== order.value?.status || next.updatedAt !== order.value?.updatedAt) {
+      order.value = next
+    }
+    if (FINAL_STATUSES.has(next.status)) {
+      stopEvents?.()
+      stopEvents = null
+    }
+  } catch {
+    // Mantém o último estado conhecido; uma nova conexão tentará novamente.
+  }
+}
+
+function connectEvents(): void {
+  stopEvents?.()
+  stopEvents = subscribeOrderEvents(
+    `/api/v1/orders/${encodeURIComponent(publicId.value)}/events`,
+    (event) => {
+      void refreshFromEvent(event)
+    },
+    { onStatus: (status) => (connectionStatus.value = status) },
+  )
+}
+
 onMounted(() => {
   const state = window.history.state
   if (typeof state?.whatsappUrl === 'string') {
@@ -85,6 +122,12 @@ onMounted(() => {
   }
   void load()
   void store.load()
+  connectEvents()
+})
+
+onUnmounted(() => {
+  stopEvents?.()
+  stopEvents = null
 })
 </script>
 
@@ -97,6 +140,14 @@ onMounted(() => {
     <ErrorState v-else-if="error" :message="error" @retry="load" />
 
     <template v-else-if="order">
+      <p v-if="!isFinalStatus" class="order-live" role="status">
+        {{
+          connectionStatus === 'connected'
+            ? 'Atualização automática ativa.'
+            : 'Conexão em tempo real indisponível. Tentando reconectar.'
+        }}
+      </p>
+
       <section class="order-hero" aria-labelledby="order-number">
         <p class="order-kicker">Pedido #{{ order.orderNumber }}</p>
         <h2 id="order-number">{{ statusLabel }}</h2>
@@ -208,6 +259,12 @@ onMounted(() => {
   font-size: var(--font-size-display);
   font-weight: 400;
   line-height: var(--line-height-display);
+}
+
+.order-live {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
 }
 
 .order-hero,

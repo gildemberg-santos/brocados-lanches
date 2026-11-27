@@ -61,6 +61,8 @@ describe('PrivacyView', () => {
     expect(text).toContain('hash Argon2id')
     expect(text).toContain('link wa.me')
     expect(text).toContain('Não usamos analytics')
+    expect(text).toContain('atualizações automáticas')
+    expect(text).toContain('nenhum dado pessoal trafega por ele')
     expect(text).toContain('24 meses')
     expect(text).toContain('7 dias')
     expect(text).toContain('12 meses')

@@ -63,6 +63,18 @@ export const useAdminOrdersStore = defineStore('adminOrders', () => {
     }
   }
 
+  /** Recarrega a fila após um evento sem exibir skeleton nem perder a lista atual. */
+  async function refreshFromEvent(): Promise<void> {
+    if (state.value !== 'success') return
+    try {
+      const page = await fetchAdminOrders({ ...filters.value })
+      orders.value = page.data
+      meta.value = page.meta
+    } catch {
+      // Mantém a última lista conhecida; a reconexão vai tentar novamente.
+    }
+  }
+
   function normalizeFilters(next: Partial<AdminOrderListQuery>): AdminOrderListQuery {
     const result: AdminOrderListQuery = {
       ...DEFAULT_FILTERS,
@@ -105,6 +117,26 @@ export const useAdminOrdersStore = defineStore('adminOrders', () => {
       detail.value = null
       detailError.value = adminOrderErrorMessage(cause, 'load')
       detailState.value = 'error'
+    }
+  }
+
+  /** Atualiza o detalhe aberto quando outro operador muda o status do pedido. */
+  async function refreshDetailFromEvent(id: string): Promise<void> {
+    if (
+      actionLoading.value ||
+      detailState.value !== 'success' ||
+      detail.value?.id !== id ||
+      !detail.value
+    ) {
+      return
+    }
+    try {
+      const next = await fetchAdminOrder(id)
+      if (next.status !== detail.value.status || next.updatedAt !== detail.value.updatedAt) {
+        detail.value = next
+      }
+    } catch {
+      // Mantém o detalhe atual em caso de falha transitória.
     }
   }
 
@@ -155,9 +187,11 @@ export const useAdminOrdersStore = defineStore('adminOrders', () => {
     actionError,
     actionSuccess,
     load,
+    refreshFromEvent,
     applyFilters,
     goToPage,
     loadDetail,
+    refreshDetailFromEvent,
     resetDetail,
     changeStatus,
   }

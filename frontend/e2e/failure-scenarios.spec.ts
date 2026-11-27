@@ -6,14 +6,13 @@ import type { APIRequestContext, APIResponse } from '@playwright/test'
 import {
   adminOrderDetail,
   adminOrderIdByNumber,
-  API_URL,
   buildOrderRequest,
   createOrder,
   ensureAdminApi,
   expectApiError,
   fetchCatalog,
-  loginTestOperator,
   quoteOrder,
+  SESSION_OPERATOR,
   type CatalogFixture,
   type MenuPayload,
   type QuotePayload,
@@ -246,9 +245,8 @@ test.describe.serial('cenários críticos de falha', () => {
   })
 
   test('sessão encerrada deixa de autorizar rotas do painel', async ({ playwright }) => {
-    const context = await playwright.request.newContext({ baseURL: API_URL })
+    const context = await ensureAdminApi(playwright, SESSION_OPERATOR)
     try {
-      await loginTestOperator(context)
       expect((await context.get('/api/v1/admin/auth/me')).ok()).toBeTruthy()
 
       const logout = await context.post('/api/v1/admin/auth/logout')

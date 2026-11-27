@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchAdminOrder, updateAdminOrderStatus } from '../../services/adminOrders'
+import { subscribeOrderEvents, type OrderEvent } from '../../services/realtime'
 import AdminOrderDetailView from './AdminOrderDetailView.vue'
 
 vi.mock('../../services/adminOrders', () => ({
@@ -12,8 +13,10 @@ vi.mock('../../services/adminOrders', () => ({
   fetchAdminOrders: vi.fn(),
   updateAdminOrderStatus: vi.fn(),
 }))
+vi.mock('../../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi.fn()) }))
 
 const mockedDetail = vi.mocked(fetchAdminOrder)
+const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const mockedUpdate = vi.mocked(updateAdminOrderStatus)
 const StubView = defineComponent({ render: () => h('div') })
 
@@ -58,9 +61,16 @@ const detail = {
   updatedAt: '2026-11-22T02:30:00Z',
 }
 
+function emitOrderEvent(event: OrderEvent): void {
+  const handler = mockedSubscribeOrderEvents.mock.calls.at(-1)?.[1]
+  if (!handler) throw new Error('canal de eventos não foi assinado')
+  handler(event)
+}
+
 describe('AdminOrderDetailView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockedSubscribeOrderEvents.mockReturnValue(vi.fn())
     setActivePinia(createPinia())
   })
 
@@ -94,6 +104,27 @@ describe('AdminOrderDetailView', () => {
     expect(wrapper.text()).toContain('Cheddar')
     expect(wrapper.text()).toContain('62,00')
     expect(wrapper.text()).toContain('Pendente')
+  })
+
+  it('recarrega o detalhe apenas quando o evento é deste pedido', async () => {
+    mockedDetail
+      .mockResolvedValueOnce(detail)
+      .mockResolvedValueOnce({ ...detail, status: 'preparing' })
+    const wrapper = await mountView()
+
+    expect(mockedSubscribeOrderEvents).toHaveBeenCalledWith(
+      '/api/v1/admin/orders/events',
+      expect.any(Function),
+      expect.any(Object),
+    )
+    emitOrderEvent({ type: 'order.updated', orderId: 'outro-pedido', status: 'ready' })
+    await flushPromises()
+    expect(mockedDetail).toHaveBeenCalledTimes(1)
+
+    emitOrderEvent({ type: 'order.updated', orderId: 'order-1', status: 'preparing' })
+    await flushPromises()
+    expect(mockedDetail).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('Em preparo')
   })
 
   it('mostra o resumo do perfil de conveniência quando o cliente é recorrente', async () => {
@@ -149,7 +180,7 @@ describe('AdminOrderDetailView', () => {
     await flushPromises()
 
     expect(mockedUpdate).toHaveBeenCalledWith('order-1', { status: 'confirmed' })
-    expect(wrapper.get('[role="status"]').text()).toContain('Status do pedido atualizado')
+    expect(wrapper.get('.admin-page__success').text()).toContain('Status do pedido atualizado')
     expect(wrapper.text()).toContain('Confirmado')
   })
 

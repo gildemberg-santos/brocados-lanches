@@ -5,13 +5,16 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { fetchAdminOrders } from '../../services/adminOrders'
+import { subscribeOrderEvents, type OrderEvent } from '../../services/realtime'
 import AdminOrdersView from './AdminOrdersView.vue'
 
 vi.mock('../../services/adminOrders', () => ({
   fetchAdminOrders: vi.fn(),
 }))
+vi.mock('../../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi.fn()) }))
 
 const mockedList = vi.mocked(fetchAdminOrders)
+const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const StubView = defineComponent({ render: () => h('div') })
 
 const listItem = {
@@ -30,9 +33,16 @@ const listItem = {
   updatedAt: '2026-11-22T02:30:00Z',
 }
 
+function emitOrderEvent(event: OrderEvent): void {
+  const handler = mockedSubscribeOrderEvents.mock.calls.at(-1)?.[1]
+  if (!handler) throw new Error('canal de eventos não foi assinado')
+  handler(event)
+}
+
 describe('AdminOrdersView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockedSubscribeOrderEvents.mockReturnValue(vi.fn())
     setActivePinia(createPinia())
   })
 
@@ -71,6 +81,27 @@ describe('AdminOrdersView', () => {
         .findAll('a[href="/admin/pedidos/order-1"]')
         .some((link) => link.text() === 'Ver detalhes'),
     ).toBe(true)
+  })
+
+  it('assina o canal autenticado e recarrega a fila quando um pedido muda', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    await mountView()
+
+    expect(mockedSubscribeOrderEvents).toHaveBeenCalledWith(
+      '/api/v1/admin/orders/events',
+      expect.any(Function),
+      expect.any(Object),
+    )
+    emitOrderEvent({ type: 'connected' })
+    await flushPromises()
+    expect(mockedList).toHaveBeenCalledTimes(1)
+
+    emitOrderEvent({ type: 'order.updated', orderId: 'order-1', status: 'ready' })
+    await flushPromises()
+    expect(mockedList).toHaveBeenCalledTimes(2)
   })
 
   it('exibe estado vazio quando não há pedidos', async () => {

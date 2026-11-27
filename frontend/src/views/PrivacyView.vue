@@ -139,6 +139,11 @@ onMounted(() => {
         Não vendemos dados pessoais. Não usamos gateway de pagamento, geocodificação, notificações
         push, inteligência artificial nem serviços de analytics.
       </p>
+      <p>
+        Enquanto a página de acompanhamento está aberta, o navegador recebe atualizações automáticas
+        de status por WebSocket. O canal traz apenas número do pedido, status e data: nenhum dado
+        pessoal trafega por ele, e não há aviso quando a página está fechada.
+      </p>
     </section>
 
     <section aria-labelledby="privacy-retention-title">

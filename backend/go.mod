@@ -3,6 +3,7 @@ module github.com/brocados-lanches/api
 go 1.27.1
 
 require (
+	github.com/coder/websocket v1.8.15
 	github.com/go-chi/chi/v5 v5.5.0
 	go.mongodb.org/mongo-driver/v2 v2.10.0
 	golang.org/x/crypto v0.54.0

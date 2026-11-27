@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import type { APIRequestContext, Page } from '@playwright/test'
 
+import { CHECKOUT_OPERATOR, ensureAdminApi } from './helpers/api'
+
 const API_URL = 'http://127.0.0.1:8080'
 
 interface TrackedOrder {
@@ -45,6 +47,11 @@ async function assertOrderPersisted(
 }
 
 test.describe('fluxo completo de pedido pela interface', () => {
+  test.beforeAll(async ({ playwright }) => {
+    const api = await ensureAdminApi(playwright, CHECKOUT_OPERATOR)
+    await api.dispose()
+  })
+
   test('cardápio → personalização → carrinho → checkout → pedido persistido no painel', async ({
     page,
     request,
@@ -104,7 +111,7 @@ test.describe('fluxo completo de pedido pela interface', () => {
     await page.getByRole('button', { name: 'Enviar pedido' }).click()
 
     await expect(page.getByRole('heading', { level: 1, name: 'Pedido registrado' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Abrir WhatsApp' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Abrir WhatsApp', exact: true })).toHaveAttribute(
       'href',
       /^https:\/\/wa\.me\/\d+\?text=/,
     )
@@ -114,7 +121,7 @@ test.describe('fluxo completo de pedido pela interface', () => {
 
     // O handoff fica na sessão: se a aba recarregar, o link continua disponível.
     await page.reload()
-    await expect(page.getByRole('link', { name: 'Abrir WhatsApp' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Abrir WhatsApp', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Copiar link' })).toBeVisible()
 
     const orderNumber = await assertOrderPersisted(
@@ -124,8 +131,8 @@ test.describe('fluxo completo de pedido pela interface', () => {
     )
 
     await page.goto('/admin/login')
-    await page.getByLabel('E-mail').fill('dono@teste.local')
-    await page.getByLabel('Senha').fill('senha-de-teste-12345')
+    await page.getByLabel('E-mail').fill(CHECKOUT_OPERATOR.email)
+    await page.getByLabel('Senha').fill(CHECKOUT_OPERATOR.password)
     await page.getByRole('button', { name: 'Entrar' }).click()
     await expect(page).toHaveURL(/\/admin$/)
 

@@ -1,6 +1,6 @@
 # Contrato de API — Brocados Lanches
 
-**Versão:** 1.2  
+**Versão:** 1.3  
 **Base:** `/api/v1`  
 **Atualizado em:** 26/11/2026  
 **Relacionados:** `04-arquitetura.md`, `05-modelo-de-dados.md`, `09-qualidade-e-testes.md`.
@@ -46,6 +46,7 @@ Fora de `/api/v1`:
 | POST | `/orders/quote` | Cotação server-side sem persistir |
 | POST | `/orders` | Cria pedido persistido |
 | GET | `/orders/{publicId}` | Acompanhamento público mínimo |
+| WS | `/orders/{publicId}/events` | Sinais de mudança de status do pedido |
 
 ---
 
@@ -442,6 +443,29 @@ Após recarregar a confirmação, o cliente vê número, status, itens e total p
 
 `404 NOT_FOUND` para ID inválido ou inexistente. Rate limit ativo: 60/min por IP; detalhes em `§15 Rate limits`.
 
+### 8.1. `WS /orders/{publicId}/events`
+
+Canal WebSocket público de acompanhamento. O `publicId` vai no caminho; nenhum dado pessoal é enviado na conexão. O servidor envia primeiro `connected` e, depois, um sinal por mudança persistida:
+
+```json
+{ "type": "connected" }
+```
+
+```json
+{
+  "type": "order.updated",
+  "publicId": "3Jk9Qm2pX7vR5sT1aB8cD4",
+  "orderNumber": 1042,
+  "status": "ready",
+  "updatedAt": "2026-11-18T20:45:00Z"
+}
+```
+
+- Tipos: `connected`, `order.created` e `order.updated`; o sinal de criação usa o mesmo formato.
+- O evento público **nunca** contém `orderId`, cliente, endereço, observação, troco, valores, taxa, total ou `whatsappUrl`. Para renderizar os dados completos, o cliente refaz `GET /orders/{publicId}`.
+- Handshake com `Origin` diferente do host é rejeitado. O limite de 60/min por IP do acompanhamento também vale para o upgrade.
+- O cliente deve reconectar com backoff exponencial após queda; o servidor mantém a assinatura apenas enquanto a conexão estiver aberta e não guarda eventos para clientes ausentes.
+
 ---
 
 ## 9. Admin — autenticação
@@ -584,6 +608,7 @@ Exemplo de resposta/corpo parcial:
 | GET | `/admin/orders` | operator/owner | Fila paginada |
 | GET | `/admin/orders/{id}` | operator/owner | Detalhe completo |
 | PATCH | `/admin/orders/{id}/status` | operator/owner | Transição de status |
+| WS | `/admin/orders/events` | operator/owner | Sinais de criação e mudança de status da fila |
 
 Listagem:
 
@@ -621,6 +646,25 @@ Cancelamento:
 - `reason` é obrigatório em `cancelled`, com no máximo 280 caracteres; o texto é operacional e não deve conter dados do cliente.
 - Cada transição atualiza `status`, `updatedAt`, `statusHistory` e, quando aplicável, `confirmedAt`/`cancelledAt` + `cancelReason`. A gravação usa compare-and-set no status lido: uma transição concorrente retorna `409` em vez de sobrescrever a primeira.
 - Auditoria registra somente `status`, `fulfillment` e `totalCents` antes/depois, com `actorId`, `action: update`, `entity: orders` e `entityId` (ID hexadecimal do pedido).
+
+### 12.1. `WS /admin/orders/events`
+
+Canal WebSocket autenticado pela mesma sessão em cookie `HttpOnly` das demais rotas administrativas. Não aceita token em query string. O servidor envia `connected` na conexão e publica `order.created` / `order.updated` para toda criação ou transição persistida:
+
+```json
+{
+  "type": "order.updated",
+  "orderId": "665f1c2a9b1e4a0012a3b4f1",
+  "publicId": "3Jk9Qm2pX7vR5sT1aB8cD4",
+  "orderNumber": 1042,
+  "status": "ready",
+  "updatedAt": "2026-11-18T20:45:00Z"
+}
+```
+
+- Mesmo com sessão válida, o evento contém apenas identificadores, número, status e data — sem PII e sem valores. A fila e o detalhe continuam sendo lidos por `GET /admin/orders` e `GET /admin/orders/{id}`.
+- O upgrade entra no limite de 120/min por sessão e na proteção CSRF por `Origin`/`Referer` do grupo administrativo.
+- A publicação é em memória e por instância: com mais de uma réplica da API, é necessário um barramento compartilhado antes de considerar a fila globalmente consistente (ver `04-arquitetura.md`).
 
 ---
 
@@ -701,6 +745,7 @@ Regras:
 | `POST /customers/profile` | 3/min | telefone |
 | `POST /orders/quote` | 30/min | IP |
 | `GET /orders/{publicId}` | 60/min | IP |
+| `WS /orders/{publicId}/events` | 60/min | IP (handshake) |
 | `GET /menu` | 120/min | IP |
 | Admin autenticado | 120/min | sessão |
 

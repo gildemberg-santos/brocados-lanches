@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import OrderStatusActions from '../../components/admin/OrderStatusActions.vue'
@@ -13,6 +13,7 @@ import {
   ORDER_STATUS_LABELS,
   isOrderStatus,
 } from '../../features/admin-orders/orderStatus'
+import { subscribeOrderEvents, type OrderEventConnectionStatus } from '../../services/realtime'
 import { useAdminOrdersStore } from '../../stores/adminOrders'
 import type { AdminOrderStatusRequest, PaymentMethod } from '../../types/order'
 
@@ -26,6 +27,8 @@ const route = useRoute()
 const store = useAdminOrdersStore()
 const orderId = computed(() => String(route.params.id ?? ''))
 const order = computed(() => store.detail)
+const connectionStatus = ref<OrderEventConnectionStatus>('connecting')
+let stopEvents: (() => void) | null = null
 
 function statusLabelFor(status: string): string {
   return isOrderStatus(status) ? ORDER_STATUS_LABELS[status] : status
@@ -45,6 +48,23 @@ onMounted(() => {
   if (!order.value || order.value.id !== orderId.value) {
     void store.loadDetail(orderId.value)
   }
+  stopEvents = subscribeOrderEvents(
+    '/api/v1/admin/orders/events',
+    (event) => {
+      if (
+        (event.type === 'order.created' || event.type === 'order.updated') &&
+        event.orderId === orderId.value
+      ) {
+        void store.refreshDetailFromEvent(orderId.value)
+      }
+    },
+    { onStatus: (status) => (connectionStatus.value = status) },
+  )
+})
+
+onUnmounted(() => {
+  stopEvents?.()
+  stopEvents = null
 })
 
 watch(orderId, (next) => {
@@ -74,6 +94,13 @@ watch(orderId, (next) => {
       <p class="admin-page__lead">
         {{ FULFILLMENT_LABELS[order.fulfillment] }} · aberto em
         {{ formatOrderDateTime(order.createdAt) }} · status: {{ statusLabel }}
+      </p>
+      <p class="admin-page__live" role="status">
+        {{
+          connectionStatus === 'connected'
+            ? 'Status atualizado automaticamente.'
+            : 'Conexão em tempo real indisponível. Tentando reconectar.'
+        }}
       </p>
 
       <p v-if="store.actionSuccess" class="admin-page__success" role="status">
@@ -268,6 +295,12 @@ watch(orderId, (next) => {
 .admin-page__lead {
   margin: 0;
   color: var(--text-sub);
+}
+
+.admin-page__live {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
 }
 
 .admin-page__success,

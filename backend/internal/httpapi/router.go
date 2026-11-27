@@ -9,6 +9,7 @@ import (
 
 	"github.com/brocados-lanches/api/internal/domain"
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
+	"github.com/brocados-lanches/api/internal/realtime"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -31,6 +32,7 @@ type Dependencies struct {
 	AdminStore       AdminStoreService
 	AdminOrders      AdminOrderService
 	AdminUsers       AdminUsersService
+	Events           *realtime.Hub
 	LoginLimiter     *ratelimit.Limiter
 	Limiters         Limiters
 	Logger           *slog.Logger
@@ -85,8 +87,9 @@ func NewRouter(deps Dependencies) http.Handler {
 			limitByIP(limiters.CustomerLookups, handleCustomerProfileLookup(deps.CustomerProfiles, limiters.CustomerPhones, logger)),
 		)
 		router.Post("/orders/quote", limitByIP(limiters.Quotes, handleQuote(deps.Orders, logger)))
-		router.Post("/orders", limitByIP(limiters.Orders, handleCreateOrder(deps.Orders, limiters.OrderPhones, logger)))
+		router.Post("/orders", limitByIP(limiters.Orders, handleCreateOrder(deps.Orders, limiters.OrderPhones, deps.Events, logger)))
 		router.Get("/orders/{publicId}", limitByIP(limiters.Tracking, handleTrackOrder(deps.Orders, logger)))
+		router.Get("/orders/{publicId}/events", limitByIP(limiters.Tracking, handlePublicOrderEvents(deps.Events, logger)))
 	})
 
 	if deps.AdminAuth != nil {
@@ -133,8 +136,9 @@ func NewRouter(deps Dependencies) http.Handler {
 				protected.Patch("/store", handleAdminUpdateStore(deps.AdminStore, logger))
 
 				protected.Get("/orders", handleAdminListOrders(deps.AdminOrders, logger))
+				protected.Get("/orders/events", handleAdminOrderEvents(deps.Events, logger))
 				protected.Get("/orders/{id}", handleAdminGetOrder(deps.AdminOrders, logger))
-				protected.Patch("/orders/{id}/status", handleAdminUpdateOrderStatus(deps.AdminOrders, logger))
+				protected.Patch("/orders/{id}/status", handleAdminUpdateOrderStatus(deps.AdminOrders, deps.Events, logger))
 			})
 
 			admin.Group(func(protected chi.Router) {

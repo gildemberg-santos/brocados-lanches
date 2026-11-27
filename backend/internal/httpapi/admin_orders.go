@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
+	"github.com/brocados-lanches/api/internal/realtime"
 	"github.com/brocados-lanches/api/internal/service"
 	"github.com/go-chi/chi/v5"
 )
@@ -186,7 +187,7 @@ func handleAdminGetOrder(orders AdminOrderService, logger *slog.Logger) http.Han
 	}
 }
 
-func handleAdminUpdateOrderStatus(orders AdminOrderService, logger *slog.Logger) http.HandlerFunc {
+func handleAdminUpdateOrderStatus(orders AdminOrderService, hub *realtime.Hub, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if orders == nil {
 			writeUnconfigured(w, r, logger, "admin order service")
@@ -208,6 +209,7 @@ func handleAdminUpdateOrderStatus(orders AdminOrderService, logger *slog.Logger)
 			writeError(w, r, logger, err)
 			return
 		}
+		publishOrderEvent(hub, realtime.EventOrderUpdated, order)
 		writeJSON(w, http.StatusOK, adminItemEnvelope[adminOrderDetailResponse]{
 			Data: newAdminOrderDetailResponse(order),
 		})

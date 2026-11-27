@@ -6,15 +6,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../services/http'
 import { fetchTrackedOrder } from '../services/orders'
+import {
+  subscribeOrderEvents,
+  type OrderEvent,
+  type OrderEventConnectionStatus,
+} from '../services/realtime'
 import { fetchStoreStatus } from '../services/store'
 import type { PublicStoreStatus } from '../types/store'
 import type { TrackedOrder } from '../types/order'
 import OrderView from './OrderView.vue'
 
 vi.mock('../services/orders', () => ({ fetchTrackedOrder: vi.fn() }))
+vi.mock('../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi.fn()) }))
 vi.mock('../services/store', () => ({ fetchStoreStatus: vi.fn() }))
 
 const mockedFetchTrackedOrder = vi.mocked(fetchTrackedOrder)
+const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const StubView = defineComponent({ name: 'StubView', render: () => h('div') })
 const tracked: TrackedOrder = {
   orderNumber: 1042,
@@ -71,10 +78,25 @@ async function mountOrder(
   return wrapper
 }
 
+function lastSubscription() {
+  const call = mockedSubscribeOrderEvents.mock.calls.at(-1)
+  if (!call) throw new Error('canal de eventos não foi assinado')
+  return call
+}
+
+function emitOrderEvent(event: OrderEvent): void {
+  lastSubscription()[1](event)
+}
+
+function setConnectionStatus(status: OrderEventConnectionStatus): void {
+  lastSubscription()[2]?.onStatus?.(status)
+}
+
 describe('OrderView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    mockedSubscribeOrderEvents.mockReturnValue(vi.fn())
     vi.mocked(fetchStoreStatus).mockResolvedValue(storeStatus)
   })
 
@@ -92,6 +114,47 @@ describe('OrderView', () => {
     expect(wrapper.text()).toContain('Andamento do pedido')
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Confirmado')
     expect(wrapper.get('.handoff-link').text()).toContain('Abrir WhatsApp')
+  })
+
+  it('assina o canal público e recarrega o pedido quando o status muda', async () => {
+    const wrapper = await mountOrder()
+
+    expect(mockedSubscribeOrderEvents).toHaveBeenCalledWith(
+      '/api/v1/orders/public-123/events',
+      expect.any(Function),
+      expect.any(Object),
+    )
+    setConnectionStatus('connected')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Atualização automática ativa.')
+
+    mockedFetchTrackedOrder.mockResolvedValue({ ...tracked, status: 'ready' })
+    emitOrderEvent({
+      type: 'order.updated',
+      publicId: 'public-123',
+      status: 'ready',
+      updatedAt: '2026-11-22T03:30:00Z',
+    })
+    await flushPromises()
+
+    expect(mockedFetchTrackedOrder).toHaveBeenCalledTimes(2)
+    expect(wrapper.get('h2').text()).toContain('Pronto')
+  })
+
+  it('ignora eventos de outro pedido e estados finais encerram a assinatura', async () => {
+    const dispose = vi.fn()
+    mockedSubscribeOrderEvents.mockReturnValue(dispose)
+    await mountOrder({}, { ...tracked, status: 'delivered' })
+
+    emitOrderEvent({ type: 'order.updated', publicId: 'outro-pedido', status: 'ready' })
+    await flushPromises()
+    expect(mockedFetchTrackedOrder).toHaveBeenCalledTimes(1)
+    expect(dispose).not.toHaveBeenCalled()
+
+    mockedFetchTrackedOrder.mockResolvedValue({ ...tracked, status: 'delivered' })
+    emitOrderEvent({ type: 'order.updated', publicId: 'public-123', status: 'delivered' })
+    await flushPromises()
+    expect(dispose).toHaveBeenCalledTimes(1)
   })
 
   it('copia o link de handoff', async () => {

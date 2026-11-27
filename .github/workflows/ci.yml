@@ -33,11 +33,17 @@ jobs:
       - name: Validar tokens e uso do design system
         run: make design-check
 
+      - name: Validar proxies de tempo real
+        run: make config-check
+
       - name: Testar validadores de documentação
         run: make test-docs
 
       - name: Testar validador do design system
         run: make test-design
+
+      - name: Testar validador de proxies de tempo real
+        run: make test-config
 
   backend:
     name: Backend

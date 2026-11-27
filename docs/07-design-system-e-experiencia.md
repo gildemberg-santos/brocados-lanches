@@ -298,6 +298,7 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 - Timeline: pending → confirmed → preparing → ready → out_for_delivery/picked_up → delivered/picked_up (histórico completo depende da fila administrativa).
 - Itens e total nesta entrega.
 - Contato da loja e atualização manual previstos para a US-051.
+- Enquanto a página está aberta, o status é atualizado automaticamente por WebSocket e o texto discreto abaixo do título informa se a conexão está ativa ou em reconexão (D-040); estados finais encerram a assinatura.
 - Estado inválido/não encontrado sem revelar dados.
 
 ### 5.8 Contato e privacidade
@@ -384,8 +385,9 @@ Implementado em `frontend/src/views/admin/AdminStoreView.vue` (US-065/US-025). O
 - Detalhe com snapshot, endereço, pagamento e histórico; quando há perfil reconhecido pelo telefone, seção “Cliente recorrente” com contagem de pedidos, último endereço/zona, preferências e prazo de retenção, ou aviso de perfil desativado.
 - Ações de transição válidas.
 - Cancelamento com motivo.
+- Aviso discreto de conexão em tempo real; criações e transições feitas por outro operador recarregam a fila e o detalhe sem recarga da página (D-040).
 
-Implementado em `frontend/src/views/admin/AdminOrdersView.vue` e `frontend/src/views/admin/AdminOrderDetailView.vue` (US-070 a US-072). As datas dos filtros usam UTC; a exibição usa `America/Fortaleza`.
+Implementado em `frontend/src/views/admin/AdminOrdersView.vue` e `frontend/src/views/admin/AdminOrderDetailView.vue` (US-070 a US-072, US-074). As datas dos filtros usam UTC; a exibição usa `America/Fortaleza`.
 
 ### 6.9 Usuários — `/admin/usuarios` (owner)
 
