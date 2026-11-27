@@ -151,6 +151,7 @@ commit → fmt/lint/test/docs/design/build → imagem → preview → aprovaçã
 
 - Blueprint: `render.yaml` com serviço web `brocados-lanches`, `dockerfilePath: ./Dockerfile`, `healthCheckPath: /healthz`.
 - Runtime: nginx serve SPA e faz proxy `/api` para Go local (`API_PORT=3000`); Render injeta `PORT`.
+- O template `deploy/nginx.conf.template` repassa `Upgrade`/`Connection` e mantém `proxy_read_timeout` longo nos canais WebSocket, como o nginx do Compose. Os dois arquivos e o proxy do Vite são validados por `make config-check`.
 - Segredos: `MONGODB_URI`, `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL`, `ADMIN_BOOTSTRAP_PASSWORD`.
 - Banco: MongoDB Atlas acessível pelo Render; definir `MONGO_DB=brocados`.
 - Após bootstrap do primeiro `owner`, remover `ADMIN_BOOTSTRAP_*`.

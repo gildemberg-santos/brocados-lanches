@@ -5,6 +5,12 @@ map $http_x_forwarded_proto $brocados_forwarded_proto {
     ""      $scheme;
 }
 
+# Necessário para o upgrade WebSocket dos canais de pedido.
+map $http_upgrade $brocados_connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
 server {
     listen ${PORT};
     server_name _;
@@ -27,6 +33,9 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $brocados_forwarded_proto;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $brocados_connection_upgrade;
+        proxy_read_timeout 3600s;
     }
 
     location = /healthz {

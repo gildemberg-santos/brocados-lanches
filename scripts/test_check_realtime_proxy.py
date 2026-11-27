@@ -25,6 +25,22 @@ server {
 }
 """
 
+VALID_NGINX_PRODUCTION = VALID_NGINX.replace(
+    "http://api:8080", "http://127.0.0.1:${API_PORT}"
+)
+
+# Reproduz o template de produção antes da correção: HTTP/1.1 presente,
+# mas nenhum cabeçalho de upgrade e nenhum timeout longo.
+INVALID_NGINX_PRODUCTION = """
+server {
+    location /api/ {
+        proxy_pass http://127.0.0.1:${API_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+    }
+}
+"""
+
 VALID_VITE = """
 const apiProxy = {
   target: 'http://127.0.0.1:8080',
@@ -33,6 +49,7 @@ const apiProxy = {
 """
 
 NGINX_ERROR = "nginx.conf"
+PRODUCTION_ERROR = "deploy/nginx.conf.template"
 VITE_ERROR = "vite.config.ts"
 
 
@@ -41,14 +58,22 @@ class CheckRealtimeProxyTest(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
         (self.root / "frontend").mkdir()
+        (self.root / "deploy").mkdir()
         self.nginx = self.root / "frontend" / "nginx.conf"
+        self.nginx_production = self.root / "deploy" / "nginx.conf.template"
         self.vite = self.root / "frontend" / "vite.config.ts"
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def configure(self, nginx: str = VALID_NGINX, vite: str = VALID_VITE) -> None:
+    def configure(
+        self,
+        nginx: str = VALID_NGINX,
+        vite: str = VALID_VITE,
+        production: str = VALID_NGINX_PRODUCTION,
+    ) -> None:
         self.nginx.write_text(nginx, encoding="utf-8")
+        self.nginx_production.write_text(production, encoding="utf-8")
         self.vite.write_text(vite, encoding="utf-8")
 
     def test_configuracao_valida(self) -> None:
@@ -76,6 +101,35 @@ class CheckRealtimeProxyTest(unittest.TestCase):
         errors = check_realtime_proxy.collect_errors(self.root)
 
         self.assertTrue(any("proxy_read_timeout" in error for error in errors))
+
+    def test_template_producao_sem_upgrade_e_rejeitado(self) -> None:
+        self.configure(production=INVALID_NGINX_PRODUCTION)
+
+        errors = check_realtime_proxy.collect_errors(self.root)
+
+        self.assertTrue(
+            any(PRODUCTION_ERROR in error and "mapa" in error for error in errors)
+        )
+        self.assertTrue(
+            any(PRODUCTION_ERROR in error and "Upgrade" in error for error in errors)
+        )
+        self.assertTrue(
+            any(PRODUCTION_ERROR in error and "Connection" in error for error in errors)
+        )
+        self.assertTrue(
+            any(
+                PRODUCTION_ERROR in error and "proxy_read_timeout" in error
+                for error in errors
+            )
+        )
+
+    def test_template_producao_ausente_e_reportado(self) -> None:
+        self.configure()
+        self.nginx_production.unlink()
+
+        errors = check_realtime_proxy.collect_errors(self.root)
+
+        self.assertIn(f"{PRODUCTION_ERROR}: arquivo não encontrado", errors)
 
     def test_proxy_vite_sem_ws_e_rejeitado(self) -> None:
         self.configure(vite=VALID_VITE.replace("ws: true,", ""))
