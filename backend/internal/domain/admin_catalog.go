@@ -44,6 +44,7 @@ const (
 	AuditEntityWebhook      = "webhook_settings"
 	AuditEntityOrder        = "orders"
 	AuditEntityAdminUser    = "admin_users"
+	AuditEntityUpload       = "uploads"
 )
 
 // AdminUserPatch contém apenas os campos permissíveis na edição de um usuário.

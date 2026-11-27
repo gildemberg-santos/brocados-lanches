@@ -147,6 +147,14 @@ export interface AdminProductInput {
   addonIds: string[]
 }
 
+/** Resposta do envio de imagem; `url` é um caminho relativo à mesma origem. */
+export interface AdminUpload {
+  id: string
+  url: string
+  contentType: string
+  sizeBytes: number
+}
+
 export type AdminStoreInput = Omit<AdminStoreSettings, 'createdAt' | 'updatedAt'>
 
 export type AdminCatalogKind = 'category' | 'addon' | 'zone'

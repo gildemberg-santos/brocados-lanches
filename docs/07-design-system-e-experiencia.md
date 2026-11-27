@@ -352,10 +352,12 @@ Implementado em `frontend/src/views/admin/AdminDashboardView.vue` (US-121). O in
 - Preço em reais na UI, convertido para centavos na API.
 - Ativar/desativar, disponível/esgotado, destaque.
 - Grupos de opções e adicionais.
-- Imagem com alt.
+- Imagem com alt, por upload ou por URL/caminho.
 - Auditoria ao salvar.
 
 Implementado em `frontend/src/views/admin/AdminProductsView.vue` e `frontend/src/components/admin/AdminProductForm.vue` (US-062). A lista carrega categorias e adicionais com `pageSize=100` para alimentar o formulário; preços e opções são enviados em centavos.
+
+O campo de imagem aceita tanto uma URL absoluta quanto um caminho relativo (ex.: `/products/burger.png`, usado pelo seed) e mostra prévia com `alt` descritivo. O envio de arquivo usa botão nativo com `accept` de JPEG/PNG/WebP/AVIF, teto de 2 MB, estados de enviando, sucesso e erro em texto, e preenche o campo com a URL devolvida pelo servidor (D-045). O arquivo vai em `multipart/form-data` para `POST /api/v1/admin/uploads`; nenhuma imagem é convertida em `data:` no navegador. Se o upload falhar, o valor anterior do campo é mantido e o produto não é salvo automaticamente.
 
 ### 6.4 Categorias — `/admin/categorias`
 
@@ -523,6 +525,7 @@ Regras:
 - `loading="lazy"` fora da primeira dobra.
 - `alt` descritivo; não usar “imagem de produto”.
 - Fallback para imagem ausente.
+- Uploads do painel são servidos em `/api/v1/uploads/{id}`, sem extensão no caminho; `ProductImage` usa o `<img>` direto nesse caso.
 - Não usar o ícone genérico do protótipo como foto real.
 - Fotos e logo precisam de autorização do cliente.
 

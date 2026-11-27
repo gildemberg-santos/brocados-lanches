@@ -73,6 +73,9 @@ func run() error {
 	if err := repository.EnsureAuditIndexes(startupContext, database); err != nil {
 		return err
 	}
+	if err := repository.EnsureUploadIndexes(startupContext, database); err != nil {
+		return err
+	}
 	logger.Info("database indexes ensured", "database", cfg.MongoDB)
 
 	catalogRepository, err := repository.NewCatalogRepository(database)
@@ -149,6 +152,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	uploadRepository, err := repository.NewUploadRepository(database)
+	if err != nil {
+		return err
+	}
+	uploadService, err := service.NewUploadService(uploadRepository)
+	if err != nil {
+		return err
+	}
 	webhookNotifier, err := webhook.NewNotifier(adminWebhookService, logger, service.BuildWebhookMessage)
 	if err != nil {
 		return err
@@ -189,6 +200,7 @@ func run() error {
 			AdminOrders:      adminOrderService,
 			AdminUsers:       adminUsersService,
 			Webhooks:         adminWebhookService,
+			Uploads:          uploadService,
 			Notifier:         webhookNotifier,
 			Events:           eventsHub,
 			AdminCookie: httpapi.AdminCookieConfig{

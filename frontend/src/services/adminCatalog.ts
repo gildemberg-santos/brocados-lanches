@@ -1,4 +1,4 @@
-import { get, patchData, postData } from './http'
+import { get, patchData, postData, postFormData } from './http'
 import type { AdminPage } from '../types/admin'
 import type {
   AdminAddon,
@@ -8,6 +8,7 @@ import type {
   AdminCategoryInput,
   AdminProduct,
   AdminProductInput,
+  AdminUpload,
   AdminZone,
   AdminZoneInput,
 } from '../types/adminCatalog'
@@ -98,4 +99,10 @@ export function updateAdminProduct(
   input: Partial<AdminProductInput>,
 ): Promise<AdminProduct> {
   return patchData<AdminProduct>(`${path('products')}/${encodeURIComponent(id)}`, input)
+}
+
+export function uploadProductImage(file: File): Promise<AdminUpload> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return postFormData<AdminUpload>(`${BASE_PATH}/uploads`, formData)
 }

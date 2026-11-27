@@ -53,6 +53,11 @@ func EnsureAuditIndexes(ctx context.Context, database *mongo.Database) error {
 }
 
 func (r *CatalogRepository) insertAuditLog(ctx context.Context, audit domain.AuditLog) error {
+	return writeAuditLog(ctx, r.auditLogs, audit)
+}
+
+// writeAuditLog é compartilhado pelos repositórios que gravam auditoria.
+func writeAuditLog(ctx context.Context, collection *mongo.Collection, audit domain.AuditLog) error {
 	actorID, err := bson.ObjectIDFromHex(audit.ActorID)
 	if err != nil {
 		return fmt.Errorf("invalid audit actor id: %w", err)
@@ -67,7 +72,7 @@ func (r *CatalogRepository) insertAuditLog(ctx context.Context, audit domain.Aud
 		After:     audit.After,
 		CreatedAt: audit.CreatedAt.UTC(),
 	}
-	if _, err := r.auditLogs.InsertOne(ctx, document); err != nil {
+	if _, err := collection.InsertOne(ctx, document); err != nil {
 		return fmt.Errorf("insert audit log: %w", err)
 	}
 	return nil

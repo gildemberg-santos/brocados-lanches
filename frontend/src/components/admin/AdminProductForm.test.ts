@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 
 import AdminProductForm from './AdminProductForm.vue'
+import { uploadProductImage } from '../../services/adminCatalog'
+
+vi.mock('../../services/adminCatalog', () => ({
+  uploadProductImage: vi.fn(),
+}))
+
+const mockedUploadProductImage = vi.mocked(uploadProductImage)
 
 const categories = [
   {
@@ -42,7 +49,24 @@ function mountForm() {
   })
 }
 
+async function fillRequiredFields(wrapper: ReturnType<typeof mountForm>): Promise<void> {
+  await wrapper.find('#product-category').setValue('a'.repeat(24))
+  await wrapper.find('#product-name').setValue('Duplo Cheddar')
+  await wrapper.find('#product-slug').setValue('duplo-cheddar')
+  await wrapper.find('#product-description').setValue('Dois hambúrgueres com cheddar.')
+  await wrapper.find('#product-price').setValue('29,90')
+}
+
+function selectImageFile(wrapper: ReturnType<typeof mountForm>, file: File): Promise<void> {
+  const input = wrapper.get('#product-image-file').element as HTMLInputElement
+  Object.defineProperty(input, 'files', { value: [file], configurable: true })
+  return wrapper.get('#product-image-file').trigger('change')
+}
+
 describe('AdminProductForm', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
   it('envia produto com grupos, opções e adicionais em centavos', async () => {
     const wrapper = mountForm()
 
@@ -126,5 +150,66 @@ describe('AdminProductForm', () => {
     expect(wrapper.get('#product-description').attributes('aria-describedby')).toBe(
       'product-description-error',
     )
+  })
+
+  it('aceita caminho relativo de imagem já cadastrado no banco', async () => {
+    const wrapper = mountForm()
+    await fillRequiredFields(wrapper)
+    await wrapper.find('#product-image').setValue('/products/burger.png')
+    await wrapper.find('#product-image-alt').setValue('Hambúrguer com cheddar')
+
+    await wrapper.find('form').trigger('submit')
+
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as { imageUrl: string }
+    expect(payload.imageUrl).toBe('/products/burger.png')
+    expect(wrapper.find('#product-image').attributes('type')).toBe('text')
+    expect(wrapper.find('.product-form__preview').attributes('src')).toBe('/products/burger.png')
+  })
+
+  it('faz upload da imagem e preenche o campo com a URL devolvida', async () => {
+    const url = `/api/v1/uploads/${'c'.repeat(24)}`
+    mockedUploadProductImage.mockResolvedValue({
+      id: 'c'.repeat(24),
+      url,
+      contentType: 'image/png',
+      sizeBytes: 128,
+    })
+    const wrapper = mountForm()
+    const file = new File(['imagem'], 'burger.png', { type: 'image/png' })
+
+    await selectImageFile(wrapper, file)
+    await flushPromises()
+
+    expect(mockedUploadProductImage).toHaveBeenCalledWith(file)
+    expect((wrapper.find('#product-image').element as HTMLInputElement).value).toBe(url)
+    expect(wrapper.text()).toContain('Imagem enviada.')
+    expect(wrapper.find('#product-image-file').attributes('disabled')).toBeUndefined()
+  })
+
+  it('rejeita arquivo inválido no cliente sem chamar a API', async () => {
+    const wrapper = mountForm()
+    const file = new File(['<script>'], 'pagina.html', { type: 'text/html' })
+
+    await selectImageFile(wrapper, file)
+    await flushPromises()
+
+    expect(mockedUploadProductImage).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Use uma imagem JPEG, PNG, WebP ou AVIF.')
+    expect(wrapper.get('#product-image-file').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#product-image-file').attributes('aria-describedby')).toBe(
+      'product-image-file-error',
+    )
+  })
+
+  it('mostra mensagem de erro quando o upload falha', async () => {
+    mockedUploadProductImage.mockRejectedValue(new Error('erro de rede'))
+    const wrapper = mountForm()
+    const file = new File(['imagem'], 'burger.png', { type: 'image/png' })
+
+    await selectImageFile(wrapper, file)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Não foi possível enviar a imagem. Tente novamente.')
+    expect((wrapper.find('#product-image').element as HTMLInputElement).value).toBe('')
   })
 })

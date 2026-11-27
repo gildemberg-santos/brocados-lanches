@@ -43,6 +43,7 @@ Fora de `/api/v1`:
 | GET | `/store` | Status efetivo, horários, contato, prazo |
 | GET | `/menu` | Categorias, produtos, opções e adicionais ativos |
 | GET | `/delivery-zones` | Zonas ativas com taxa |
+| GET | `/uploads/{id}` | Imagem enviada pelo painel (D-045) |
 | POST | `/customers/profile` | Consulta de conveniência por telefone (D-039) |
 | POST | `/orders/quote` | Cotação server-side sem persistir |
 | POST | `/orders` | Cria pedido persistido |
@@ -212,6 +213,14 @@ Content-Type: application/json
 Perfil ausente ou desativado por opt-out retorna `{"data":{"found":false}}`, sem distinção entre os dois casos. A resposta nunca inclui `feeCents`, `orderCount`, `lastOrderPublicId`, `note`, `changeForCents`, histórico de pedidos ou `phoneKey`. Campos de endereço opcionais, como `complement`, são devolvidos como string vazia quando não preenchidos — o checkout pode preencher o formulário e enviar o pedido sem tratar `undefined`. Zona retornada é apenas sugestão: o cliente descarta zona inativa e a taxa continua sendo calculada por `POST /orders/quote` e revalidada em `POST /orders`.
 
 `422 VALIDATION_ERROR` para telefone incompleto ou fora do formato; `400 VALIDATION_ERROR` para JSON inválido ou campo desconhecido. Limites em `§15`.
+
+---
+
+## 5.2. `GET /uploads/{id}`
+
+Serve uma imagem enviada pelo painel (D-045). O `{id}` é um hexadecimal de 24 caracteres opaco; a resposta é o arquivo em si, sem envelope `{ "data": ... }`. O `Content-Type` é sempre um dos quatro tipos permitidos, derivado da assinatura no servidor, com `X-Content-Type-Options: nosniff` e `Cache-Control: public, max-age=31536000, immutable`. A URL é estável porque o identificador nunca é reaproveitado; para trocar a imagem de um produto, envie um novo arquivo e atualize `imageUrl`.
+
+ID malformado, inexistente ou com tipo fora da allowlist retorna `404 NOT_FOUND`. Nenhuma autenticação é necessária: esta rota apenas expõe o que já está em `products.imageUrl`. O corpo não passa por log nem por auditoria de leitura.
 
 ---
 
@@ -577,6 +586,7 @@ Todas as rotas exigem sessão válida, papel `operator` ou `owner` e origem same
 | GET | `/admin/delivery-zones` | operator/owner | Lista zonas |
 | POST | `/admin/delivery-zones` | operator/owner | Cria zona (`201`) |
 | PATCH | `/admin/delivery-zones/{id}` | operator/owner | Atualiza zona |
+| POST | `/admin/uploads` | operator/owner | Envia imagem de produto (`201`) |
 
 Listagens usam o envelope paginado `{ "data": [...], "meta": { "page": 1, "pageSize": 20, "total": 0, "totalPages": 0 } }` e aceitam:
 
@@ -610,6 +620,32 @@ Exemplo de `PATCH /admin/products/{id}`:
   "featured": true
 }
 ```
+
+### 10.1 `POST /admin/uploads`
+
+Recebe `multipart/form-data` com o campo `file` (um único arquivo). Não aceita JSON. O teto é 2 MiB por arquivo e 3 MiB por requisição (inclui o overhead do multipart). O servidor identifica o formato pela assinatura do arquivo e recusa qualquer conteúdo que não seja JPEG, PNG, WebP ou AVIF — o `Content-Type` enviado pelo navegador não é confiável e é ignorado. A criação registra auditoria com `entity: "uploads"`, `contentType` e `sizeBytes`, sem nome de arquivo, bytes ou PII.
+
+```http
+POST /api/v1/admin/uploads HTTP/1.1
+Content-Type: multipart/form-data; boundary=...
+Origin: http://localhost:5173
+Cookie: brocados_admin=<sessão>
+```
+
+Resposta `201`:
+
+```json
+{
+  "data": {
+    "id": "665f1c2a9b1e4a0012a3b4f1",
+    "url": "/api/v1/uploads/665f1c2a9b1e4a0012a3b4f1",
+    "contentType": "image/png",
+    "sizeBytes": 128
+  }
+}
+```
+
+O cliente preenche `products.imageUrl` com `url` e envia o produto pelo `POST`/`PATCH` normal; nenhum preço ou disponibilidade é alterado pelo upload. Sem sessão retorna `401`, com origem estranha retorna `403`. Arquivo ausente, arquivo acima do teto ou corpo maior que o limite da requisição retornam `422 VALIDATION_ERROR` no campo `file`. Formato não permitido retorna o mesmo `422` no campo `file`, sem gravar nada.
 
 ---
 

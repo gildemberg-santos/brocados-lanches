@@ -1,6 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, get, getData, patch, patchData, post, postData, postEmpty } from './http'
+import {
+  ApiError,
+  get,
+  getData,
+  patch,
+  patchData,
+  post,
+  postData,
+  postEmpty,
+  postFormData,
+} from './http'
 
 interface MockResponse {
   ok: boolean
@@ -147,6 +157,22 @@ describe('http', () => {
       },
       credentials: 'include',
       body: JSON.stringify({ items: [] }),
+      signal: expect.any(AbortSignal),
+    })
+  })
+
+  it('posts FormData without setting a JSON content type and unwraps data', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'abc' } }))
+    vi.stubGlobal('fetch', fetchMock)
+    const formData = new FormData()
+    formData.append('file', new File(['imagem'], 'produto.png', { type: 'image/png' }))
+
+    await expect(postFormData('/api/v1/admin/uploads', formData)).resolves.toEqual({ id: 'abc' })
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/uploads', {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      credentials: 'include',
+      body: formData,
       signal: expect.any(AbortSignal),
     })
   })

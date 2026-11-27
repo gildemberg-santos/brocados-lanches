@@ -11,6 +11,8 @@ import {
   validateProductInput,
 } from '../../features/admin-catalog/catalogForm'
 import type { FieldErrors } from '../../features/admin-catalog/catalogForm'
+import { IMAGE_UPLOAD_ACCEPT, validateImageFile } from '../../features/admin-catalog/imageUpload'
+import { uploadProductImage } from '../../services/adminCatalog'
 import type {
   AdminAddon,
   AdminCategory,
@@ -37,6 +39,9 @@ const description = ref('')
 const price = ref('')
 const imageUrl = ref('')
 const imageAlt = ref('')
+const uploadingImage = ref(false)
+const imageUploadError = ref('')
+const imageUploadSuccess = ref('')
 const allergensText = ref('')
 const available = ref(true)
 const featured = ref(false)
@@ -63,6 +68,35 @@ function errorAttrs(key: string) {
   }
 }
 
+async function onImageChange(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) {
+    return
+  }
+
+  const problem = validateImageFile(file)
+  imageUploadSuccess.value = ''
+  if (problem) {
+    imageUploadError.value = problem
+    input.value = ''
+    return
+  }
+
+  uploadingImage.value = true
+  try {
+    const uploaded = await uploadProductImage(file)
+    imageUrl.value = uploaded.url
+    imageUploadError.value = ''
+    imageUploadSuccess.value = 'Imagem enviada. Descreva o conteúdo dela no texto alternativo.'
+  } catch {
+    imageUploadError.value = 'Não foi possível enviar a imagem. Tente novamente.'
+  } finally {
+    uploadingImage.value = false
+    input.value = ''
+  }
+}
+
 function centsToInput(cents: number): string {
   return (cents / 100).toFixed(2).replace('.', ',')
 }
@@ -71,6 +105,8 @@ watch(
   () => props.item,
   (item) => {
     errors.value = {}
+    imageUploadError.value = ''
+    imageUploadSuccess.value = ''
     categoryId.value = item?.categoryId ?? ''
     name.value = item?.name ?? ''
     slug.value = item?.slug ?? ''
@@ -288,8 +324,46 @@ function submit(): void {
       </div>
 
       <div class="product-form__field">
-        <label for="product-image">URL da imagem</label>
-        <input id="product-image" v-model="imageUrl" type="url" maxlength="500" />
+        <label for="product-image">URL ou caminho da imagem</label>
+        <input id="product-image" v-model="imageUrl" type="text" maxlength="500" />
+        <p class="product-form__hint">Caminhos como /products/burger.png também são aceitos.</p>
+        <img
+          v-if="imageUrl"
+          class="product-form__preview"
+          :src="imageUrl"
+          :alt="imageAlt || 'Prévia da imagem do produto'"
+          width="160"
+          height="120"
+          loading="lazy"
+        />
+      </div>
+
+      <div class="product-form__field">
+        <label for="product-image-file">Enviar imagem</label>
+        <input
+          id="product-image-file"
+          type="file"
+          :accept="IMAGE_UPLOAD_ACCEPT"
+          :disabled="uploadingImage"
+          :aria-invalid="imageUploadError ? 'true' : undefined"
+          :aria-describedby="imageUploadError ? 'product-image-file-error' : undefined"
+          @change="onImageChange"
+        />
+        <p class="product-form__hint">
+          JPEG, PNG, WebP ou AVIF de até 2 MB. O arquivo é salvo no servidor.
+        </p>
+        <p
+          v-if="imageUploadError"
+          id="product-image-file-error"
+          class="product-form__error"
+          role="alert"
+        >
+          {{ imageUploadError }}
+        </p>
+        <p v-else-if="imageUploadSuccess" class="product-form__message" role="status">
+          {{ imageUploadSuccess }}
+        </p>
+        <p v-if="uploadingImage" class="product-form__hint" role="status">Enviando imagem...</p>
       </div>
 
       <div class="product-form__field">
@@ -564,6 +638,24 @@ function submit(): void {
 .product-form__small {
   width: fit-content;
   font-weight: 700;
+}
+
+.product-form input[type='file']::file-selector-button {
+  padding: 8px 12px;
+  border: 1px solid var(--bg-border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.product-form__preview {
+  width: 160px;
+  height: 120px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  object-fit: cover;
 }
 
 .product-form__inline,

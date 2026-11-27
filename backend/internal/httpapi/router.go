@@ -33,6 +33,7 @@ type Dependencies struct {
 	AdminOrders      AdminOrderService
 	AdminUsers       AdminUsersService
 	Webhooks         AdminWebhookService
+	Uploads          UploadService
 	Notifier         OrderNotifier
 	Events           *realtime.Hub
 	LoginLimiter     *ratelimit.Limiter
@@ -84,6 +85,7 @@ func NewRouter(deps Dependencies) http.Handler {
 		router.Get("/store", handleStore(deps.Store, logger))
 		router.Get("/menu", limitByIP(limiters.Menu, handleMenu(deps.Catalog, logger)))
 		router.Get("/delivery-zones", handleDeliveryZones(deps.Catalog, logger))
+		router.Get("/uploads/{id}", handleGetUpload(deps.Uploads, logger))
 		router.Post(
 			"/customers/profile",
 			limitByIP(limiters.CustomerLookups, handleCustomerProfileLookup(deps.CustomerProfiles, limiters.CustomerPhones, logger)),
@@ -137,6 +139,8 @@ func NewRouter(deps Dependencies) http.Handler {
 
 				protected.Get("/store", handleAdminGetStore(deps.AdminStore, logger))
 				protected.Patch("/store", handleAdminUpdateStore(deps.AdminStore, logger))
+
+				protected.Post("/uploads", handleAdminCreateUpload(deps.Uploads, logger))
 
 				protected.Get("/orders", handleAdminListOrders(deps.AdminOrders, logger))
 				protected.Get("/orders/events", handleAdminOrderEvents(deps.Events, logger))

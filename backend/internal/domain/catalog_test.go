@@ -147,6 +147,20 @@ func TestProductValidate(t *testing.T) {
 			},
 		},
 		{
+			name: "imagem com caminho relativo do seed",
+			mutate: func(product *Product) {
+				product.ImageURL = "/products/burger.png"
+				product.ImageAlt = "Hambúrguer com cheddar"
+			},
+		},
+		{
+			name: "imagem com caminho de upload",
+			mutate: func(product *Product) {
+				product.ImageURL = "/api/v1/uploads/665f1c2a9b1e4a0012a3b4f1"
+				product.ImageAlt = "Hambúrguer com cheddar"
+			},
+		},
+		{
 			name: "imagem sem texto alternativo",
 			mutate: func(product *Product) {
 				product.ImageURL = "https://cdn.example.com/burger.webp"

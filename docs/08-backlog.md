@@ -2,7 +2,7 @@
 
 **Versão:** 1.2  
 **Atualizado em:** 26/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-066 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual.
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-067 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual.
 
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`, `14-auditoria-design-system.md`.
 
@@ -295,6 +295,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | US-064 | Zonas e taxas | P0 | M | US-022, US-061 | **Concluída** — CRUD no painel, taxa digitada em reais e enviada em centavos, ativo e testes |
 | US-065 | Configuração da loja (API) | P0 | M | US-061 | **Concluída** — `GET/PATCH /admin/store`, validação de horários em `America/Fortaleza`, E.164, auditoria, tela com kill switch e intervalos por dia, e testes |
 | US-066 | Usuários e papéis | P1 | M | US-060 | **Concluída** — owner cria/edita/desativa; último owner protegido; auditoria sem PII; testes |
+| US-067 | Upload de imagem de produto | P1 | M | US-022, US-062 | **Concluída** — `POST /admin/uploads` em MongoDB, leitura pública em `/uploads/{id}`, campo textual que aceita caminhos relativos do seed, prévia, validação de tipo/tamanho e testes (D-045) |
 
 **Tarefas técnicas:**
 
@@ -308,6 +309,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] Implementar `GET/PATCH /admin/store` com validação e auditoria (US-065).
 - [x] Criar componentes de filtro, listagem e paginação do catálogo (US-062 a US-064).
 - [x] Criar formulários com validação por campo e conversão de centavos (US-062 a US-065).
+- [x] Persistir imagens em `uploads` com auditoria e servir por `/uploads/{id}` (US-067).
+- [x] Aceitar URL absoluta e caminho relativo no campo de imagem do produto (US-067).
 - [ ] Criar `DataTable` e `AdminPageHeader` se novas telas justificarem a abstração.
 - [x] Implementar auditoria nas mutações de catálogo e configuração da loja (US-022/US-065).
 - [x] Implementar `GET/POST/PATCH /admin/users` com autorização owner, auditoria e proteção do último owner (US-066).
@@ -513,7 +516,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | FR-CHECKOUT-01..05 | US-032, US-033, US-034 |
 | FR-ORDER-01..06 | US-040, US-041, US-042, US-043, US-050, US-072 |
 | FR-ADMIN-AUTH-01/02 | US-060, US-061 |
-| FR-ADMIN-CAT-01/02 | US-022, US-062, US-063 |
+| FR-ADMIN-CAT-01/02 | US-022, US-062, US-063, US-067 |
 | FR-ADMIN-ZONE-01 | US-064 |
 | FR-ADMIN-STORE-01 | US-065 |
 | FR-ADMIN-ORDER-01..03 | US-070, US-071, US-072 |

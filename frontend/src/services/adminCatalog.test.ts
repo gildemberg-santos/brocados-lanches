@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { get, patchData, postData } from './http'
+import { get, patchData, postData, postFormData } from './http'
 import {
   createAdminCategory,
   fetchAdminAddons,
@@ -9,17 +9,20 @@ import {
   fetchAdminZones,
   updateAdminProduct,
   updateAdminZone,
+  uploadProductImage,
 } from './adminCatalog'
 
 vi.mock('./http', () => ({
   get: vi.fn(),
   patchData: vi.fn(),
   postData: vi.fn(),
+  postFormData: vi.fn(),
 }))
 
 const mockedGet = vi.mocked(get)
 const mockedPatchData = vi.mocked(patchData)
 const mockedPostData = vi.mocked(postData)
+const mockedPostFormData = vi.mocked(postFormData)
 
 describe('adminCatalog service', () => {
   beforeEach(() => {
@@ -84,6 +87,22 @@ describe('adminCatalog service', () => {
     expect(mockedPatchData).toHaveBeenCalledWith('/api/v1/admin/products/abc%2F123', {
       active: false,
     })
+  })
+
+  it('envia imagem de produto como FormData no campo file', async () => {
+    const upload = {
+      id: 'a'.repeat(24),
+      url: `/api/v1/uploads/${'a'.repeat(24)}`,
+      contentType: 'image/png',
+      sizeBytes: 128,
+    }
+    mockedPostFormData.mockResolvedValue(upload)
+    const file = new File(['imagem'], 'produto.png', { type: 'image/png' })
+
+    await expect(uploadProductImage(file)).resolves.toEqual(upload)
+    expect(mockedPostFormData).toHaveBeenCalledWith('/api/v1/admin/uploads', expect.any(FormData))
+    const formData = mockedPostFormData.mock.calls[0]?.[1]
+    expect(formData?.get('file')).toBe(file)
   })
 
   it('codifica o identificador na atualização de zonas', async () => {

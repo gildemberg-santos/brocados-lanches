@@ -148,6 +148,30 @@ export async function postData<T>(
   return body.data
 }
 
+/** POST multipart para upload; o navegador define o Content-Type com o boundary. */
+export async function postForm<T>(path: string, formData: FormData): Promise<T> {
+  return withTimeout(async (signal) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      credentials: 'include',
+      body: formData,
+      signal,
+    })
+
+    if (!response.ok) {
+      throw await parseError(response)
+    }
+
+    return (await response.json()) as T
+  })
+}
+
+export async function postFormData<T>(path: string, formData: FormData): Promise<T> {
+  const body = await postForm<{ data: T }>(path, formData)
+  return body.data
+}
+
 /** POST sem corpo, para endpoints que respondem 204 (ex.: logout). */
 export async function postEmpty(path: string): Promise<void> {
   return withTimeout(async (signal) => {

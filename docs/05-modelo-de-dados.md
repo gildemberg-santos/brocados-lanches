@@ -39,7 +39,7 @@ erDiagram
   COUNTERS ||--o{ ORDERS : numbers
 ```
 
-As relações são conceituais; o MongoDB guarda o snapshot do pedido, não depende de `lookup` para renderizar histórico.
+As relações são conceituais; o MongoDB guarda o snapshot do pedido, não depende de `lookup` para renderizar histórico. Imagens enviadas pelo painel ficam em `uploads` (D-045) e são referenciadas por caminho em `products.imageUrl`, sem vínculo rígido por `ObjectID`.
 
 ---
 
@@ -464,6 +464,22 @@ O detalhe administrativo do pedido pode exibir `customerProfile` somente para ad
 
 O histórico do próprio cliente (D-041) não cria outra coleção: a associação é feita por `orders.accessTokenHash`. O token em claro é derivado no servidor de `ORDER_ACCESS_SECRET` e da chave de idempotência, devolvido na criação do pedido e guardado somente no navegador. Nenhuma listagem usa telefone.
 
+### 3.13 `uploads`
+
+Imagens enviadas pelo painel de produtos (D-045). O arquivo é gravado no próprio MongoDB, sem volume adicional, e servido por `GET /api/v1/uploads/{id}`. A criação registra auditoria sem bytes, nome de arquivo ou PII. O tipo servido é decidido pela assinatura do arquivo no servidor, nunca pelo `Content-Type` informado pelo navegador; apenas JPEG, PNG, WebP e AVIF são aceitos.
+
+| Campo | Tipo | Obrigatório | Observação |
+|---|---|---|---|
+| `_id` | ObjectID | sim | Identificador opaco usado na URL pública |
+| `contentType` | string | sim | `image/jpeg`, `image/png`, `image/webp` ou `image/avif` |
+| `sizeBytes` | int | sim | Tamanho do arquivo; teto de 2 MiB |
+| `data` | binário | sim | Bytes exatos da imagem |
+| `createdAt` | datetime | sim | UTC |
+
+Índice: `{ createdAt: -1 }` (`uploads_created_at`), criado de forma idempotente no start junto com os demais.
+
+`products.imageUrl` aceita tanto uma URL absoluta quanto um caminho relativo: os arquivos do seed usam `/products/<slug>.<ext>`, e os uploads do painel usam `/api/v1/uploads/<id>`. O valor é sempre validado no backend antes da gravação do produto.
+
 ---
 
 ## 4. Invariantes
@@ -489,6 +505,7 @@ O histórico do próprio cliente (D-041) não cria outra coleção: a associaç�
 19. `audit_logs` não contém PII.
 20. Nenhum valor monetário é float.
 21. `accessTokenHash`, quando presente, é SHA-256 de um token opaco de 256 bits; o token em claro não é persistido nem usado como chave de consulta pública.
+22. `uploads.contentType` é sempre um dos quatro tipos de imagem permitidos e corresponde à assinatura do arquivo em `uploads.data`.
 
 ---
 
@@ -521,6 +538,7 @@ Toda transição inválida retorna `409 CONFLICT`.
 | Perfil de conveniência | 24 meses após o último pedido | TTL e tombstone de opt-out |
 | Sessões | 7 dias | TTL |
 | Auditoria | 12 meses | Arquivar/anonimizar |
+| Imagens enviadas | Enquanto referenciadas | Remover órfãs em rotina de manutenção; não há TTL automático na V1 |
 | Logs | 30 dias | Expirar |
 | Analytics | Conforme consentimento | Sem PII |
 
