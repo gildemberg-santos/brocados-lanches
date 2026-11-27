@@ -100,14 +100,11 @@ func writeWSEvent(ctx context.Context, conn *websocket.Conn, event realtime.Even
 	return wsjson.Write(writeContext, conn, event)
 }
 
-// publishOrderEvent converte o pedido do domínio para o evento mínimo. O tipo
-// distingue criação de transição para o painel reorganizar a fila sem precisar
-// de polling.
-func publishOrderEvent(hub *realtime.Hub, eventType string, order domain.Order) {
-	if hub == nil {
-		return
-	}
-	event := realtime.Event{
+// newOrderEvent converte o pedido do domínio para o sinal mínimo. O tipo
+// distingue criação, transição e exclusão para o painel reorganizar a fila sem
+// precisar de polling.
+func newOrderEvent(eventType string, order domain.Order) realtime.Event {
+	return realtime.Event{
 		Type:        eventType,
 		OrderID:     order.ID,
 		PublicID:    order.PublicID,
@@ -115,8 +112,24 @@ func publishOrderEvent(hub *realtime.Hub, eventType string, order domain.Order) 
 		Status:      order.Status,
 		UpdatedAt:   order.UpdatedAt.UTC().Format(time.RFC3339),
 	}
+}
+
+func publishOrderEvent(hub *realtime.Hub, eventType string, order domain.Order) {
+	if hub == nil {
+		return
+	}
+	event := newOrderEvent(eventType, order)
 	hub.Publish(realtime.TopicAdmin, event)
 	publicEvent := event
 	publicEvent.OrderID = ""
 	hub.Publish(realtime.TopicForPublic(order.PublicID), publicEvent)
+}
+
+// publishOrderDeleted avisa somente o painel: o acompanhamento público não
+// recebe o sinal e passa a receber 404 na próxima consulta do pedido removido.
+func publishOrderDeleted(hub *realtime.Hub, order domain.Order) {
+	if hub == nil {
+		return
+	}
+	hub.Publish(realtime.TopicAdmin, newOrderEvent(realtime.EventOrderDeleted, order))
 }

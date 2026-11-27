@@ -84,11 +84,16 @@ export function isCancellationAllowed(status: string): boolean {
 }
 
 /** Erro de API transformado em mensagem operacional, sem expor detalhes internos. */
-export function adminOrderErrorMessage(error: unknown, action: 'load' | 'status'): string {
+export function adminOrderErrorMessage(
+  error: unknown,
+  action: 'load' | 'status' | 'delete',
+): string {
   const fallback =
     action === 'load'
       ? 'Não foi possível carregar os pedidos. Tente novamente.'
-      : 'Não foi possível atualizar o pedido. Tente novamente.'
+      : action === 'delete'
+        ? 'Não foi possível excluir o pedido. Tente novamente.'
+        : 'Não foi possível atualizar o pedido. Tente novamente.'
 
   if (!(error instanceof ApiError)) {
     return fallback
@@ -99,13 +104,16 @@ export function adminOrderErrorMessage(error: unknown, action: 'load' | 'status'
   if (error.status === 403) {
     return 'Você não tem permissão para esta ação.'
   }
+  if (error.status === 404 && action === 'delete') {
+    return 'Este pedido já não está na fila. Atualize a lista e tente novamente.'
+  }
   if (error.status === 409) {
     return 'O pedido mudou de status enquanto você operava. Atualize a tela e tente novamente.'
   }
   if (error.code === 'VALIDATION_ERROR') {
-    return action === 'status'
-      ? 'Revise a ação escolhida e tente novamente.'
-      : 'Revise os filtros informados e tente novamente.'
+    if (action === 'status') return 'Revise a ação escolhida e tente novamente.'
+    if (action === 'delete') return 'Revise o pedido selecionado e tente novamente.'
+    return 'Revise os filtros informados e tente novamente.'
   }
   // Erros internos nunca são exibidos ao operador.
   return fallback

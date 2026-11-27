@@ -19,6 +19,7 @@ type AdminOrderService interface {
 	Get(ctx context.Context, id string) (domain.Order, error)
 	GetCustomerProfile(ctx context.Context, phone string) (*domain.CustomerProfile, error)
 	UpdateStatus(ctx context.Context, actorID, id string, request domain.OrderStatusChangeRequest) (domain.Order, error)
+	Delete(ctx context.Context, actorID, id string) (domain.Order, error)
 }
 
 type adminOrderListItemResponse struct {
@@ -224,6 +225,33 @@ func handleAdminUpdateOrderStatus(
 		writeJSON(w, http.StatusOK, adminItemEnvelope[adminOrderDetailResponse]{
 			Data: newAdminOrderDetailResponse(order),
 		})
+	}
+}
+
+// handleAdminDeleteOrder responde 204 sem corpo. A exclusão não dispara
+// webhook: o destino externo recebe apenas criações e transições persistidas.
+func handleAdminDeleteOrder(
+	orders AdminOrderService,
+	hub *realtime.Hub,
+	logger *slog.Logger,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if orders == nil {
+			writeUnconfigured(w, r, logger, "admin order service")
+			return
+		}
+		actor, ok := adminFromContext(r.Context())
+		if !ok {
+			writeError(w, r, logger, domain.ErrUnauthorized)
+			return
+		}
+		order, err := orders.Delete(r.Context(), actor.ID, chi.URLParam(r, "id"))
+		if err != nil {
+			writeError(w, r, logger, err)
+			return
+		}
+		publishOrderDeleted(hub, order)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

@@ -516,6 +516,7 @@ Canal WebSocket público de acompanhamento. O `publicId` vai no caminho; nenhum 
 
 - Tipos: `connected`, `order.created` e `order.updated`; o sinal de criação usa o mesmo formato.
 - O evento público **nunca** contém `orderId`, cliente, endereço, observação, troco, valores, taxa, total ou `whatsappUrl`. Para renderizar os dados completos, o cliente refaz `GET /orders/{publicId}`.
+- Exclusões administrativas não são publicadas neste canal; após a remoção, a próxima consulta do pedido retorna `404`.
 - Handshake com `Origin` diferente do host é rejeitado. O limite de 60/min por IP do acompanhamento também vale para o upgrade.
 - O cliente deve reconectar com backoff exponencial após queda; o servidor mantém a assinatura apenas enquanto a conexão estiver aberta e não guarda eventos para clientes ausentes.
 
@@ -757,7 +758,8 @@ Em transições, o texto inclui `✅ Status: Confirmado` (ou o rótulo do status
 | GET | `/admin/orders` | operator/owner | Fila paginada |
 | GET | `/admin/orders/{id}` | operator/owner | Detalhe completo |
 | PATCH | `/admin/orders/{id}/status` | operator/owner | Transição de status |
-| WS | `/admin/orders/events` | operator/owner | Sinais de criação e mudança de status da fila |
+| DELETE | `/admin/orders/{id}` | owner | Exclusão física do pedido, com auditoria sem PII |
+| WS | `/admin/orders/events` | operator/owner | Sinais de criação, mudança de status e exclusão da fila |
 
 Listagem:
 
@@ -796,9 +798,22 @@ Cancelamento:
 - Cada transição atualiza `status`, `updatedAt`, `statusHistory` e, quando aplicável, `confirmedAt`/`cancelledAt` + `cancelReason`. A gravação usa compare-and-set no status lido: uma transição concorrente retorna `409` em vez de sobrescrever a primeira.
 - Auditoria registra somente `status`, `fulfillment` e `totalCents` antes/depois, com `actorId`, `action: update`, `entity: orders` e `entityId` (ID hexadecimal do pedido).
 
+Exclusão manual:
+
+```http
+DELETE /api/v1/admin/orders/665f1c2a9b1e4a0012a3b4f1
+```
+
+- Resposta `204` sem corpo. ID inválido ou pedido já removido retorna `404 NOT_FOUND`.
+- Restrita a `owner`: `operator` recebe `403 FORBIDDEN`. A confirmação fica no painel; a API não exige campo adicional.
+- Qualquer status pode ser excluído. O documento é removido do MongoDB; não há soft delete nem recuperação pela API.
+- Auditoria registra `action: delete`, `entity: orders`, `entityId`, `actorId` e `before` com `number`, `status`, `fulfillment` e `totalCents`. Nome, telefone, endereço, observação, troco e token nunca entram na auditoria.
+- A exclusão não dispara webhook e não apaga `customer_profiles`. A chave de idempotência também é removida com o documento: um replay com a mesma chave pode criar um pedido novo (D-051).
+- O canal administrativo recebe `order.deleted`; o canal público não recebe sinal de exclusão e `GET /orders/{publicId}` passa a devolver `404`.
+
 ### 12.1. `WS /admin/orders/events`
 
-Canal WebSocket autenticado pela mesma sessão em cookie `HttpOnly` das demais rotas administrativas. Não aceita token em query string. O servidor envia `connected` na conexão e publica `order.created` / `order.updated` para toda criação ou transição persistida:
+Canal WebSocket autenticado pela mesma sessão em cookie `HttpOnly` das demais rotas administrativas. Não aceita token em query string. O servidor envia `connected` na conexão e publica `order.created` / `order.updated` para toda criação ou transição persistida, além de `order.deleted` após uma exclusão confirmada:
 
 ```json
 {
@@ -812,6 +827,7 @@ Canal WebSocket autenticado pela mesma sessão em cookie `HttpOnly` das demais r
 ```
 
 - Mesmo com sessão válida, o evento contém apenas identificadores, número, status e data — sem PII e sem valores. A fila e o detalhe continuam sendo lidos por `GET /admin/orders` e `GET /admin/orders/{id}`.
+- `order.deleted` usa o mesmo formato e chega somente a este canal autenticado; o cliente deve refazer a fila para paginar corretamente após a remoção.
 - O upgrade entra no limite de 120/min por sessão e na proteção CSRF por `Origin`/`Referer` do grupo administrativo.
 - A publicação é em memória e por instância: com mais de uma réplica da API, é necessário um barramento compartilhado antes de considerar a fila globalmente consistente (ver `04-arquitetura.md`).
 

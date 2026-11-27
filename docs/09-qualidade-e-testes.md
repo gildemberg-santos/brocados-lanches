@@ -95,6 +95,7 @@ make test-e2e          # Playwright com API isolada em brocados_test
 | Loja admin (API e painel) | Horários válidos/não sobrepostos, E.164, kill switch, PATCH parcial, auditoria sem PII; formulário com validação por campo | US-065 |
 | Pedidos admin | Filtros, paginação, detalhe, PII mascarada; fila e detalhe no painel com estados de carregamento/vazio/erro | US-070, US-071 |
 | Status | Todas as transições válidas e inválidas, motivo, concorrência; ações contextuais e confirmação no painel | US-072 |
+| Exclusão manual | 204 após remoção, 404 para ID inválido/removido, 403 para operator, qualquer status, auditoria sem PII, sem webhook, evento só no painel, confirmação e erro amigável na fila | US-077, D-051 |
 | Auditoria | Mutação gera log, owner lê, sem PII | US-073 |
 | Webhook | URL absoluta com qualquer esquema e host, exigência de URL quando ativo, payload `{number, storeNumber, message}` com os dois destinatários e número da loja ausente sem envio, cabeçalho de evento, replay sem duplicata, falha de transporte sem bloqueio, 403 para operator, auditoria sem URL e formulário owner-only | US-075, D-046 |
 | Seleção de eventos do webhook | Chaves válidas/repetidas/desconhecidas, lista vazia, configuração legada com todos os eventos, filtro do notificador por criação/status, cabeçalho inalterado, auditoria sem URL e checkboxes no painel | US-076, D-048 |
@@ -272,6 +273,21 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Dado** painel com CSP sem `connect-src` do Sentry ou código com tracing/Replay/DSN literal.
 - **Quando** `make sentry-check` roda.
 - **Então** a validação falha com o motivo e bloqueia o CI.
+
+### 5.26 Exclusão manual de pedido (D-051)
+
+- **Dado** pedido em qualquer status e sessão de `owner`.
+- **Quando** `DELETE /admin/orders/{id}` é chamado.
+- **Então** o documento é removido, a resposta é `204`, a auditoria registra número/status/forma de entrega/total sem PII e nenhum POST de webhook é feito.
+- **Dado** `operator`, ID inválido ou pedido já removido.
+- **Quando** a mesma rota é chamada.
+- **Então** a API responde respectivamente `403`, `404` e `404`, sem apagar documento algum.
+- **Dado** fila aberta no painel.
+- **Quando** o `owner` clica em excluir.
+- **Então** aparece confirmação explícita; só depois dela o pedido sai da fila, e falhas viram mensagem em português sem dados internos.
+- **Dado** assinatura no canal administrativo.
+- **Quando** a exclusão é persistida.
+- **Então** chega `order.deleted` sem PII; o canal público não recebe o sinal e o acompanhamento passa a devolver `404`.
 
 ---
 

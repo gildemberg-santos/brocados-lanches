@@ -172,6 +172,8 @@ func NewRouter(deps Dependencies) http.Handler {
 
 				protected.Get("/integrations/webhook", handleAdminGetWebhook(deps.Webhooks, logger))
 				protected.Patch("/integrations/webhook", handleAdminUpdateWebhook(deps.Webhooks, logger))
+
+				protected.Delete("/orders/{id}", handleAdminDeleteOrder(deps.AdminOrders, deps.Events, logger))
 			})
 		})
 	}

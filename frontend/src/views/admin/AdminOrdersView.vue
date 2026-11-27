@@ -11,11 +11,14 @@ import PriceText from '../../components/PriceText.vue'
 import { formatOrderDateTime } from '../../features/admin-orders/format'
 import { FULFILLMENT_LABELS } from '../../features/admin-orders/orderStatus'
 import { subscribeOrderEvents, type OrderEventConnectionStatus } from '../../services/realtime'
+import { useAdminAuthStore } from '../../stores/adminAuth'
 import { useAdminOrdersStore } from '../../stores/adminOrders'
 import type { AdminOrderListQuery } from '../../types/order'
 
 const store = useAdminOrdersStore()
+const auth = useAdminAuthStore()
 const connectionStatus = ref<OrderEventConnectionStatus>('connecting')
+const pendingDeleteId = ref<string | null>(null)
 let stopEvents: (() => void) | null = null
 
 function applyFilters(filters: Partial<AdminOrderListQuery>): void {
@@ -26,6 +29,20 @@ function goToPage(page: number): void {
   void store.goToPage(page)
 }
 
+function requestDelete(id: string): void {
+  pendingDeleteId.value = id
+}
+
+function cancelDelete(): void {
+  pendingDeleteId.value = null
+}
+
+async function confirmDelete(id: string): Promise<void> {
+  if (await store.deleteOrder(id)) {
+    pendingDeleteId.value = null
+  }
+}
+
 onMounted(() => {
   if (store.state === 'idle') {
     void store.load()
@@ -33,7 +50,11 @@ onMounted(() => {
   stopEvents = subscribeOrderEvents(
     '/api/v1/admin/orders/events',
     (event) => {
-      if (event.type === 'order.created' || event.type === 'order.updated') {
+      if (
+        event.type === 'order.created' ||
+        event.type === 'order.updated' ||
+        event.type === 'order.deleted'
+      ) {
         void store.refreshFromEvent()
       }
     },
@@ -62,6 +83,17 @@ onUnmounted(() => {
           ? 'Fila atualizada automaticamente.'
           : 'Conexão em tempo real indisponível. Tentando reconectar.'
       }}
+    </p>
+
+    <p
+      v-if="store.deleteError"
+      class="admin-page__feedback admin-page__feedback--error"
+      role="alert"
+    >
+      {{ store.deleteError }}
+    </p>
+    <p v-else-if="store.deleteSuccess" class="admin-page__feedback" role="status">
+      {{ store.deleteSuccess }}
     </p>
 
     <AdminOrderFilters :filters="store.filters" @apply="applyFilters" />
@@ -118,6 +150,42 @@ onUnmounted(() => {
           >
             Ver detalhes
           </RouterLink>
+
+          <div v-if="auth.isOwner" class="order-row__delete">
+            <button
+              v-if="pendingDeleteId !== order.id"
+              type="button"
+              class="order-row__delete-button"
+              :aria-label="`Excluir pedido ${order.orderNumber}`"
+              @click="requestDelete(order.id)"
+            >
+              Excluir pedido
+            </button>
+            <div
+              v-else
+              class="order-row__confirm"
+              role="group"
+              :aria-label="`Confirmar exclusão do pedido ${order.orderNumber}`"
+            >
+              <p>Excluir pedido {{ order.orderNumber }}? Esta ação é irreversível.</p>
+              <button
+                type="button"
+                class="order-row__delete-button"
+                :disabled="store.deleteLoading"
+                @click="confirmDelete(order.id)"
+              >
+                {{ store.deleteLoading ? 'Excluindo…' : 'Confirmar exclusão' }}
+              </button>
+              <button
+                type="button"
+                class="order-row__cancel-button"
+                :disabled="store.deleteLoading"
+                @click="cancelDelete"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         </li>
       </ol>
 
@@ -241,6 +309,62 @@ onUnmounted(() => {
   font-size: var(--font-size-caption);
   font-weight: 800;
   text-decoration: none;
+}
+
+.admin-page__feedback {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--bg-border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: var(--font-size-caption);
+}
+
+.admin-page__feedback--error {
+  color: var(--status-error);
+}
+
+.order-row__delete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-row__delete-button,
+.order-row__cancel-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--bg-border);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.order-row__delete-button {
+  color: var(--status-error);
+}
+
+.order-row__delete-button:disabled,
+.order-row__cancel-button:disabled {
+  opacity: 0.5;
+}
+
+.order-row__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-row__confirm p {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
 }
 
 .order-pagination {

@@ -13,6 +13,7 @@ const (
 	EventConnected    = "connected"
 	EventOrderCreated = "order.created"
 	EventOrderUpdated = "order.updated"
+	EventOrderDeleted = "order.deleted"
 )
 
 // TopicAdmin recebe os sinais de todos os pedidos; o tópico público recebe

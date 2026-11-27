@@ -1,11 +1,17 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchAdminOrder, fetchAdminOrders, updateAdminOrderStatus } from '../services/adminOrders'
+import {
+  deleteAdminOrder,
+  fetchAdminOrder,
+  fetchAdminOrders,
+  updateAdminOrderStatus,
+} from '../services/adminOrders'
 import { ApiError } from '../services/http'
 import { useAdminOrdersStore } from './adminOrders'
 
 vi.mock('../services/adminOrders', () => ({
+  deleteAdminOrder: vi.fn(),
   fetchAdminOrder: vi.fn(),
   fetchAdminOrders: vi.fn(),
   updateAdminOrderStatus: vi.fn(),
@@ -14,6 +20,7 @@ vi.mock('../services/adminOrders', () => ({
 const mockedList = vi.mocked(fetchAdminOrders)
 const mockedDetail = vi.mocked(fetchAdminOrder)
 const mockedUpdate = vi.mocked(updateAdminOrderStatus)
+const mockedDelete = vi.mocked(deleteAdminOrder)
 
 const listItem = {
   id: 'order-1',
@@ -187,5 +194,39 @@ describe('adminOrders store', () => {
 
     await store.refreshDetailFromEvent('outro-pedido')
     expect(mockedDetail).toHaveBeenCalledTimes(2)
+  })
+
+  it('exclui o pedido somente após confirmação do servidor e ajusta a paginação', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem, { ...listItem, id: 'order-2', orderNumber: 1043 }],
+      meta: { page: 1, pageSize: 20, total: 2, totalPages: 1 },
+    })
+    mockedDelete.mockResolvedValue(undefined)
+    const store = useAdminOrdersStore()
+    await store.load()
+
+    await expect(store.deleteOrder('order-1')).resolves.toBe(true)
+
+    expect(mockedDelete).toHaveBeenCalledWith('order-1')
+    expect(store.orders.map((item) => item.id)).toEqual(['order-2'])
+    expect(store.meta.total).toBe(1)
+    expect(store.deleteSuccess).toContain('excluído')
+    expect(store.deleteLoading).toBe(false)
+  })
+
+  it('mantém o pedido na fila quando a exclusão falha', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    mockedDelete.mockRejectedValueOnce(new ApiError(403, 'FORBIDDEN', 'raw'))
+    const store = useAdminOrdersStore()
+    await store.load()
+
+    await expect(store.deleteOrder('order-1')).resolves.toBe(false)
+
+    expect(store.orders).toEqual([listItem])
+    expect(store.deleteError).toContain('permissão')
+    expect(store.deleteLoading).toBe(false)
   })
 })

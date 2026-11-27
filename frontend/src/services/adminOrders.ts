@@ -1,4 +1,4 @@
-import { get, getData, patchData } from './http'
+import { deleteEmpty, get, getData, patchData } from './http'
 import type { AdminPage } from '../types/admin'
 import type {
   AdminOrderDetail,
@@ -48,4 +48,8 @@ export function updateAdminOrderStatus(
   request: AdminOrderStatusRequest,
 ): Promise<AdminOrderDetail> {
   return patchData<AdminOrderDetail>(`${BASE_PATH}/${encodeURIComponent(id)}/status`, request)
+}
+
+export function deleteAdminOrder(id: string): Promise<void> {
+  return deleteEmpty(`${BASE_PATH}/${encodeURIComponent(id)}`)
 }

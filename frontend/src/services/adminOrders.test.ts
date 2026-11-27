@@ -1,14 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { get, getData, patchData } from './http'
-import { fetchAdminOrder, fetchAdminOrders, updateAdminOrderStatus } from './adminOrders'
+import { deleteEmpty, get, getData, patchData } from './http'
+import {
+  deleteAdminOrder,
+  fetchAdminOrder,
+  fetchAdminOrders,
+  updateAdminOrderStatus,
+} from './adminOrders'
 
 vi.mock('./http', () => ({
+  deleteEmpty: vi.fn(),
   get: vi.fn(),
   getData: vi.fn(),
   patchData: vi.fn(),
 }))
 
+const mockedDeleteEmpty = vi.mocked(deleteEmpty)
 const mockedGet = vi.mocked(get)
 const mockedGetData = vi.mocked(getData)
 const mockedPatchData = vi.mocked(patchData)
@@ -65,5 +72,12 @@ describe('adminOrders service', () => {
       status: 'cancelled',
     })
     expect(mockedPatchData).toHaveBeenCalledWith('/api/v1/admin/orders/abc/status', request)
+  })
+
+  it('exclui o pedido codificando o identificador', async () => {
+    mockedDeleteEmpty.mockResolvedValue(undefined)
+
+    await expect(deleteAdminOrder('abc/123')).resolves.toBeUndefined()
+    expect(mockedDeleteEmpty).toHaveBeenCalledWith('/api/v1/admin/orders/abc%2F123')
   })
 })

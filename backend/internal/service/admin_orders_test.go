@@ -25,6 +25,9 @@ type fakeAdminOrderRepository struct {
 	listErr            error
 	getErr             error
 	writeErr           error
+	deleteErr          error
+	deletedID          string
+	deleted            bool
 	writes             int
 }
 
@@ -57,6 +60,18 @@ func (f *fakeAdminOrderRepository) AdminUpdateOrderStatus(_ context.Context, id,
 		return f.writeErr
 	}
 	f.orders[id] = order
+	return nil
+}
+
+func (f *fakeAdminOrderRepository) AdminDeleteOrder(_ context.Context, id string, audit domain.AuditLog) error {
+	f.writes++
+	f.deletedID = id
+	f.lastAudit = audit
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+	delete(f.orders, id)
+	f.deleted = true
 	return nil
 }
 
@@ -239,5 +254,65 @@ func TestAdminOrderServiceUpdateStatusCancelAndErrors(t *testing.T) {
 	}
 	if repo.writes != writesBefore+1 {
 		t.Error("stale transition must reach repository once")
+	}
+}
+
+func TestAdminOrderServiceDeleteAnyStatusWithAuditableSnapshot(t *testing.T) {
+	for _, status := range []string{
+		domain.OrderStatusPending, domain.OrderStatusConfirmed, domain.OrderStatusPreparing,
+		domain.OrderStatusReady, domain.OrderStatusOutForDelivery, domain.OrderStatusPickedUp,
+		domain.OrderStatusDelivered, domain.OrderStatusCancelled,
+	} {
+		t.Run(status, func(t *testing.T) {
+			repo := newFakeAdminOrderRepository()
+			order := adminOrderFixture()
+			order.Status = status
+			repo.orders[adminOrderTestID] = order
+			service := newAdminOrderTestService(repo)
+
+			deleted, err := service.Delete(context.Background(), adminOrderTestActor, adminOrderTestID)
+			if err != nil {
+				t.Fatalf("Delete() error = %v", err)
+			}
+			if deleted.Number != 42 || repo.deletedID != adminOrderTestID || !repo.deleted {
+				t.Fatalf("deleted = %+v, repository = %+v", deleted, repo)
+			}
+			if repo.lastAudit.Action != domain.AuditActionDelete || repo.lastAudit.Entity != domain.AuditEntityOrder ||
+				repo.lastAudit.EntityID != adminOrderTestID || repo.lastAudit.ActorID != adminOrderTestActor {
+				t.Fatalf("audit = %+v", repo.lastAudit)
+			}
+			if repo.lastAudit.Before["number"] != int64(42) || repo.lastAudit.Before["status"] != status {
+				t.Fatalf("audit before = %+v", repo.lastAudit.Before)
+			}
+			if repo.lastAudit.After != nil {
+				t.Fatalf("delete audit must not have after snapshot: %+v", repo.lastAudit.After)
+			}
+			for _, key := range []string{"customer", "address", "items", "note", "phone"} {
+				if _, ok := repo.lastAudit.Before[key]; ok {
+					t.Fatalf("audit leaked %q: %+v", key, repo.lastAudit.Before)
+				}
+			}
+		})
+	}
+}
+
+func TestAdminOrderServiceDeleteErrors(t *testing.T) {
+	repo := newFakeAdminOrderRepository()
+	service := newAdminOrderTestService(repo)
+
+	if _, err := service.Delete(context.Background(), adminOrderTestActor, "invalido"); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("invalid id error = %v, want ErrNotFound", err)
+	}
+	if _, err := service.Delete(context.Background(), adminOrderTestActor, adminOrderTestID); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("unknown id error = %v, want ErrNotFound", err)
+	}
+
+	repo.orders[adminOrderTestID] = adminOrderFixture()
+	repo.deleteErr = domain.ErrConflict
+	if _, err := service.Delete(context.Background(), adminOrderTestActor, adminOrderTestID); !errors.Is(err, domain.ErrConflict) {
+		t.Errorf("repository error = %v, want ErrConflict", err)
+	}
+	if repo.deleted {
+		t.Error("failed delete must not be reported as done")
 	}
 }

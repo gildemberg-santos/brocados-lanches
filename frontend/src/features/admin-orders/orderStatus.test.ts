@@ -79,6 +79,15 @@ describe('adminOrderErrorMessage', () => {
     expect(
       adminOrderErrorMessage(new ApiError(500, 'INTERNAL_ERROR', 'mongo: boom'), 'status'),
     ).toBe('Não foi possível atualizar o pedido. Tente novamente.')
+    expect(
+      adminOrderErrorMessage(new ApiError(500, 'INTERNAL_ERROR', 'mongo: boom'), 'delete'),
+    ).toBe('Não foi possível excluir o pedido. Tente novamente.')
+  })
+
+  it('orienta quando o pedido já foi excluído por outra sessão', () => {
+    expect(adminOrderErrorMessage(new ApiError(404, 'NOT_FOUND', 'raw'), 'delete')).toContain(
+      'já não está na fila',
+    )
   })
 })
 

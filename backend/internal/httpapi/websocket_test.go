@@ -187,6 +187,36 @@ func TestPublishOrderEventSeparaCanais(t *testing.T) {
 	}
 }
 
+func TestPublishOrderDeletedAvisaApenasAdmin(t *testing.T) {
+	hub := realtime.NewHub()
+	defer hub.Close()
+	admin, ok := hub.Subscribe(realtime.TopicAdmin)
+	if !ok {
+		t.Fatal("Subscribe(admin) = false")
+	}
+	defer admin.Close()
+	public, ok := hub.Subscribe(realtime.TopicForPublic("opaco"))
+	if !ok {
+		t.Fatal("Subscribe(public) = false")
+	}
+	defer public.Close()
+
+	order := adminOrderDetailFixture()
+	order.UpdatedAt = time.Date(2026, 11, 27, 10, 0, 0, 0, time.UTC)
+	publishOrderDeleted(hub, order)
+
+	event := <-admin.Events
+	if event.Type != realtime.EventOrderDeleted || event.OrderID != order.ID ||
+		event.PublicID != order.PublicID || event.OrderNumber != order.Number {
+		t.Fatalf("evento admin = %+v", event)
+	}
+	select {
+	case publicEvent := <-public.Events:
+		t.Fatalf("canal público não deve receber exclusão: %+v", publicEvent)
+	default:
+	}
+}
+
 func TestCreateOrderPublicaEventoApenasNaPrimeiraGravacao(t *testing.T) {
 	for _, test := range []struct {
 		name     string

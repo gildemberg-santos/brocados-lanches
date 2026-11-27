@@ -2,7 +2,12 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { adminOrderErrorMessage } from '../features/admin-orders/orderStatus'
-import { fetchAdminOrder, fetchAdminOrders, updateAdminOrderStatus } from '../services/adminOrders'
+import {
+  deleteAdminOrder,
+  fetchAdminOrder,
+  fetchAdminOrders,
+  updateAdminOrderStatus,
+} from '../services/adminOrders'
 import type { AdminPageMeta } from '../types/admin'
 import type {
   AdminOrderDetail,
@@ -43,6 +48,9 @@ export const useAdminOrdersStore = defineStore('adminOrders', () => {
   const actionLoading = ref(false)
   const actionError = ref('')
   const actionSuccess = ref('')
+  const deleteLoading = ref(false)
+  const deleteError = ref('')
+  const deleteSuccess = ref('')
 
   const isEmpty = computed(() => state.value === 'success' && orders.value.length === 0)
   const totalPages = computed(() => meta.value.totalPages)
@@ -172,6 +180,30 @@ export const useAdminOrdersStore = defineStore('adminOrders', () => {
     }
   }
 
+  /** Remove da fila local apenas depois do 204; o servidor já persistiu a exclusão. */
+  async function deleteOrder(id: string): Promise<boolean> {
+    deleteLoading.value = true
+    deleteError.value = ''
+    deleteSuccess.value = ''
+    try {
+      await deleteAdminOrder(id)
+      orders.value = orders.value.filter((item) => item.id !== id)
+      const total = Math.max(0, meta.value.total - 1)
+      meta.value = {
+        ...meta.value,
+        total,
+        totalPages: Math.ceil(total / Math.max(meta.value.pageSize, 1)),
+      }
+      deleteSuccess.value = 'Pedido excluído.'
+      return true
+    } catch (cause: unknown) {
+      deleteError.value = adminOrderErrorMessage(cause, 'delete')
+      return false
+    } finally {
+      deleteLoading.value = false
+    }
+  }
+
   return {
     state,
     orders,
@@ -186,6 +218,9 @@ export const useAdminOrdersStore = defineStore('adminOrders', () => {
     actionLoading,
     actionError,
     actionSuccess,
+    deleteLoading,
+    deleteError,
+    deleteSuccess,
     load,
     refreshFromEvent,
     applyFilters,
@@ -194,5 +229,6 @@ export const useAdminOrdersStore = defineStore('adminOrders', () => {
     refreshDetailFromEvent,
     resetDetail,
     changeStatus,
+    deleteOrder,
   }
 })

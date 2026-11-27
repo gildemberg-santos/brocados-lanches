@@ -60,6 +60,16 @@ func (f *fakeAdminOrdersHandlerService) UpdateStatus(_ context.Context, actorID,
 	return updated, f.err
 }
 
+func (f *fakeAdminOrdersHandlerService) Delete(_ context.Context, actorID, id string) (domain.Order, error) {
+	f.calls++
+	f.actorID = actorID
+	f.id = id
+	if f.err != nil {
+		return domain.Order{}, f.err
+	}
+	return f.order, nil
+}
+
 func newAdminOrdersTestRouter(auth AdminAuthService, orders AdminOrderService) http.Handler {
 	return NewRouter(Dependencies{
 		AdminAuth:   auth,
@@ -337,5 +347,83 @@ func TestAdminOrderRoutesRequireSessionRoleAndCSRF(t *testing.T) {
 	router.ServeHTTP(unknownField, newAdminRequest(http.MethodPatch, path+"/"+adminOrderDetailFixture().ID+"/status", `{"status":"confirmed","totalCents":1}`))
 	if unknownField.Code != http.StatusBadRequest {
 		t.Errorf("unknown field status = %d, want 400", unknownField.Code)
+	}
+
+	deleteAsOperator := httptest.NewRecorder()
+	id := adminOrderDetailFixture().ID
+	router.ServeHTTP(deleteAsOperator, newAdminRequest(http.MethodDelete, path+"/"+id, ""))
+	if deleteAsOperator.Code != http.StatusForbidden {
+		t.Errorf("operator delete status = %d, want 403", deleteAsOperator.Code)
+	}
+}
+
+func TestAdminDeleteOrderRequiresOwnerAndReturnsNoContent(t *testing.T) {
+	orders := &fakeAdminOrdersHandlerService{order: adminOrderDetailFixture()}
+	notifier := &fakeOrderNotifier{}
+	router := NewRouter(Dependencies{
+		AdminAuth:   newAdminOwnerAuth(),
+		AdminCookie: AdminCookieConfig{Name: "brocados_admin"},
+		AdminOrders: orders,
+		Notifier:    notifier,
+		Logger:      slog.New(slog.NewTextHandler(io.Discard, nil)),
+	})
+
+	id := adminOrderDetailFixture().ID
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, newAdminRequest(http.MethodDelete, "/api/v1/admin/orders/"+id, ""))
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204; body = %s", response.Code, response.Body.String())
+	}
+	if response.Body.Len() != 0 {
+		t.Errorf("body = %q, want empty", response.Body.String())
+	}
+	if orders.actorID != testActorIDForHTTP || orders.id != id {
+		t.Fatalf("actor = %q, id = %q", orders.actorID, orders.id)
+	}
+	if len(notifier.events) != 0 {
+		t.Fatalf("delete must not notify webhook: %+v", notifier.events)
+	}
+}
+
+func TestAdminDeleteOrderErrorsAreMapped(t *testing.T) {
+	tests := []struct {
+		name       string
+		err        error
+		wantStatus int
+		wantCode   string
+	}{
+		{"não encontrado", domain.ErrNotFound, http.StatusNotFound, codeNotFound},
+		{"sem sessão", domain.ErrUnauthorized, http.StatusUnauthorized, codeUnauthorized},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			orders := &fakeAdminOrdersHandlerService{err: test.err}
+			router := newAdminOrdersTestRouter(newAdminOwnerAuth(), orders)
+			path := "/api/v1/admin/orders/" + adminOrderDetailFixture().ID
+
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, newAdminRequest(http.MethodDelete, path, ""))
+			if response.Code != test.wantStatus {
+				t.Fatalf("status = %d, want %d; body = %s", response.Code, test.wantStatus, response.Body.String())
+			}
+			var envelope errorEnvelope
+			if err := json.Unmarshal(response.Body.Bytes(), &envelope); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+			if envelope.Error.Code != test.wantCode {
+				t.Errorf("code = %q, want %q", envelope.Error.Code, test.wantCode)
+			}
+		})
+	}
+}
+
+func TestAdminDeleteOrderRejectsBadCSRF(t *testing.T) {
+	router := newAdminOrdersTestRouter(newAdminOwnerAuth(), &fakeAdminOrdersHandlerService{})
+	request := newAdminRequest(http.MethodDelete, "/api/v1/admin/orders/"+adminOrderDetailFixture().ID, "")
+	request.Header.Set("Origin", "https://evil.example")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", response.Code)
 	}
 }

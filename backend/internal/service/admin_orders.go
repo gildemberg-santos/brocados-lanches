@@ -15,6 +15,7 @@ type AdminOrderRepository interface {
 	AdminListOrders(ctx context.Context, query domain.AdminOrderListQuery) ([]domain.Order, int64, error)
 	FindByID(ctx context.Context, id string) (domain.Order, error)
 	AdminUpdateOrderStatus(ctx context.Context, id, expectedStatus string, order domain.Order, audit domain.AuditLog) error
+	AdminDeleteOrder(ctx context.Context, id string, audit domain.AuditLog) error
 }
 
 // AdminOrderService aplica validação, máscara de PII e auditoria à operação.
@@ -138,6 +139,31 @@ func (s *AdminOrderService) UpdateStatus(ctx context.Context, actorID, id string
 	return updated, nil
 }
 
+// Delete remove o pedido do banco e registra auditoria sem PII. A operação é
+// permitida em qualquer status porque também serve para limpar pedidos de teste
+// e lançamentos incorretos; a confirmação fica no painel, não no domínio.
+func (s *AdminOrderService) Delete(ctx context.Context, actorID, id string) (domain.Order, error) {
+	if !isObjectID(id) {
+		return domain.Order{}, domain.ErrNotFound
+	}
+	order, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return domain.Order{}, err
+	}
+	audit := domain.AuditLog{
+		ActorID:   actorID,
+		Action:    domain.AuditActionDelete,
+		Entity:    domain.AuditEntityOrder,
+		EntityID:  id,
+		Before:    orderDeleteAuditSnapshot(order),
+		CreatedAt: s.now().UTC(),
+	}
+	if err := s.repo.AdminDeleteOrder(ctx, id, audit); err != nil {
+		return domain.Order{}, err
+	}
+	return order, nil
+}
+
 func normalizeAdminOrderQuery(query domain.AdminOrderListQuery) (domain.AdminOrderListQuery, error) {
 	if query.Page == 0 {
 		query.Page = 1
@@ -193,6 +219,15 @@ func isObjectID(value string) bool {
 
 func orderStatusAuditSnapshot(order domain.Order) map[string]any {
 	return map[string]any{
+		"status":      order.Status,
+		"fulfillment": string(order.Fulfillment),
+		"totalCents":  order.TotalCents,
+	}
+}
+
+func orderDeleteAuditSnapshot(order domain.Order) map[string]any {
+	return map[string]any{
+		"number":      order.Number,
 		"status":      order.Status,
 		"fulfillment": string(order.Fulfillment),
 		"totalCents":  order.TotalCents,

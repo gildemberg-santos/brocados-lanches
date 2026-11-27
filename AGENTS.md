@@ -25,6 +25,8 @@ Em 27/11/2026, o monitoramento de erros passou a usar Sentry somente para falhas
 
 Em 27/11/2026, o painel passou a permitir escolher quais eventos do pedido disparam webhook: criação e cada um dos sete status mapeados (`confirmed`, `preparing`, `ready`, `out_for_delivery`, `picked_up`, `delivered`, `cancelled`) têm uma opção em `/admin/integracoes/webhook`, somente para `owner` (D-048). A seleção é persistida em `store_settings.webhook.events`, validada no servidor e aplicada pelo notificador antes do POST; configurações antigas sem o campo continuam enviando todos os eventos, e uma lista vazia desativa todos sem mudar o `active`. O cabeçalho `X-Brocados-Event` permanece genérico (`order.created`/`order.updated`); a chave específica do status é usada apenas no filtro interno e na auditoria, sem PII. Em 27/11/2026, a mensagem do webhook passou a incluir o link `<ADMIN_BASE_URL>/admin/pedidos/<id>` (D-049): em desenvolvimento a base é `http://localhost:5173`, e em produção `ADMIN_BASE_URL` deve ser HTTPS ou o link é omitido até o domínio ser decidido. O link usa o `id` hexadecimal, não o `publicId`. O desenvolvimento da API usa Air para hot reload via `make dev-api`, com `backend/.air.toml` observando `cmd`, `internal` e `.env`.
 
+Em 27/11/2026, a fila do painel passou a permitir que somente `owner` exclua pedidos manualmente, em qualquer status, após confirmação explícita na tela (D-051). `DELETE /api/v1/admin/orders/{id}` remove o documento do MongoDB e responde `204`; a auditoria registra número, status, forma de entrega e total antes da exclusão, sem PII. A exclusão não dispara webhook, não apaga perfil de conveniência e publica `order.deleted` apenas no canal administrativo; o acompanhamento público passa a devolver `404` na próxima consulta do pedido removido.
+
 Em 25/11/2026, uma auditoria de conformidade comparou as telas com o protótipo e com `docs/07-design-system-e-experiencia.md`. Os desvios, a severidade e as tarefas de correção estão registrados em `docs/14-auditoria-design-system.md` e no Épico 12 de `docs/08-backlog.md`. O Épico 12 foi concluído em 25/11/2026, com as decisões de design registradas em `docs/13-decisoes-e-pendencias.md` (D-029 a D-031); privacidade, termos e créditos foram publicados em 25/11/2026 (D-033), com o canal do titular nos canais já existentes em `/contato` e os créditos liberados para indexação.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
@@ -409,7 +411,8 @@ Preço, taxa, total e disponibilidade **nunca** vêm do cliente. A resposta incl
 | GET | `/admin/orders` | Fila com filtro por status e data |
 | GET | `/admin/orders/{id}` | Detalhe, com `customerProfile` quando houver perfil reconhecido |
 | PATCH | `/admin/orders/{id}/status` | Transição de status |
-| WS | `/admin/orders/events` | Criações e mudanças de status; exige sessão |
+| DELETE | `/admin/orders/{id}` | Exclusão física pelo `owner`, com auditoria sem PII (D-051) |
+| WS | `/admin/orders/events` | Criações, mudanças de status e exclusões; exige sessão |
 | GET/POST/PATCH | `/admin/users` | Usuários admin; somente `owner` |
 | GET | `/admin/audit-logs` | Auditoria de mutações; somente `owner` |
 

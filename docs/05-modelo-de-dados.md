@@ -240,6 +240,8 @@ A fila administrativa usa os filtros `status`, `fulfillment`, `from`/`to` (inter
 
 A transição de status usa compare-and-set em `status` e grava, na mesma operação quando o MongoDB suporta transação, o documento do pedido e um registro em `audit_logs` com `entity: "orders"`, snapshots mínimos (`status`, `fulfillment`, `totalCents`) e `actorId`. `confirmedAt` e `cancelledAt` são preenchidos nas transições correspondentes; `cancelReason` só existe em cancelamentos.
 
+A exclusão manual do `owner` remove o documento e a chave `idempotencyKey` associada em qualquer status (D-051). A auditoria correspondente guarda só `number`, `status`, `fulfillment` e `totalCents`; o perfil de conveniência em `customer_profiles` não é apagado, pois existe por telefone normalizado e tem retenção própria.
+
 `customer`:
 
 ```json
@@ -395,7 +397,7 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 |---|---|---|---|
 | `_id` | ObjectID | sim | |
 | `actorId` | ObjectID | sim | Usuário admin |
-| `action` | string | sim | `create` ou `update` |
+| `action` | string | sim | `create`, `update` ou `delete` |
 | `entity` | string | sim | `categories`, `products`, `addons`, `delivery_zones`, `store_settings`, `webhook_settings` ou `orders` |
 | `entityId` | string | sim | ID alvo |
 | `before` | object | não | Snapshot mínimo |
@@ -412,6 +414,7 @@ Regras:
 
 - Não guardar senha, token, telefone, endereço ou observação.
 - `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`; em `webhook_settings`, somente `active`, `urlConfigured` e a lista efetiva de `events` (nunca a URL).
+- Na exclusão manual de pedido (D-051), `action` é `delete`, `after` é omitido e `before` contém apenas `number`, `status`, `fulfillment` e `totalCents`.
 - A mutação e a auditoria são gravadas na mesma transação quando o MongoDB suporta; em standalone, em sequência.
 - Retenção de 12 meses; após isso, arquivar ou anonimizar.
 
@@ -594,6 +597,6 @@ Nunca colocar PII em:
 2. `products.optionGroups` será embutido ou coleção separada? Proposta: embutido, por ser pequeno e acoplado ao produto.
 3. `orders.statusHistory` será usado ou apenas timestamps/auditoria? Proposta: usar, com limite natural.
 4. `audit_logs` terá TTL ou arquivamento? Proposta: arquivamento após 12 meses.
-5. Haverá soft delete em pedidos? Proposta: não; cancelamento é status.
+5. Haverá soft delete em pedidos? Não (D-051): cancelamento é status e a exclusão manual do `owner` é física, com auditoria mínima.
 6. `store_settings` terá múltiplos turnos por dia? Proposta: sim, `intervals[]`.
 7. O número do pedido pode ter lacunas? Proposta: sim, documentado.

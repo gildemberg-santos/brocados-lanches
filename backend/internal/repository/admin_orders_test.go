@@ -165,3 +165,46 @@ func TestAdminOrderRepositoryUpdateStatusWithAuditAndCompareAndSet(t *testing.T)
 		t.Errorf("unknown id error = %v, want ErrNotFound", err)
 	}
 }
+
+func TestAdminOrderRepositoryDeleteWithAudit(t *testing.T) {
+	ctx := testContext(t)
+	database := openCatalogTestDatabase(t)
+	if err := EnsureAuditIndexes(ctx, database); err != nil {
+		t.Fatalf("EnsureAuditIndexes() error = %v", err)
+	}
+	repository, err := NewOrderRepository(database)
+	if err != nil {
+		t.Fatalf("NewOrderRepository() error = %v", err)
+	}
+	fixture := adminOrderDocumentFixture(domain.OrderStatusReady, 77, domain.FulfillmentDelivery, "+5585992358708", testTime())
+	insertDocument(t, ctx, database.Collection(CollectionOrders), fixture)
+
+	audit := domain.AuditLog{
+		ActorID: adminTestActorID, Action: domain.AuditActionDelete,
+		Entity: domain.AuditEntityOrder, EntityID: fixture.ID.Hex(),
+		Before:    map[string]any{"number": int64(77), "status": domain.OrderStatusReady},
+		CreatedAt: time.Date(2026, 11, 27, 10, 0, 0, 0, time.UTC),
+	}
+	if err := repository.AdminDeleteOrder(ctx, fixture.ID.Hex(), audit); err != nil {
+		t.Fatalf("AdminDeleteOrder() error = %v", err)
+	}
+	if _, err := repository.FindByID(ctx, fixture.ID.Hex()); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("FindByID() after delete error = %v, want ErrNotFound", err)
+	}
+
+	filter := bson.D{
+		{Key: "entityId", Value: fixture.ID.Hex()},
+		{Key: "action", Value: domain.AuditActionDelete},
+	}
+	count, err := database.Collection(CollectionAuditLogs).CountDocuments(ctx, filter)
+	if err != nil || count != 1 {
+		t.Fatalf("audit count = %d, err = %v; want 1", count, err)
+	}
+	if err := repository.AdminDeleteOrder(ctx, fixture.ID.Hex(), audit); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("second delete error = %v, want ErrNotFound", err)
+	}
+	count, err = database.Collection(CollectionAuditLogs).CountDocuments(ctx, filter)
+	if err != nil || count != 1 {
+		t.Errorf("audit count after missing delete = %d, err = %v; want 1", count, err)
+	}
+}

@@ -355,6 +355,7 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 ### 10.4 Retenção e anonimização
 
 - Pedidos: 24 meses; depois remover/mascarar nome, telefone, endereço e observação, preservando estatística.
+- Exclusão manual: somente `owner`, pelo painel, em qualquer status; remove o pedido fisicamente e mantém auditoria mínima sem PII (D-051). O perfil de conveniência por telefone não é apagado junto.
 - Perfil de conveniência: 24 meses após o último pedido; expira por TTL. No opt-out, dados de conveniência são removidos imediatamente e fica apenas um tombstone com a chave e os prazos.
 - Sessões: TTL de 7 dias.
 - Auditoria: 12 meses, sem PII.

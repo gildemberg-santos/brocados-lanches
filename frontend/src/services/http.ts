@@ -207,6 +207,24 @@ export async function postEmpty(path: string): Promise<void> {
   })
 }
 
+/** DELETE sem corpo, para endpoints que respondem 204. */
+export async function deleteEmpty(path: string): Promise<void> {
+  return performRequest('DELETE', path, async (signal) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+      },
+      credentials: 'include',
+      signal,
+    })
+
+    if (!response.ok) {
+      throw await parseError(response)
+    }
+  })
+}
+
 export async function patch<T>(path: string, value: unknown): Promise<T> {
   return performRequest('PATCH', path, async (signal) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {

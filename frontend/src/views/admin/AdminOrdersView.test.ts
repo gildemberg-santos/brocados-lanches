@@ -4,18 +4,27 @@ import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchAdminOrders } from '../../services/adminOrders'
+import { deleteAdminOrder, fetchAdminOrders } from '../../services/adminOrders'
+import { ApiError } from '../../services/http'
 import { subscribeOrderEvents, type OrderEvent } from '../../services/realtime'
+import { useAdminAuthStore } from '../../stores/adminAuth'
 import AdminOrdersView from './AdminOrdersView.vue'
 
 vi.mock('../../services/adminOrders', () => ({
+  deleteAdminOrder: vi.fn(),
   fetchAdminOrders: vi.fn(),
 }))
 vi.mock('../../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi.fn()) }))
 
 const mockedList = vi.mocked(fetchAdminOrders)
+const mockedDelete = vi.mocked(deleteAdminOrder)
 const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const StubView = defineComponent({ render: () => h('div') })
+
+function setRole(role: 'owner' | 'operator'): void {
+  const auth = useAdminAuthStore()
+  auth.user = { id: 'u1', name: 'Dono', email: 'dono@example.com', role }
+}
 
 const listItem = {
   id: 'order-1',
@@ -43,7 +52,9 @@ describe('AdminOrdersView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockedSubscribeOrderEvents.mockReturnValue(vi.fn())
+    mockedDelete.mockResolvedValue(undefined)
     setActivePinia(createPinia())
+    setRole('owner')
   })
 
   async function mountView() {
@@ -134,5 +145,66 @@ describe('AdminOrdersView', () => {
     expect(mockedList).toHaveBeenLastCalledWith(
       expect.objectContaining({ status: 'cancelled', page: 1 }),
     )
+  })
+
+  it('só oferece exclusão para owner e pede confirmação antes de excluir', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    const wrapper = await mountView()
+
+    await wrapper.get('[aria-label="Excluir pedido 1042"]').trigger('click')
+    expect(wrapper.text()).toContain('Excluir pedido 1042? Esta ação é irreversível.')
+    expect(mockedDelete).not.toHaveBeenCalled()
+
+    setRole('operator')
+    await flushPromises()
+    expect(wrapper.find('[aria-label="Excluir pedido 1042"]').exists()).toBe(false)
+  })
+
+  it('exclui o pedido após confirmação e remove da fila', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    const wrapper = await mountView()
+
+    await wrapper.get('[aria-label="Excluir pedido 1042"]').trigger('click')
+    await wrapper.get('[aria-label="Confirmar exclusão do pedido 1042"] button').trigger('click')
+    await flushPromises()
+
+    expect(mockedDelete).toHaveBeenCalledWith('order-1')
+    expect(wrapper.text()).not.toContain('1042')
+    expect(wrapper.text()).toContain('Pedido excluído.')
+  })
+
+  it('mantém a confirmação aberta quando a exclusão falha', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    mockedDelete.mockRejectedValueOnce(new ApiError(403, 'FORBIDDEN', 'raw'))
+    const wrapper = await mountView()
+
+    await wrapper.get('[aria-label="Excluir pedido 1042"]').trigger('click')
+    await wrapper.get('[aria-label="Confirmar exclusão do pedido 1042"] button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Você não tem permissão para esta ação.')
+    expect(wrapper.find('[aria-label="Confirmar exclusão do pedido 1042"]').exists()).toBe(true)
+  })
+
+  it('recarrega a fila quando outro operador exclui um pedido', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    await mountView()
+
+    emitOrderEvent({ type: 'order.deleted', orderId: 'order-1', orderNumber: 1042 })
+    await flushPromises()
+
+    expect(mockedList).toHaveBeenCalledTimes(2)
   })
 })

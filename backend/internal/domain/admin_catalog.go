@@ -32,6 +32,7 @@ type AuditLog struct {
 const (
 	AuditActionCreate = "create"
 	AuditActionUpdate = "update"
+	AuditActionDelete = "delete"
 )
 
 // Entidades auditadas pelo painel.

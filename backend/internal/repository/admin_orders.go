@@ -172,6 +172,63 @@ func (r *OrderRepository) AdminUpdateOrderStatus(ctx context.Context, id, expect
 	return nil
 }
 
+// AdminDeleteOrder remove o pedido e registra a auditoria na mesma operação
+// quando o MongoDB suporta transação. Em standalone, onde não há transação, as
+// duas escritas acontecem em sequência.
+func (r *OrderRepository) AdminDeleteOrder(ctx context.Context, id string, audit domain.AuditLog) error {
+	objectID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return domain.ErrNotFound
+	}
+
+	write := func(writeCtx context.Context) error {
+		result, err := r.orders.DeleteOne(writeCtx, bson.D{{Key: "_id", Value: objectID}})
+		if err != nil {
+			return fmt.Errorf("delete order: %w", err)
+		}
+		if result.DeletedCount == 0 {
+			return domain.ErrNotFound
+		}
+		return nil
+	}
+
+	session, err := r.database.Client().StartSession()
+	if err != nil {
+		return fmt.Errorf("start order delete session: %w", err)
+	}
+	defer session.EndSession(ctx)
+
+	transactionStarted := false
+	writesStarted := false
+	transactionErr := session.StartTransaction()
+	if transactionErr == nil {
+		transactionStarted = true
+		transactionErr = mongo.WithSession(ctx, session, func(sessionCtx context.Context) error {
+			if err := write(sessionCtx); err != nil {
+				return err
+			}
+			writesStarted = true
+			if err := r.insertAuditLog(sessionCtx, audit); err != nil {
+				return err
+			}
+			return session.CommitTransaction(sessionCtx)
+		})
+	}
+	if transactionErr != nil {
+		if transactionStarted {
+			_ = session.AbortTransaction(ctx)
+		}
+		if writesStarted || !isTransactionUnsupported(transactionErr) {
+			return transactionErr
+		}
+		if err := write(ctx); err != nil {
+			return err
+		}
+		return r.insertAuditLog(ctx, audit)
+	}
+	return nil
+}
+
 // phoneDigits extrai apenas dígitos para que a busca funcione com o telefone
 // formatado ou mascarado exibido na fila.
 func phoneDigits(value string) string {

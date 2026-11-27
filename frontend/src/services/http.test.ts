@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   ApiError,
+  deleteEmpty,
   get,
   getData,
   patch,
@@ -218,6 +219,35 @@ describe('http', () => {
     )
 
     await expect(postEmpty('/api/v1/admin/auth/logout')).rejects.toMatchObject({
+      status: 403,
+      code: 'FORBIDDEN',
+    })
+  })
+
+  it('deletes without a body and accepts 204', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(deleteEmpty('/api/v1/admin/orders/abc')).resolves.toBeUndefined()
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/orders/abc', {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+      },
+      credentials: 'include',
+      signal: expect.any(AbortSignal),
+    })
+  })
+
+  it('maps empty DELETE errors to ApiError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(jsonResponse({ error: { code: 'FORBIDDEN', message: 'Negado.' } }, 403)),
+    )
+
+    await expect(deleteEmpty('/api/v1/admin/orders/abc')).rejects.toMatchObject({
       status: 403,
       code: 'FORBIDDEN',
     })
