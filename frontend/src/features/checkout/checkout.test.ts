@@ -55,6 +55,9 @@ describe('checkout', () => {
     expect(normalizePhone('(85) 99999-9999')).toBe('+5585999999999')
     expect(normalizePhone('5585999999999')).toBe('+5585999999999')
     expect(formatPhone('85999999999')).toBe('(85) 99999-9999')
+    expect(formatPhone('+5585999999999')).toBe('(85) 99999-9999')
+    expect(formatPhone('55 85 99999-9999')).toBe('(85) 99999-9999')
+    expect(normalizePhone(formatPhone('+5585999999999'))).toBe('+5585999999999')
   })
 
   it('builds a create request with customer, address and payment', () => {

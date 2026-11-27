@@ -307,6 +307,24 @@ describe('CheckoutView', () => {
     expect(wrapper.text()).toContain('Dados encontrados. Confira e ajuste se necessário.')
   })
 
+  it('mantém o DDD ao colar o telefone com prefixo +55 antes da busca', async () => {
+    const { wrapper } = await mountCheckout({
+      seed: true,
+      lookupResponse: { found: true, profile: { name: 'Maria Silva' } },
+    })
+
+    await wrapper.get('input[name="phone"]').setValue('+5585999999999')
+    await advanceCustomerLookup()
+
+    expect((wrapper.get('input[name="phone"]').element as HTMLInputElement).value).toBe(
+      '(85) 99999-9999',
+    )
+    expect(mockedFetchCustomerProfile).toHaveBeenCalledWith('(85) 99999-9999')
+    expect((wrapper.get('input[name="customerName"]').element as HTMLInputElement).value).toBe(
+      'Maria Silva',
+    )
+  })
+
   it('não sobrescreve nome, observação ou troco ao aplicar o perfil buscado', async () => {
     const { wrapper } = await mountCheckout({
       seed: true,

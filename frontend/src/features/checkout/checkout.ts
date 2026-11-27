@@ -75,17 +75,23 @@ export function normalizePhone(value: string): string {
 }
 
 export function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 11)
-  if (digits.length <= 2) {
-    return digits === '' ? '' : `(${digits}`
+  const digits = value.replace(/\D/g, '')
+  // Quem cola o número em E.164 (+55) não pode ter o DDD trocado pelo 55 do país.
+  const national =
+    (digits.length === 12 || digits.length === 13) && digits.startsWith('55')
+      ? digits.slice(2)
+      : digits
+  const masked = national.slice(0, 11)
+  if (masked.length <= 2) {
+    return masked === '' ? '' : `(${masked}`
   }
-  if (digits.length <= 6) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  if (masked.length <= 6) {
+    return `(${masked.slice(0, 2)}) ${masked.slice(2)}`
   }
-  if (digits.length <= 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  if (masked.length <= 10) {
+    return `(${masked.slice(0, 2)}) ${masked.slice(2, 6)}-${masked.slice(6)}`
   }
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  return `(${masked.slice(0, 2)}) ${masked.slice(2, 7)}-${masked.slice(7)}`
 }
 
 /** Converte texto de dinheiro em centavos inteiros, sem parseFloat. */

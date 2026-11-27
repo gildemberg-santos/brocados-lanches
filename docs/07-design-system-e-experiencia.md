@@ -268,7 +268,7 @@ Regras:
 - A consulta ao perfil não devolve taxa, histórico de pedidos, observação, troco nem `phoneKey`. Zona inativa retornada pelo perfil é descartada; preço e taxa continuam vindo da cotação autoritativa.
 - Retirada oculta endereço e zera taxa.
 - Zona inativa não aparece.
-- Telefone com máscara e normalização.
+- Telefone com máscara e normalização. Colar o número com prefixo `+55` preserva o DDD: a máscara remove o código do país antes de formatar, e a busca envia a forma mascarada; servidor e banco comparam apenas os dígitos normalizados com prefixo `55`.
 - Erros por campo, com foco no primeiro erro.
 - Total vem de `/orders/quote`; se a cotação falhar, não enviar.
 - Na entrega, a cotação só é solicitada após escolher a zona. Depois de recarregar a página, o resumo pede a zona em vez de enviar uma cotação incompleta (`422`).
