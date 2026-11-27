@@ -8,8 +8,14 @@ import EmptyState from '../../components/EmptyState.vue'
 import ErrorState from '../../components/ErrorState.vue'
 import LoadingSkeleton from '../../components/LoadingSkeleton.vue'
 import PriceText from '../../components/PriceText.vue'
+import StatusToast from '../../components/StatusToast.vue'
 import { formatOrderDateTime } from '../../features/admin-orders/format'
-import { FULFILLMENT_LABELS } from '../../features/admin-orders/orderStatus'
+import {
+  FULFILLMENT_LABELS,
+  ORDER_STATUS_LABELS,
+  isOrderStatus,
+} from '../../features/admin-orders/orderStatus'
+import { useOrderStatusNotifications } from '../../features/orders/statusNotifications'
 import { subscribeOrderEvents, type OrderEventConnectionStatus } from '../../services/realtime'
 import { useAdminAuthStore } from '../../stores/adminAuth'
 import { useAdminOrdersStore } from '../../stores/adminOrders'
@@ -20,6 +26,18 @@ const auth = useAdminAuthStore()
 const connectionStatus = ref<OrderEventConnectionStatus>('connecting')
 const pendingDeleteId = ref<string | null>(null)
 let stopEvents: (() => void) | null = null
+
+const {
+  notification: statusNotification,
+  handleEvent: handleStatusEvent,
+  dismiss: dismissStatusNotification,
+} = useOrderStatusNotifications({
+  currentStatus: (event) =>
+    store.state === 'idle' || store.state === 'loading'
+      ? undefined
+      : (store.orders.find((item) => item.id === event.orderId)?.status ?? null),
+  labelForStatus: (status) => (isOrderStatus(status) ? ORDER_STATUS_LABELS[status] : status),
+})
 
 function applyFilters(filters: Partial<AdminOrderListQuery>): void {
   void store.applyFilters(filters)
@@ -55,6 +73,7 @@ onMounted(() => {
         event.type === 'order.updated' ||
         event.type === 'order.deleted'
       ) {
+        handleStatusEvent(event)
         void store.refreshFromEvent()
       }
     },
@@ -209,6 +228,13 @@ onUnmounted(() => {
         </button>
       </nav>
     </template>
+
+    <StatusToast
+      v-if="statusNotification"
+      :key="statusNotification.id"
+      :message="statusNotification.message"
+      @close="dismissStatusNotification"
+    />
   </main>
 </template>
 

@@ -4,10 +4,14 @@ import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { playNotificationSound } from '../../features/orders/notificationSound'
 import { fetchAdminOrder, updateAdminOrderStatus } from '../../services/adminOrders'
 import { subscribeOrderEvents, type OrderEvent } from '../../services/realtime'
 import AdminOrderDetailView from './AdminOrderDetailView.vue'
 
+vi.mock('../../features/orders/notificationSound', () => ({
+  playNotificationSound: vi.fn(() => true),
+}))
 vi.mock('../../services/adminOrders', () => ({
   fetchAdminOrder: vi.fn(),
   fetchAdminOrders: vi.fn(),
@@ -16,6 +20,7 @@ vi.mock('../../services/adminOrders', () => ({
 vi.mock('../../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi.fn()) }))
 
 const mockedDetail = vi.mocked(fetchAdminOrder)
+const mockedPlayNotificationSound = vi.mocked(playNotificationSound)
 const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const mockedUpdate = vi.mocked(updateAdminOrderStatus)
 const StubView = defineComponent({ render: () => h('div') })
@@ -127,6 +132,29 @@ describe('AdminOrderDetailView', () => {
     expect(wrapper.text()).toContain('Em preparo')
   })
 
+  it('avisa com toast e som somente quando o status deste pedido muda', async () => {
+    mockedDetail.mockResolvedValue(detail)
+    const wrapper = await mountView()
+
+    emitOrderEvent({ type: 'connected' })
+    emitOrderEvent({ type: 'order.updated', orderId: 'outro-pedido', status: 'ready' })
+    expect(wrapper.find('.status-toast').exists()).toBe(false)
+    expect(mockedPlayNotificationSound).not.toHaveBeenCalled()
+
+    mockedDetail.mockResolvedValue({ ...detail, status: 'preparing' })
+    emitOrderEvent({
+      type: 'order.updated',
+      orderId: 'order-1',
+      orderNumber: 1042,
+      status: 'preparing',
+      updatedAt: '2026-11-27T12:00:00Z',
+    })
+    await flushPromises()
+
+    expect(wrapper.get('.status-toast').text()).toContain(`Pedido #${1042}: Em preparo`)
+    expect(mockedPlayNotificationSound).toHaveBeenCalledTimes(1)
+  })
+
   it('mostra o resumo do perfil de conveniência quando o cliente é recorrente', async () => {
     mockedDetail.mockResolvedValue({
       ...detail,
@@ -182,6 +210,18 @@ describe('AdminOrderDetailView', () => {
     expect(mockedUpdate).toHaveBeenCalledWith('order-1', { status: 'confirmed' })
     expect(wrapper.get('.admin-page__success').text()).toContain('Status do pedido atualizado')
     expect(wrapper.text()).toContain('Confirmado')
+    expect(wrapper.get('.status-toast').text()).toContain('Confirmado')
+    expect(mockedPlayNotificationSound).toHaveBeenCalledTimes(1)
+
+    mockedDetail.mockResolvedValue({ ...detail, status: 'confirmed' })
+    emitOrderEvent({
+      type: 'order.updated',
+      orderId: 'order-1',
+      status: 'confirmed',
+      updatedAt: '2026-11-27T12:10:00Z',
+    })
+    await flushPromises()
+    expect(mockedPlayNotificationSound).toHaveBeenCalledTimes(1)
   })
 
   it('mostra erro amigável quando o detalhe não carrega', async () => {

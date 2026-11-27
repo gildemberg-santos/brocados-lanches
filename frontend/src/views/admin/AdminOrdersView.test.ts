@@ -4,12 +4,16 @@ import { defineComponent, h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { playNotificationSound } from '../../features/orders/notificationSound'
 import { deleteAdminOrder, fetchAdminOrders } from '../../services/adminOrders'
 import { ApiError } from '../../services/http'
 import { subscribeOrderEvents, type OrderEvent } from '../../services/realtime'
 import { useAdminAuthStore } from '../../stores/adminAuth'
 import AdminOrdersView from './AdminOrdersView.vue'
 
+vi.mock('../../features/orders/notificationSound', () => ({
+  playNotificationSound: vi.fn(() => true),
+}))
 vi.mock('../../services/adminOrders', () => ({
   deleteAdminOrder: vi.fn(),
   fetchAdminOrders: vi.fn(),
@@ -18,6 +22,7 @@ vi.mock('../../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi
 
 const mockedList = vi.mocked(fetchAdminOrders)
 const mockedDelete = vi.mocked(deleteAdminOrder)
+const mockedPlayNotificationSound = vi.mocked(playNotificationSound)
 const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const StubView = defineComponent({ render: () => h('div') })
 
@@ -113,6 +118,30 @@ describe('AdminOrdersView', () => {
     emitOrderEvent({ type: 'order.updated', orderId: 'order-1', status: 'ready' })
     await flushPromises()
     expect(mockedList).toHaveBeenCalledTimes(2)
+  })
+
+  it('avisa com toast e som quando um pedido da fila muda de status', async () => {
+    mockedList.mockResolvedValue({
+      data: [listItem],
+      meta: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    })
+    const wrapper = await mountView()
+
+    emitOrderEvent({ type: 'connected' })
+    expect(wrapper.find('.status-toast').exists()).toBe(false)
+    expect(mockedPlayNotificationSound).not.toHaveBeenCalled()
+
+    emitOrderEvent({
+      type: 'order.updated',
+      orderId: 'order-1',
+      orderNumber: 1042,
+      status: 'ready',
+      updatedAt: '2026-11-27T12:00:00Z',
+    })
+    await flushPromises()
+
+    expect(wrapper.get('.status-toast').text()).toContain(`Pedido #${1042}: Pronto`)
+    expect(mockedPlayNotificationSound).toHaveBeenCalledTimes(1)
   })
 
   it('exibe estado vazio quando não há pedidos', async () => {

@@ -7,9 +7,11 @@ import ErrorState from '../components/ErrorState.vue'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import OrderStatusTimeline from '../components/OrderStatusTimeline.vue'
 import PriceText from '../components/PriceText.vue'
+import StatusToast from '../components/StatusToast.vue'
 import { formatOrderDateTime } from '../features/admin-orders/format'
 import { checkoutApiMessage, orderStatusLabel } from '../features/checkout/checkout'
 import { readHandoffUrl } from '../features/checkout/handoff'
+import { useOrderStatusNotifications } from '../features/orders/statusNotifications'
 import { fetchTrackedOrder } from '../services/orders'
 import {
   subscribeOrderEvents,
@@ -29,6 +31,16 @@ const handoffUrl = ref('')
 const linkCopied = ref(false)
 const connectionStatus = ref<OrderEventConnectionStatus>('connecting')
 let stopEvents: (() => void) | null = null
+
+const {
+  notification: statusNotification,
+  handleEvent: handleStatusEvent,
+  dismiss: dismissStatusNotification,
+} = useOrderStatusNotifications({
+  currentStatus: () => (loading.value ? undefined : (order.value?.status ?? null)),
+  labelForStatus: orderStatusLabel,
+  matchesOrder: (event) => !event.publicId || event.publicId === publicId.value,
+})
 
 const FINAL_STATUSES = new Set(['delivered', 'picked_up', 'cancelled'])
 
@@ -90,6 +102,7 @@ async function load(): Promise<void> {
 async function refreshFromEvent(event: OrderEvent): Promise<void> {
   if (loading.value || (event.type !== 'order.created' && event.type !== 'order.updated')) return
   if (event.publicId && event.publicId !== publicId.value) return
+  handleStatusEvent(event)
   try {
     const next = await fetchTrackedOrder(publicId.value)
     if (next.status !== order.value?.status || next.updatedAt !== order.value?.updatedAt) {
@@ -244,6 +257,13 @@ onUnmounted(() => {
 
       <RouterLink class="text-link" :to="{ name: 'menu' }">Voltar ao cardápio</RouterLink>
     </template>
+
+    <StatusToast
+      v-if="statusNotification"
+      :key="statusNotification.id"
+      :message="statusNotification.message"
+      @close="dismissStatusNotification"
+    />
   </main>
 </template>
 

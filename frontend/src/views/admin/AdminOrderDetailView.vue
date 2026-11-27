@@ -7,12 +7,14 @@ import OrderStatusBadge from '../../components/admin/OrderStatusBadge.vue'
 import PriceText from '../../components/PriceText.vue'
 import ErrorState from '../../components/ErrorState.vue'
 import LoadingSkeleton from '../../components/LoadingSkeleton.vue'
+import StatusToast from '../../components/StatusToast.vue'
 import { formatOrderDateTime } from '../../features/admin-orders/format'
 import {
   FULFILLMENT_LABELS,
   ORDER_STATUS_LABELS,
   isOrderStatus,
 } from '../../features/admin-orders/orderStatus'
+import { useOrderStatusNotifications } from '../../features/orders/statusNotifications'
 import { subscribeOrderEvents, type OrderEventConnectionStatus } from '../../services/realtime'
 import { useAdminOrdersStore } from '../../stores/adminOrders'
 import type { AdminOrderStatusRequest, PaymentMethod } from '../../types/order'
@@ -34,10 +36,36 @@ function statusLabelFor(status: string): string {
   return isOrderStatus(status) ? ORDER_STATUS_LABELS[status] : status
 }
 
+const {
+  notification: statusNotification,
+  handleEvent: handleStatusEvent,
+  announce: announceStatusChange,
+  dismiss: dismissStatusNotification,
+} = useOrderStatusNotifications({
+  currentStatus: () =>
+    store.detailState === 'idle' || store.detailState === 'loading'
+      ? undefined
+      : (order.value?.status ?? null),
+  labelForStatus: statusLabelFor,
+  matchesOrder: (event) => !event.orderId || event.orderId === orderId.value,
+})
+
 const statusLabel = computed(() => statusLabelFor(order.value?.status ?? ''))
 
-function changeStatus(request: AdminOrderStatusRequest): void {
-  void store.changeStatus(orderId.value, request)
+async function changeStatus(request: AdminOrderStatusRequest): Promise<void> {
+  const previousStatus = order.value?.status ?? ''
+  if (await store.changeStatus(orderId.value, request)) {
+    const next = order.value
+    if (next && next.status !== previousStatus) {
+      announceStatusChange({
+        type: 'order.updated',
+        orderId: next.id,
+        orderNumber: next.orderNumber,
+        status: next.status,
+        updatedAt: next.updatedAt,
+      })
+    }
+  }
 }
 
 function load(): void {
@@ -55,6 +83,7 @@ onMounted(() => {
         (event.type === 'order.created' || event.type === 'order.updated') &&
         event.orderId === orderId.value
       ) {
+        handleStatusEvent(event)
         void store.refreshDetailFromEvent(orderId.value)
       }
     },
@@ -248,6 +277,13 @@ watch(orderId, (next) => {
         Ver acompanhamento público
       </RouterLink>
     </template>
+
+    <StatusToast
+      v-if="statusNotification"
+      :key="statusNotification.id"
+      :message="statusNotification.message"
+      @close="dismissStatusNotification"
+    />
   </main>
 </template>
 
