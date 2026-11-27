@@ -16,13 +16,21 @@ import (
 	"github.com/brocados-lanches/api/internal/domain"
 )
 
+const testStoreNumber = "+5585992358708"
+
 type stubSettings struct {
-	settings domain.WebhookSettings
-	err      error
+	settings      domain.WebhookSettings
+	storeNumber   string
+	err           error
+	noStoreNumber bool
 }
 
-func (s *stubSettings) Get(context.Context) (domain.WebhookSettings, error) {
-	return s.settings, s.err
+func (s *stubSettings) GetNotification(context.Context) (domain.WebhookNotification, error) {
+	storeNumber := s.storeNumber
+	if !s.noStoreNumber && storeNumber == "" {
+		storeNumber = testStoreNumber
+	}
+	return domain.WebhookNotification{Settings: s.settings, StoreNumber: storeNumber}, s.err
 }
 
 func testOrder() domain.Order {
@@ -60,7 +68,10 @@ func TestDeliverPostsExactPayloadAndEventHeader(t *testing.T) {
 	defer server.Close()
 
 	notifier, err := NewNotifier(
-		&stubSettings{settings: domain.WebhookSettings{URL: server.URL, Active: true}},
+		&stubSettings{
+			settings:    domain.WebhookSettings{URL: server.URL, Active: true},
+			storeNumber: testStoreNumber,
+		},
 		slog.Default(),
 		func(domain.WebhookEvent) string { return "Mensagem formatada para envio ao cliente" },
 	)
@@ -82,8 +93,47 @@ func TestDeliverPostsExactPayloadAndEventHeader(t *testing.T) {
 	if received.Number != "+5511999991234" {
 		t.Fatalf("number = %q", received.Number)
 	}
+	if received.StoreNumber != testStoreNumber {
+		t.Fatalf("storeNumber = %q, want %q", received.StoreNumber, testStoreNumber)
+	}
 	if received.Message != "Mensagem formatada para envio ao cliente" {
 		t.Fatalf("message = %q", received.Message)
+	}
+}
+
+func TestDeliverSkipsWhenStoreNumberUnavailable(t *testing.T) {
+	var deliveries int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		deliveries++
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	var logs bytes.Buffer
+	notifier, err := NewNotifier(
+		&stubSettings{
+			settings:      domain.WebhookSettings{URL: server.URL, Active: true},
+			noStoreNumber: true,
+		},
+		slog.New(slog.NewTextHandler(&logs, nil)),
+		func(domain.WebhookEvent) string { return "mensagem" },
+	)
+	if err != nil {
+		t.Fatalf("NewNotifier: %v", err)
+	}
+	notifier.deliver(context.Background(), domain.WebhookEvent{
+		Type:  domain.WebhookEventOrderCreated,
+		Order: testOrder(),
+	})
+
+	if deliveries != 0 {
+		t.Fatalf("webhook incompleto foi entregue: %d chamada(s)", deliveries)
+	}
+	if !strings.Contains(logs.String(), "webhook skipped: store number unavailable") {
+		t.Fatalf("falta do número da loja não foi registrada: %s", logs.String())
+	}
+	if strings.Contains(logs.String(), "+5511999991234") {
+		t.Fatalf("log expôs telefone do cliente: %s", logs.String())
 	}
 }
 

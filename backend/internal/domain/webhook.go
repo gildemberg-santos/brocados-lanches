@@ -35,6 +35,13 @@ type WebhookEvent struct {
 	Order Order
 }
 
+// WebhookNotification reúne, em uma única leitura do documento da loja, a
+// configuração do webhook e o WhatsApp usado como destinatário interno (D-046).
+type WebhookNotification struct {
+	Settings    WebhookSettings
+	StoreNumber string
+}
+
 // Validate confere o endpoint antes de gravar. Qualquer esquema absoluto é
 // aceito, sem allowlist de host ou de IP; esquemas não HTTP falham no envio
 // best-effort sem bloquear o pedido.

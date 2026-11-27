@@ -702,17 +702,19 @@ Resposta/corpo parcial:
 - A configuração fica no documento `store_settings` (`webhook`), sem nova coleção. A auditoria registra `entity: webhook_settings` e apenas `active` + `urlConfigured` antes/depois; a URL nunca entra em auditoria ou log.
 - A leitura é restrita a `owner` para não expor o destino ao papel `operator`.
 - O disparo é best-effort e assíncrono: um único POST por evento, timeout de 3 s, sem retry, sem fila persistida e sem seguir redirecionamentos. Falha de conexão, timeout, resposta 3xx/4xx/5xx ou configuração inválida nunca altera o resultado da criação/transição; 3xx é registrado como falha no log.
+- Configuração e número da loja são lidos juntos do documento `store_settings`; sem `whatsapp` preenchido o envio é ignorado e registrado como aviso sem PII, para não entregar um payload com apenas um destinatário (D-046).
 - O PATCH da loja (`/admin/store`) não altera `webhook`; o PATCH da integração não altera campos operacionais da loja. Não há sobrescrita entre configurações lidas em momentos diferentes.
 - Corpo exato (sem campos adicionais):
 
 ```json
 {
   "number": "+5511999991234",
+  "storeNumber": "+5585992358708",
   "message": "Mensagem formatada para envio ao cliente"
 }
 ```
 
-- `number` é o telefone do cliente congelado no pedido; `message` reaproveita o texto do handoff do WhatsApp e inclui o status legível após transições. O texto usa negrito do WhatsApp (`*...*`), emojis de seção, vírgula decimal e quebras de linha. Exemplo para o pedido #20:
+- `number` é o telefone do cliente congelado no pedido e `storeNumber` é o `whatsapp` da loja configurado em `/admin/store`; ambos os destinatários são notificados no mesmo evento (D-046). `message` reaproveita o texto do handoff do WhatsApp e inclui o status legível após transições. O texto usa negrito do WhatsApp (`*...*`), emojis de seção, vírgula decimal e quebras de linha. Exemplo para o pedido #20:
 
 ```text
 *Pedido #20* 🍔

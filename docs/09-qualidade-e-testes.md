@@ -96,7 +96,7 @@ make test-e2e          # Playwright com API isolada em brocados_test
 | Pedidos admin | Filtros, paginação, detalhe, PII mascarada; fila e detalhe no painel com estados de carregamento/vazio/erro | US-070, US-071 |
 | Status | Todas as transições válidas e inválidas, motivo, concorrência; ações contextuais e confirmação no painel | US-072 |
 | Auditoria | Mutação gera log, owner lê, sem PII | US-073 |
-| Webhook | URL absoluta com qualquer esquema e host, exigência de URL quando ativo, payload `{number, message}`, cabeçalho de evento, replay sem duplicata, falha de transporte sem bloqueio, 403 para operator, auditoria sem URL e formulário owner-only | US-075 |
+| Webhook | URL absoluta com qualquer esquema e host, exigência de URL quando ativo, payload `{number, storeNumber, message}` com os dois destinatários e número da loja ausente sem envio, cabeçalho de evento, replay sem duplicata, falha de transporte sem bloqueio, 403 para operator, auditoria sem URL e formulário owner-only | US-075, D-046 |
 | SEO | Título, descrição, JSON-LD, sitemap | US-081 |
 | A11y | Teclado, foco, rótulos, contraste, 44 px, reduced motion | US-082 |
 | LGPD | PII fora de log, retenção, acompanhamento mínimo | US-080, US-093 |
@@ -237,6 +237,13 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Dado** telefone com DDI duplicado, DDD inexistente ou celular de 9 dígitos começando com `8`.
 - **Quando** o cliente tenta finalizar o checkout ou consultar `POST /customers/profile`.
 - **Então** o frontend bloqueia com erro no campo e o servidor responde `422 VALIDATION_ERROR`; nenhum pedido é criado e nenhum número inválido é usado como destinatário do webhook.
+
+### 5.22 Webhook com dois destinatários
+
+- **Dado** webhook ativo e loja com `whatsapp` preenchido.
+- **Quando** o pedido é criado ou transicionado.
+- **Então** o POST traz `number` com o telefone do cliente e `storeNumber` com o da loja, em um único evento, sem PII em log (D-046).
+- **Dado** loja sem `whatsapp` preenchido: nenhum POST é enviado, o aviso não contém telefone e o pedido permanece gravado.
 
 ---
 

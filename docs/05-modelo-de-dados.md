@@ -95,7 +95,7 @@ Regras:
 ```
 
 - `url` aceita qualquer esquema absoluto e qualquer host, inclusive endereço interno; não há allowlist, restrição a `http`/`https` ou bloqueio de SSRF (D-042). Ativo exige URL preenchida; esquemas não HTTP falham apenas no envio.
-- O corpo do POST contém `number` (telefone do cliente) e `message`; por isso o campo é sensível e a leitura pela API é restrita a `owner`.
+- O corpo do POST contém `number` (telefone do cliente congelado no pedido), `storeNumber` (`whatsapp` da loja, lido junto com a configuração) e `message`; por isso o campo é sensível e a leitura pela API é restrita a `owner` (D-046).
 - O envio é best-effort, assíncrono, sem retry e sem fila persistida; uma falha nunca altera o pedido já gravado.
 
 ### 3.2 `categories`

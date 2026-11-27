@@ -31,15 +31,17 @@ var (
 )
 
 // Payload é o corpo exato exigido pelo contrato de integração. Nenhum campo
-// adicional é enviado.
+// adicional é enviado: os dois destinatários viajam juntos em cada evento.
 type Payload struct {
-	Number  string `json:"number"`
-	Message string `json:"message"`
+	Number      string `json:"number"`
+	StoreNumber string `json:"storeNumber"`
+	Message     string `json:"message"`
 }
 
 // SettingsReader é a parcela do serviço administrativo necessária ao disparo.
+// Configuração e número da loja vêm da mesma leitura do documento único.
 type SettingsReader interface {
-	Get(ctx context.Context) (domain.WebhookSettings, error)
+	GetNotification(ctx context.Context) (domain.WebhookNotification, error)
 }
 
 // MessageBuilder monta o texto a partir do pedido persistido.
@@ -98,18 +100,27 @@ func (n *Notifier) deliver(base context.Context, event domain.WebhookEvent) {
 	ctx, cancel := context.WithTimeout(base, n.timeout)
 	defer cancel()
 
-	settings, err := n.settings.Get(ctx)
+	notification, err := n.settings.GetNotification(ctx)
 	if err != nil {
 		n.logger.Warn("webhook skipped: settings unavailable")
 		return
 	}
+	settings := notification.Settings
 	if !settings.Active || strings.TrimSpace(settings.URL) == "" {
+		return
+	}
+	storeNumber := strings.TrimSpace(notification.StoreNumber)
+	if storeNumber == "" {
+		// Sem o número da loja o destino não poderia notificar os dois;
+		// nenhum dado pessoal é registrado no aviso.
+		n.logger.Warn("webhook skipped: store number unavailable")
 		return
 	}
 
 	body, err := json.Marshal(Payload{
-		Number:  event.Order.Customer.Phone,
-		Message: n.message(event),
+		Number:      event.Order.Customer.Phone,
+		StoreNumber: storeNumber,
+		Message:     n.message(event),
 	})
 	if err != nil {
 		n.logger.Warn("webhook skipped: payload encoding failed")

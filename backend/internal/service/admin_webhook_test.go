@@ -16,9 +16,11 @@ type fakeAdminWebhookRepository struct {
 	received  domain.StoreSettings
 	audit     domain.AuditLog
 	updates   int
+	reads     int
 }
 
 func (f *fakeAdminWebhookRepository) GetStoreSettings(context.Context) (domain.StoreSettings, error) {
+	f.reads++
 	return f.settings, f.getErr
 }
 
@@ -30,6 +32,42 @@ func (f *fakeAdminWebhookRepository) AdminUpdateWebhookSettings(_ context.Contex
 	f.audit = audit
 	f.updates++
 	return nil
+}
+
+func TestAdminWebhookGetNotificationReadsStoreOnce(t *testing.T) {
+	repo := &fakeAdminWebhookRepository{settings: domain.StoreSettings{
+		WhatsApp: "+5585992358708",
+		Webhook:  domain.WebhookSettings{URL: "http://127.0.0.1:5678/hook", Active: true},
+	}}
+	service, err := NewAdminWebhookService(repo)
+	if err != nil {
+		t.Fatalf("NewAdminWebhookService: %v", err)
+	}
+
+	notification, err := service.GetNotification(context.Background())
+	if err != nil {
+		t.Fatalf("GetNotification: %v", err)
+	}
+	if notification.Settings != repo.settings.Webhook {
+		t.Fatalf("configuração inesperada: %+v", notification.Settings)
+	}
+	if notification.StoreNumber != "+5585992358708" {
+		t.Fatalf("storeNumber = %q", notification.StoreNumber)
+	}
+	if repo.reads != 1 {
+		t.Fatalf("leituras do documento = %d, want 1", repo.reads)
+	}
+}
+
+func TestAdminWebhookGetNotificationPropagatesRepositoryError(t *testing.T) {
+	repo := &fakeAdminWebhookRepository{getErr: errors.New("indisponível")}
+	service, err := NewAdminWebhookService(repo)
+	if err != nil {
+		t.Fatalf("NewAdminWebhookService: %v", err)
+	}
+	if _, err := service.GetNotification(context.Background()); err == nil {
+		t.Fatal("esperava erro ao ler configuração de notificação")
+	}
 }
 
 func TestAdminWebhookUpdatePersistsWithoutLeakingURL(t *testing.T) {

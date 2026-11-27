@@ -41,6 +41,19 @@ func (s *AdminWebhookService) Get(ctx context.Context) (domain.WebhookSettings, 
 	return settings.Webhook, nil
 }
 
+// GetNotification devolve configuração e número da loja em uma única leitura,
+// evitando que o envio dispare duas consultas ao documento único (D-046).
+func (s *AdminWebhookService) GetNotification(ctx context.Context) (domain.WebhookNotification, error) {
+	settings, err := s.repo.GetStoreSettings(ctx)
+	if err != nil {
+		return domain.WebhookNotification{}, fmt.Errorf("get webhook notification settings: %w", err)
+	}
+	return domain.WebhookNotification{
+		Settings:    settings.Webhook,
+		StoreNumber: settings.WhatsApp,
+	}, nil
+}
+
 // Update aplica um PATCH parcial, valida o resultado e registra auditoria.
 func (s *AdminWebhookService) Update(ctx context.Context, actorID string, patch domain.WebhookSettingsPatch) (domain.WebhookSettings, error) {
 	if patch.Empty() {
