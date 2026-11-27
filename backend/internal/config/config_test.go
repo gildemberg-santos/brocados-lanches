@@ -23,6 +23,9 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Addr() != ":8080" {
 		t.Errorf("Addr() = %q, want :8080", cfg.Addr())
 	}
+	if cfg.OrderAccessSecret == "" {
+		t.Error("OrderAccessSecret is empty in development")
+	}
 	if cfg.AdminCookieName != "brocados_admin" {
 		t.Errorf("AdminCookieName = %q, want brocados_admin", cfg.AdminCookieName)
 	}
@@ -39,10 +42,11 @@ func TestLoadDefaults(t *testing.T) {
 
 func TestLoadOverrides(t *testing.T) {
 	env := map[string]string{
-		"APP_ENV":   "production",
-		"PORT":      "9090",
-		"MONGO_URI": "mongodb+srv://cluster.example.com",
-		"MONGO_DB":  "brocados",
+		"APP_ENV":             "production",
+		"PORT":                "9090",
+		"MONGO_URI":           "mongodb+srv://cluster.example.com",
+		"MONGO_DB":            "brocados",
+		"ORDER_ACCESS_SECRET": "segredo-de-producao-com-mais-de-32-caracteres",
 	}
 
 	cfg, err := Load(func(key string) string { return env[key] })
@@ -101,6 +105,17 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		{name: "invalid mongodb uri alias", env: map[string]string{"MONGODB_URI": "http://localhost:27017"}},
 		{name: "invalid cookie name", env: map[string]string{"ADMIN_SESSION_COOKIE": "cookie com espaco"}},
 		{name: "partial bootstrap", env: map[string]string{"ADMIN_BOOTSTRAP_EMAIL": "dono@example.com"}},
+		{
+			name: "missing production order access secret",
+			env:  map[string]string{"APP_ENV": "production"},
+		},
+		{
+			name: "short production order access secret",
+			env: map[string]string{
+				"APP_ENV":             "production",
+				"ORDER_ACCESS_SECRET": "curto",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -117,6 +132,9 @@ func TestLoadAdminCookieInProduction(t *testing.T) {
 	cfg, err := Load(func(key string) string {
 		if key == "APP_ENV" {
 			return "production"
+		}
+		if key == "ORDER_ACCESS_SECRET" {
+			return "segredo-de-producao-com-mais-de-32-caracteres"
 		}
 		return ""
 	})

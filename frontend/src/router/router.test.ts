@@ -27,6 +27,15 @@ describe('router', () => {
     expect(route?.path).toBe('/carrinho')
   })
 
+  it('registers the lazy order history route', () => {
+    const route = router.getRoutes().find((candidate) => candidate.name === 'my-orders')
+
+    expect(route?.path).toBe('/meus-pedidos')
+    expect(typeof route?.components?.default).toBe('function')
+    expect(route?.meta.title).toBe('Meus pedidos')
+    expect(route?.meta.noindex).toBe(true)
+  })
+
   it('registers the lazy admin login route', () => {
     const route = router.getRoutes().find((candidate) => candidate.name === 'admin-login')
 

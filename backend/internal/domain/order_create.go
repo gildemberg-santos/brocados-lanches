@@ -104,12 +104,16 @@ type Order struct {
 	Note             string
 	IdempotencyKey   string
 	RequestHash      string
-	StatusHistory    []OrderStatusChange
-	ConfirmedAt      *time.Time
-	CancelledAt      *time.Time
-	CancelReason     string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	// AccessToken é devolvido ao navegador e nunca persistido.
+	AccessToken string
+	// AccessTokenHash é a única forma do token de histórico gravada no banco.
+	AccessTokenHash string
+	StatusHistory   []OrderStatusChange
+	ConfirmedAt     *time.Time
+	CancelledAt     *time.Time
+	CancelReason    string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // OrderZone é o snapshot da zona no momento do pedido.

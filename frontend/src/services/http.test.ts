@@ -46,6 +46,24 @@ describe('http', () => {
     })
   })
 
+  it('sends additional headers on GET without changing defaults', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await get('/api/v1/orders/history', {
+      headers: { Authorization: 'Bearer token-de-teste' },
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/orders/history', {
+      headers: {
+        Accept: 'application/json',
+        Authorization: 'Bearer token-de-teste',
+      },
+      credentials: 'include',
+      signal: expect.any(AbortSignal),
+    })
+  })
+
   it('unwraps the data envelope', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'abc' } })))
 

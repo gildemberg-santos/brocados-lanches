@@ -36,6 +36,7 @@ func orderFixture() domain.Order {
 		Payment:          domain.OrderPayment{Method: domain.PaymentMethodCash, ChangeForCents: &changeForCents},
 		IdempotencyKey:   "4d1f6b1e-7c2a-4e2f-9f2a-1c3d5e7f9a0b",
 		RequestHash:      "request-hash",
+		AccessTokenHash:  "hash-do-token-de-historico",
 		StatusHistory:    []domain.OrderStatusChange{{Status: domain.OrderStatusPending, At: now}},
 		CreatedAt:        now,
 		UpdatedAt:        now,
@@ -90,6 +91,41 @@ func TestOrderRepositoryCreateAndFind(t *testing.T) {
 	}
 	if byPublicID.Number != stored.Number {
 		t.Errorf("number by public id = %d, want %d", byPublicID.Number, stored.Number)
+	}
+	if stored.AccessTokenHash != "hash-do-token-de-historico" {
+		t.Errorf("access token hash = %q", stored.AccessTokenHash)
+	}
+}
+
+func TestOrderRepositoryListAndSetAccessTokenHash(t *testing.T) {
+	ctx := testContext(t)
+	database := openCatalogTestDatabase(t)
+	repository, err := NewOrderRepository(database)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	legacy := orderFixture()
+	legacy.PublicID = "public-legacy"
+	legacy.IdempotencyKey = "key-legacy-requisicao-1"
+	legacy.AccessTokenHash = ""
+	stored, err := repository.Create(ctx, legacy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repository.SetAccessTokenHash(ctx, stored.ID, "hash-novo"); err != nil {
+		t.Fatalf("SetAccessTokenHash() error = %v", err)
+	}
+
+	orders, total, err := repository.ListByAccessToken(ctx, "hash-novo", domain.OrderHistoryQuery{Page: 1, PageSize: 10})
+	if err != nil {
+		t.Fatalf("ListByAccessToken() error = %v", err)
+	}
+	if total != 1 || len(orders) != 1 || orders[0].ID != stored.ID {
+		t.Errorf("history = %+v, total = %d", orders, total)
+	}
+	if orders[0].AccessTokenHash != "hash-novo" || !orders[0].UpdatedAt.After(stored.UpdatedAt) {
+		t.Errorf("attached order = %+v", orders[0])
 	}
 }
 

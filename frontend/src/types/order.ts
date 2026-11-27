@@ -1,3 +1,5 @@
+import type { AdminPageMeta } from './admin'
+
 export type Fulfillment = 'delivery' | 'pickup'
 
 export interface OrderQuoteRequest {
@@ -84,6 +86,7 @@ export interface CreatedOrder {
   totalCents: number
   createdAt: string
   whatsappUrl: string
+  accessToken: string
 }
 
 export interface TrackedOrder {
@@ -98,6 +101,16 @@ export interface TrackedOrder {
   createdAt: string
   updatedAt: string
   estimatedTime?: string
+}
+
+export interface OrderHistoryQuery {
+  page?: number
+  pageSize?: number
+}
+
+export interface OrderHistoryPage {
+  data: TrackedOrder[]
+  meta: AdminPageMeta
 }
 
 export interface AdminOrderListItem {

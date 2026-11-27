@@ -52,13 +52,18 @@ func TestOrderServiceCreateSavesCustomerProfile(t *testing.T) {
 	reader, _ := orderServiceFixture()
 	reader.created = customerProfileStoredOrder()
 	store := &fakeCustomerProfileStore{}
-	service, err := NewOrderService(reader, time.UTC, WithCustomerProfiles(store, nil))
+	service, err := NewOrderService(
+		reader,
+		time.UTC,
+		WithOrderAccessSecret("test-order-access-secret"),
+		WithCustomerProfiles(store, nil),
+	)
 	if err != nil {
 		t.Fatalf("NewOrderService() error = %v", err)
 	}
 	service.publicID = func() (string, error) { return "public-123", nil }
 
-	if _, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey); err != nil {
+	if _, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, ""); err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 	if len(store.upserts) != 1 {
@@ -84,7 +89,7 @@ func TestOrderServiceCreateHonorsCustomerProfileOptOut(t *testing.T) {
 	optedOut := false
 	request.SaveCustomerProfile = &optedOut
 
-	if _, _, err := service.Create(context.Background(), request, testIdempotencyKey); err != nil {
+	if _, _, err := service.Create(context.Background(), request, testIdempotencyKey, ""); err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 	if len(store.upserts) != 0 || len(store.optOuts) != 1 || store.optOuts[0] != "5585999999999" {
@@ -100,7 +105,7 @@ func TestOrderServiceCreateDoesNotFailWhenProfileWriteFails(t *testing.T) {
 	service.profiles = store
 	service.logger = discardLogger()
 
-	if _, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey); err != nil {
+	if _, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, ""); err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 	if len(store.upserts) != 1 {
@@ -120,7 +125,7 @@ func TestOrderServiceCreateReplayDoesNotRewriteCustomerProfile(t *testing.T) {
 	service.profiles = store
 	service.logger = discardLogger()
 
-	if _, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey); err != nil {
+	if _, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, ""); err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 	if len(store.upserts) != 0 || len(store.optOuts) != 0 {

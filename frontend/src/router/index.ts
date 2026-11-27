@@ -44,6 +44,12 @@ const publicRoutes: RouteRecordRaw[] = [
     meta: { title: 'Acompanhar pedido', noindex: true },
   },
   {
+    path: '/meus-pedidos',
+    name: 'my-orders',
+    component: () => import('../views/MyOrdersView.vue'),
+    meta: { title: 'Meus pedidos', noindex: true },
+  },
+  {
     path: '/contato',
     name: 'contact',
     component: () => import('../views/ContactView.vue'),

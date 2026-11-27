@@ -4,8 +4,10 @@ import { RouterLink } from 'vue-router'
 
 import BaseButton from '../components/BaseButton.vue'
 import { clearCheckoutPreferences, hasCheckoutPreferences } from '../features/checkout/preferences'
+import { clearOrderAccessToken, hasOrderAccessToken } from '../features/orders/orderAccessToken'
 
 const preferencesSaved = ref(false)
+const orderAccessSaved = ref(false)
 const preferencesFeedback = ref('')
 
 function forgetPreferences(): void {
@@ -14,8 +16,16 @@ function forgetPreferences(): void {
   preferencesFeedback.value = 'Preferências apagadas deste navegador.'
 }
 
+function forgetOrderAccess(): void {
+  clearOrderAccessToken()
+  orderAccessSaved.value = false
+  preferencesFeedback.value =
+    'Acesso aos pedidos apagado deste navegador. Faça um novo pedido para criar outro acesso.'
+}
+
 onMounted(() => {
   preferencesSaved.value = hasCheckoutPreferences()
+  orderAccessSaved.value = hasOrderAccessToken()
 })
 </script>
 
@@ -92,7 +102,12 @@ onMounted(() => {
         <li>
           preferências do checkout salvas neste navegador após um pedido concluído: forma de
           entrega, zona, nome, telefone, endereço e forma de pagamento. Observação e valor de troco
-          não são salvos. Você pode apagá-las na seção 5.
+          não são salvos. Você pode apagá-las na seção 5;
+        </li>
+        <li>
+          um token opaco de acesso aos pedidos, emitido pelo servidor e guardado neste navegador.
+          Ele permite consultar apenas o histórico deste dispositivo, sem senha nem consulta por
+          telefone. O token viaja no cabeçalho `Authorization` e nunca aparece na URL.
         </li>
       </ul>
       <p>Não usamos analytics, pixels de rastreamento, mapas de calor nem publicidade.</p>
@@ -110,6 +125,10 @@ onMounted(() => {
           navegador e em um perfil no servidor identificado pelo telefone. Esse tratamento pode ser
           desativado no checkout; nesse caso o perfil existente é desativado e seus dados de
           conveniência são removidos;
+        </li>
+        <li>
+          histórico de pedidos: permitir que você consulte novamente, neste navegador, os pedidos
+          feitos aqui por meio do token opaco de acesso;
         </li>
         <li>
           legítimo interesse: segurança, prevenção a abuso e auditoria das alterações no painel;
@@ -168,10 +187,17 @@ onMounted(() => {
         <li>
           preferências do checkout: até você apagar nesta página ou limpar os dados deste navegador.
         </li>
+        <li>
+          token de acesso aos pedidos: até você apagar nesta página, limpar os dados do navegador ou
+          trocar de dispositivo. Depois disso, o histórico não fica disponível neste navegador.
+        </li>
       </ul>
       <div class="info-page__preferences">
         <BaseButton variant="secondary" :disabled="!preferencesSaved" @click="forgetPreferences">
           Apagar preferências salvas neste navegador
+        </BaseButton>
+        <BaseButton variant="secondary" :disabled="!orderAccessSaved" @click="forgetOrderAccess">
+          Apagar acesso aos meus pedidos
         </BaseButton>
         <p v-if="preferencesFeedback" class="info-page__feedback" role="status">
           {{ preferencesFeedback }}
@@ -207,8 +233,9 @@ onMounted(() => {
       <h2 id="privacy-changes-title">8. Alterações desta política</h2>
       <p>
         Esta é a versão vigente, publicada em 25/11/2026 e atualizada em 26/11/2026 para descrever
-        as preferências do checkout e o perfil de conveniência no servidor. Mudanças relevantes
-        serão comunicadas pelos canais da loja nesta página.
+        as preferências do checkout, o perfil de conveniência no servidor e o token local de acesso
+        ao histórico de pedidos. Mudanças relevantes serão comunicadas pelos canais da loja nesta
+        página.
       </p>
     </section>
   </main>

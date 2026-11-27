@@ -142,5 +142,48 @@ test.describe('fluxo completo de pedido pela interface', () => {
     const linha = page.locator('.order-row').filter({ hasText: `#${orderNumber}` })
     await expect(linha).toBeVisible()
     expect(await linha.innerText()).not.toContain(phone)
+
+    // O histórico local reencontra o pedido sem senha nem consulta por telefone.
+    await page.goto('/meus-pedidos')
+    await expect(page.getByRole('heading', { level: 1, name: 'Meus pedidos' })).toBeVisible()
+    await expectNoHorizontalScroll(page)
+    const card = page.locator('.history-card').filter({ hasText: `#${orderNumber}` })
+    await expect(card).toBeVisible()
+    await expect(card).toHaveAttribute('href', `/pedido/${publicId}`)
+    const cardText = await card.innerText()
+    expect(cardText).not.toContain(phone)
+    expect(cardText).not.toContain('Cliente Fluxo E2E')
+
+    const historyToken = await page.evaluate(() => {
+      const stored = localStorage.getItem('brocados:order-access-token')
+      if (!stored) {
+        return null
+      }
+      const parsed: unknown = JSON.parse(stored)
+      return typeof parsed === 'object' &&
+        parsed !== null &&
+        'token' in parsed &&
+        typeof parsed.token === 'string'
+        ? parsed.token
+        : null
+    })
+    expect(historyToken).not.toBeNull()
+    const historyResponse = await request.get(`${API_URL}/api/v1/orders/history`, {
+      headers: { Authorization: `Bearer ${historyToken ?? ''}` },
+    })
+    expect(historyResponse.ok()).toBeTruthy()
+    expect(historyResponse.headers()['cache-control']).toBe('no-store')
+    const historyBody = await historyResponse.text()
+    expect(historyBody).toContain(publicId)
+    expect(historyBody).not.toContain(phone)
+    expect(historyBody).not.toContain('Cliente Fluxo E2E')
+
+    await page.goto('/privacidade')
+    await page.getByRole('button', { name: 'Apagar acesso aos meus pedidos' }).click()
+    await expect(page.getByRole('status')).toContainText('Acesso aos pedidos apagado')
+    await page.goto('/meus-pedidos')
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Nenhum histórico neste navegador' }),
+    ).toBeVisible()
   })
 })

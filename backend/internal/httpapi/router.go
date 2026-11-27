@@ -88,6 +88,7 @@ func NewRouter(deps Dependencies) http.Handler {
 		)
 		router.Post("/orders/quote", limitByIP(limiters.Quotes, handleQuote(deps.Orders, logger)))
 		router.Post("/orders", limitByIP(limiters.Orders, handleCreateOrder(deps.Orders, limiters.OrderPhones, deps.Events, logger)))
+		router.Get("/orders/history", limitByIP(limiters.Tracking, handleOrderHistory(deps.Orders, limiters.HistoryTokens, logger)))
 		router.Get("/orders/{publicId}", limitByIP(limiters.Tracking, handleTrackOrder(deps.Orders, logger)))
 		router.Get("/orders/{publicId}/events", limitByIP(limiters.Tracking, handlePublicOrderEvents(deps.Events, logger)))
 	})

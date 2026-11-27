@@ -1,7 +1,7 @@
 # Operação e Lançamento — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 20/11/2026  
+**Versão:** 1.1  
+**Atualizado em:** 26/11/2026  
 **Status:** plano operacional da V1; provedores ainda em aberto.  
 **Relacionados:** `04-arquitetura.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`.
 
@@ -61,6 +61,7 @@ Nomes e padrões abaixo são os lidos por `backend/internal/config/config.go` e 
 | `ADMIN_BOOTSTRAP_NAME` | não | Nome do primeiro `owner`; deve ser usado junto com e-mail e senha |
 | `ADMIN_BOOTSTRAP_EMAIL` | não | E-mail do primeiro `owner`; só cria usuário se `admin_users` estiver vazio |
 | `ADMIN_BOOTSTRAP_PASSWORD` | não | Senha do primeiro `owner` (12 a 128 caracteres); remover as três variáveis de bootstrap após criar o `owner` |
+| `ORDER_ACCESS_SECRET` | sim em produção | Segredo HMAC-SHA256 para derivar tokens de histórico; mínimo de 32 caracteres. Em desenvolvimento há valor padrão fictício. Rodá-lo altera tokens gerados depois da troca; tokens já emitidos continuam consultando o histórico pelo hash gravado |
 
 | `OTEL_*`/métricas | não | Observabilidade, se adotada |
 
@@ -312,7 +313,8 @@ Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem s
 - observação do pedido;
 - dados de autenticação do admin (nome/e-mail/senha com hash);
 - preferências do checkout no navegador (entrega, zona, nome, telefone, endereço e pagamento), sem observação nem troco; podem ser apagadas em `/privacidade` (D-037);
-- perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038). Com a opção habilitada, o checkout consulta esse perfil pelo telefone informado para preencher o próximo pedido, com limites por IP e telefone e sem devolver histórico ou taxa (D-039).
+- perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038). Com a opção habilitada, o checkout consulta esse perfil pelo telefone informado para preencher o próximo pedido, com limites por IP e telefone e sem devolver histórico ou taxa (D-039);
+- token opaco de histórico no navegador e seu hash SHA-256 no pedido; sem cadastro, senha ou consulta por telefone (D-041).
 
 Não coletar CPF, e-mail de cliente ou dados de cartão.
 
@@ -322,6 +324,7 @@ Não coletar CPF, e-mail de cliente ou dados de cartão.
 - contatar sobre o pedido;
 - entregar/retirar;
 - conveniência: reaproveitar escolhas no próximo pedido no navegador e no perfil por telefone, com opt-out no checkout e exclusão pelos canais da loja;
+- histórico: consultar novamente, neste navegador, os pedidos feitos aqui por meio do token opaco;
 - cumprir obrigação legal;
 - segurança e auditoria.
 
@@ -343,6 +346,7 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 - Sessões: TTL de 7 dias.
 - Auditoria: 12 meses, sem PII.
 - Preferências do checkout: até o cliente apagar em `/privacidade` ou limpar os dados do navegador.
+- Token de acesso ao histórico: até o cliente apagar em `/privacidade`, limpar os dados do navegador ou trocar de dispositivo; depois disso o histórico local deixa de estar disponível.
 - Logs: 30 dias, sem PII.
 - Backups: 30 dias; respeitar retenção ao restaurar.
 

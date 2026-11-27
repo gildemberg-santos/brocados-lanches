@@ -29,6 +29,15 @@ type fakeOrderReader struct {
 	byPublicID    domain.Order
 	byPublicIDErr error
 
+	history      []domain.Order
+	historyTotal int64
+	historyErr   error
+	historyQuery domain.OrderHistoryQuery
+	historyHash  string
+	attachedID   string
+	attachedHash string
+	attachErr    error
+
 	receivedOrder domain.Order
 
 	calls []string
@@ -64,6 +73,20 @@ func (f *fakeOrderReader) FindByPublicID(context.Context, string) (domain.Order,
 	return f.byPublicID, f.byPublicIDErr
 }
 
+func (f *fakeOrderReader) ListByAccessToken(_ context.Context, hash string, query domain.OrderHistoryQuery) ([]domain.Order, int64, error) {
+	f.calls = append(f.calls, "listByAccessToken")
+	f.historyHash = hash
+	f.historyQuery = query
+	return f.history, f.historyTotal, f.historyErr
+}
+
+func (f *fakeOrderReader) SetAccessTokenHash(_ context.Context, id, hash string) error {
+	f.calls = append(f.calls, "setAccessTokenHash")
+	f.attachedID = id
+	f.attachedHash = hash
+	return f.attachErr
+}
+
 func (f *fakeOrderReader) Create(_ context.Context, order domain.Order) (domain.Order, error) {
 	f.calls = append(f.calls, "create")
 	f.receivedOrder = order
@@ -97,7 +120,11 @@ func orderServiceFixture() (*fakeOrderReader, *OrderService) {
 		zones:  []domain.DeliveryZone{{ID: "zone-1", Name: "Centro", FeeCents: 800, Active: true}},
 		store:  domain.StoreSettings{IsOpen: true},
 	}
-	service, err := NewOrderService(reader, time.FixedZone("UTC-3", -3*60*60))
+	service, err := NewOrderService(
+		reader,
+		time.FixedZone("UTC-3", -3*60*60),
+		WithOrderAccessSecret("test-order-access-secret"),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -125,6 +152,9 @@ func TestNewOrderServiceRequiresDependencies(t *testing.T) {
 	}
 	if _, err := NewOrderService(&fakeOrderReader{}, nil); err == nil {
 		t.Error("NewOrderService(reader, nil) error = nil, want error")
+	}
+	if _, err := NewOrderService(&fakeOrderReader{}, time.UTC); err == nil {
+		t.Error("NewOrderService(reader, location) without secret error = nil, want error")
 	}
 }
 

@@ -13,7 +13,11 @@ import (
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
+	"github.com/brocados-lanches/api/internal/platform/token"
+	"github.com/brocados-lanches/api/internal/service"
 )
+
+var testAccessToken = token.DeriveOrderAccess("test-secret", "test-source")
 
 type fakeOrderService struct {
 	quote    domain.Quote
@@ -25,11 +29,15 @@ type fakeOrderService struct {
 	replayed      bool
 	receivedOrder domain.OrderRequest
 	receivedKey   string
+	receivedToken string
 
-	tracked    domain.Order
-	trackedErr error
-	store      domain.StoreSettings
-	storeErr   error
+	tracked      domain.Order
+	trackedErr   error
+	history      service.OrderHistoryPage
+	historyErr   error
+	historyCalls int
+	store        domain.StoreSettings
+	storeErr     error
 
 	quoteCalls  int
 	createCalls int
@@ -42,16 +50,22 @@ func (f *fakeOrderService) Quote(_ context.Context, request domain.QuoteRequest)
 	return f.quote, f.err
 }
 
-func (f *fakeOrderService) Create(_ context.Context, request domain.OrderRequest, key string) (domain.Order, bool, error) {
+func (f *fakeOrderService) Create(_ context.Context, request domain.OrderRequest, key, accessToken string) (domain.Order, bool, error) {
 	f.createCalls++
 	f.receivedOrder = request
 	f.receivedKey = key
+	f.receivedToken = accessToken
 	return f.created, f.replayed, f.createdErr
 }
 
 func (f *fakeOrderService) GetByPublicID(context.Context, string) (domain.Order, error) {
 	f.trackCalls++
 	return f.tracked, f.trackedErr
+}
+
+func (f *fakeOrderService) ListByAccessToken(context.Context, string, domain.OrderHistoryQuery) (service.OrderHistoryPage, error) {
+	f.historyCalls++
+	return f.history, f.historyErr
 }
 
 func (f *fakeOrderService) StoreSettings(context.Context) (domain.StoreSettings, error) {
@@ -273,6 +287,7 @@ func createdOrderFixture() domain.Order {
 		DeliveryFeeCents: 800,
 		TotalCents:       6200,
 		CreatedAt:        time.Date(2026, 11, 22, 22, 0, 0, 0, time.UTC),
+		AccessToken:      testAccessToken,
 	}
 }
 
@@ -286,6 +301,86 @@ func performCreateOrderRequest(handler http.Handler, key, body string) *httptest
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	return response
+}
+
+func performCreateOrderRequestWithToken(handler http.Handler, key, accessToken, body string) *httptest.ResponseRecorder {
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/orders", strings.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", key)
+	request.Header.Set("Authorization", "Bearer "+accessToken)
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	return response
+}
+
+func TestCreateOrderForwardsBrowserAccessToken(t *testing.T) {
+	orders := &fakeOrderService{
+		created: createdOrderFixture(),
+		store:   domain.StoreSettings{WhatsApp: "(85) 99999-9999"},
+	}
+
+	performCreateOrderRequestWithToken(newOrderTestRouter(orders), testOrderHeaderKey, testAccessToken, validOrderBody)
+
+	if orders.receivedToken != testAccessToken {
+		t.Errorf("received token = %q, want %q", orders.receivedToken, testAccessToken)
+	}
+}
+
+func TestCreateOrderRejectsInvalidAuthorizationHeader(t *testing.T) {
+	response := performCreateOrderRequestWithToken(newOrderTestRouter(&fakeOrderService{}), testOrderHeaderKey, "invalido", validOrderBody)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", response.Code)
+	}
+}
+
+func TestOrderHistoryReturnsPagedSummaries(t *testing.T) {
+	orders := &fakeOrderService{
+		history: service.OrderHistoryPage{
+			Items: []domain.Order{{
+				Number:      1042,
+				PublicID:    "public-123",
+				Status:      domain.OrderStatusPending,
+				Fulfillment: domain.FulfillmentDelivery,
+				Items:       []domain.OrderItem{{Name: "Bacon Cheddar", Quantity: 2}},
+				TotalCents:  6200,
+				CreatedAt:   time.Date(2026, 11, 22, 22, 0, 0, 0, time.UTC),
+				UpdatedAt:   time.Date(2026, 11, 22, 22, 0, 0, 0, time.UTC),
+			}},
+			Page: 1, PageSize: 20, Total: 1, TotalPages: 1,
+		},
+	}
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/orders/history?page=1&pageSize=20", nil)
+	request.Header.Set("Authorization", "Bearer "+testAccessToken)
+	response := httptest.NewRecorder()
+	newOrderTestRouter(orders).ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body = %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get("Cache-Control") != "no-store" {
+		t.Error("history response must not be cached")
+	}
+	var body orderHistoryEnvelope
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if len(body.Data) != 1 || body.Data[0].PublicID != "public-123" || body.Meta.Total != 1 {
+		t.Errorf("body = %+v", body)
+	}
+	if strings.Contains(response.Body.String(), "Maria Silva") {
+		t.Error("history must not expose customer PII")
+	}
+}
+
+func TestOrderHistoryRequiresAccessToken(t *testing.T) {
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/orders/history", nil)
+	newOrderTestRouter(&fakeOrderService{}).ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", response.Code)
+	}
 }
 
 func TestCreateOrderSuccess(t *testing.T) {
@@ -317,6 +412,12 @@ func TestCreateOrderSuccess(t *testing.T) {
 	}
 	if !strings.HasPrefix(body.Data.WhatsAppURL, "https://wa.me/5585999999999?text=") {
 		t.Errorf("whatsappUrl = %q", body.Data.WhatsAppURL)
+	}
+	if body.Data.AccessToken != testAccessToken {
+		t.Errorf("accessToken = %q, want %q", body.Data.AccessToken, testAccessToken)
+	}
+	if response.Header().Get("Cache-Control") != "no-store" {
+		t.Error("order response must not be cached")
 	}
 }
 

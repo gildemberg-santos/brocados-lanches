@@ -1,6 +1,6 @@
 # Modelo de Dados — Brocados Lanches
 
-**Versão:** 1.1  
+**Versão:** 1.2  
 **Atualizado em:** 26/11/2026  
 **Banco:** MongoDB 8+  
 **Bancos:** `brocados_dev`, `brocados_test`, `brocados` (produção)  
@@ -210,6 +210,7 @@ Adicionais são reutilizáveis; o vínculo com o produto é `products.addonIds`.
 | `payment` | object | sim | `{ method, changeForCents }` |
 | `idempotencyKey` | string | sim | Único sparse |
 | `requestHash` | string | sim | SHA-256 do corpo canônico |
+| `accessTokenHash` | string | não | SHA-256 do token opaco de histórico; o token em claro nunca é gravado |
 | `createdAt` | datetime | sim | UTC |
 | `updatedAt` | datetime | sim | UTC |
 | `confirmedAt` | datetime | não | |
@@ -317,11 +318,13 @@ Regras:
 - `{ status: 1, createdAt: -1 }`.
 - `{ createdAt: -1 }`.
 - `{ "customer.phone": 1, createdAt: -1 }`.
+- `{ accessTokenHash: 1, createdAt: -1 }` esparso (somente pedidos com token de histórico).
 
 Observações:
 
 - `publicId` não é derivado de `number`.
 - `requestHash` não é exposto na API.
+- `accessTokenHash` é o único registro do token de histórico; `accessToken` existe somente na resposta da criação e no navegador, nunca no documento. Pedidos gravados antes desta feature podem não ter o campo; o replay com token preenche o hash.
 - `idempotencyKey` não é PII, mas não deve ser usada como identificador público.
 - `statusHistory` é limitado pelas transições possíveis; não cresce indefinidamente.
 - `address` e `phone` são PII e só aparecem no admin autorizado.
@@ -443,6 +446,8 @@ Perfil de conveniência reconhecido pelo telefone normalizado. Não recebe `note
 
 O detalhe administrativo do pedido pode exibir `customerProfile` somente para administrador autenticado; nunca há listagem pública de pedidos ou de perfis. A consulta pública permitida devolve somente a sugestão de conveniência por telefone, sem vincular pedidos (D-039). O resumo administrativo contém nome, telefone, `orderCount`, último pedido, último endereço, zona, forma de entrega/pagamento, `optedOut`, `updatedAt` e `retainedUntil`, sem `phoneKey`.
 
+O histórico do próprio cliente (D-041) não cria outra coleção: a associação é feita por `orders.accessTokenHash`. O token em claro é derivado no servidor de `ORDER_ACCESS_SECRET` e da chave de idempotência, devolvido na criação do pedido e guardado somente no navegador. Nenhuma listagem usa telefone.
+
 ---
 
 ## 4. Invariantes
@@ -467,6 +472,7 @@ O detalhe administrativo do pedido pode exibir `customerProfile` somente para ad
 18. `sessions.expiresAt` é futuro na criação e nunca ultrapassa `sessions.absoluteExpiresAt`.
 19. `audit_logs` não contém PII.
 20. Nenhum valor monetário é float.
+21. `accessTokenHash`, quando presente, é SHA-256 de um token opaco de 256 bits; o token em claro não é persistido nem usado como chave de consulta pública.
 
 ---
 

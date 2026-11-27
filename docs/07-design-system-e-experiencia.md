@@ -1,7 +1,7 @@
 # Design System e Experiência — Brocados Lanches
 
-**Versão:** 1.0  
-**Atualizado em:** 18/11/2026  
+**Versão:** 1.1  
+**Atualizado em:** 26/11/2026  
 **Fonte visual:** `../design-system/brocados-lanches-design-system-v2.5.html`  
 **Tokens:** `../design-system/tokens.css` e `../design-system/tokens.json`  
 **Referência funcional:** `12-referencia-ola-click.md`  
@@ -307,7 +307,19 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 - Link para mapa, se aprovado.
 - Política de privacidade e termos com data de publicação. Desde a US-126 as páginas exibiam a data do rascunho (25/11/2026); em 25/11/2026 o cliente confirmou os textos e eles passaram a ser apresentados como versão vigente, publicada nessa data (D-033). A privacidade e os termos foram detalhados com base em modelos externos, adaptados apenas ao fluxo real (dados do pedido, sessão administrativa, IP para limite de requisições, link `wa.me`, retenção proposta, registro/idempotência, regras de preço/entrega/pagamento e acesso ao painel), sem copiar prestadores, assinaturas ou recursos que a loja não usa.
 - Canal do titular: os canais já publicados na `/contato`, sem inventar CNPJ, razão social ou e-mail (D-033).
-- A política descreve as preferências do checkout guardadas no navegador e oferece o botão “Apagar preferências salvas neste navegador” na seção de retenção; a versão publicada em 25/11/2026 foi atualizada em 26/11/2026 para cobrir esse tratamento (D-037), o perfil de conveniência no servidor, com opt-out no checkout, retenção de 24 meses e exclusão pelos canais da loja (D-038), e a consulta por telefone com finalidade exclusiva de preencher o próximo pedido (D-039).
+- A política descreve as preferências do checkout guardadas no navegador e oferece o botão “Apagar preferências salvas neste navegador” na seção de retenção; a versão publicada em 25/11/2026 foi atualizada em 26/11/2026 para cobrir esse tratamento (D-037), o perfil de conveniência no servidor, com opt-out no checkout, retenção de 24 meses e exclusão pelos canais da loja (D-038), e a consulta por telefone com finalidade exclusiva de preencher o próximo pedido (D-039). Em 26/11/2026 passou a descrever também o token opaco de acesso ao histórico e o botão “Apagar acesso aos meus pedidos”, com o aviso de que isso remove o histórico naquele navegador (D-041).
+
+### 5.9 Meus pedidos — `/meus-pedidos`
+
+**Objetivo:** rever os pedidos feitos neste navegador a qualquer momento (D-041).
+
+- Rota pública, acessível pelo link “Pedidos” no cabeçalho, sem login e sem consulta por telefone.
+- Lista paginada com número do pedido, status, data, itens, forma de entrega e total, no mesmo formato mínimo do acompanhamento; cada cartão leva ao `/pedido/:publicId`.
+- O token opaco emitido na criação é guardado no `localStorage` versionado e enviado em `Authorization: Bearer`; ele não aparece na URL, em log nem na listagem.
+- Texto informa que o acesso fica apenas neste dispositivo e que limpar os dados do navegador remove o histórico. A seção de retenção em `/privacidade` oferece a limpeza explícita do token.
+- Estados: carregamento com skeleton, vazio sem token, vazio sem pedidos, erro com “Tentar novamente” e paginação com “Anterior”/“Próxima”.
+- Cartões usam superfície, borda, raio e cores de status dos tokens existentes; sem novo padrão visual. Alvos de toque de 44 px, `aria-live` na paginação e foco visível preservados.
+- O histórico não substitui o acompanhamento em tempo real: detalhe e status continuam em `/pedido/:publicId` com WebSocket.
 
 ---
 

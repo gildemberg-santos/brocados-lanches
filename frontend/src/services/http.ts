@@ -67,11 +67,12 @@ async function withTimeout<T>(request: (signal: AbortSignal) => Promise<T>): Pro
   }
 }
 
-export async function get<T>(path: string): Promise<T> {
+export async function get<T>(path: string, options: RequestOptions = {}): Promise<T> {
   return withTimeout(async (signal) => {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       headers: {
         Accept: 'application/json',
+        ...options.headers,
       },
       credentials: 'include',
       signal,
@@ -85,8 +86,8 @@ export async function get<T>(path: string): Promise<T> {
   })
 }
 
-export async function getData<T>(path: string): Promise<T> {
-  const body = await get<{ data: T }>(path)
+export async function getData<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const body = await get<{ data: T }>(path, options)
   return body.data
 }
 

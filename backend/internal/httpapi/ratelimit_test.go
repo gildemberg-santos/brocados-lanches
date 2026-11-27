@@ -34,6 +34,9 @@ func rateLimitRequest(handler http.Handler, method, path, body, remoteAddr strin
 	request.RemoteAddr = remoteAddr
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Idempotency-Key", testOrderHeaderKey)
+	if path == "/api/v1/orders/history" {
+		request.Header.Set("Authorization", "Bearer "+testAccessToken)
+	}
 
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -94,6 +97,16 @@ func TestPublicRateLimits(t *testing.T) {
 				limits.Tracking = limiter
 			},
 			wantCalls: func(orders *fakeOrderService) int { return orders.trackCalls },
+		},
+		{
+			name:   "histórico por token",
+			method: http.MethodGet,
+			path:   "/api/v1/orders/history",
+			limit:  historyPerTokenLimit,
+			configure: func(limits *Limiters, limiter *ratelimit.Limiter) {
+				limits.HistoryTokens = limiter
+			},
+			wantCalls: func(orders *fakeOrderService) int { return orders.historyCalls },
 		},
 	}
 

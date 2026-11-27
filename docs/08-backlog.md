@@ -108,6 +108,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | E10 — Deploy e go-live | Ambientes, backup, monitoramento e lançamento | P0 | G | E9 |
 | E11 — Pós-lançamento | Medição, correções e evolução | P2 | M | E10 |
 | E12 — Conformidade com o design system | Corrigir os desvios da auditoria de 25/11/2026 | P1/P2 | M | E4, E6, E8 |
+| E13 — Histórico do cliente | Consultar pedidos anteriores por token no navegador | P1 | M | E4, E8 |
 
 ---
 
@@ -473,7 +474,31 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 ---
 
-## 17. Rastreabilidade requisito → história
+## 17. Épico 13 — Histórico do cliente
+
+**Origem:** pedido do cliente para rever todos os pedidos feitos a qualquer momento, mesmo depois de sair da tela de acompanhamento.  
+**Objetivo:** permitir consultar o histórico neste navegador sem login, usando token opaco emitido pelo servidor (D-041).  
+**Fora do escopo:** consulta por telefone, cadastro com e-mail/senha e recuperação do histórico em outro dispositivo.
+
+| ID | História | Prioridade | Tam. | Depende de | Aceite |
+|---|---|---|---|---|---|
+| US-130 | Emitir e reenviar token de acesso ao histórico | P1 | M | US-040 | `POST /orders` devolve `accessToken` na criação e no replay; só o hash é gravado; pedidos antigos são associados no replay; token inválido não cria pedido; testes de service, handler e repositório |
+| US-131 | API de histórico paginado sem PII | P1 | M | US-130 | `GET /orders/history` exige `Bearer`, aceita `page`/`pageSize`, ordena por `createdAt` desc, devolve o formato mínimo do acompanhamento e `Cache-Control: no-store`; limites por IP e hash do token; testes de handler e service |
+| US-132 | Tela pública “Meus pedidos” | P1 | M | US-131, US-050 | Rota `/meus-pedidos` no header; lista com número, status, itens, total e link para o `publicId`; estados de carregamento, vazio, erro e paginação; token salvo no checkout e apagado em `/privacidade`; textos legais atualizados; testes Vitest e evidência em 375/1280 px |
+
+**Tarefas técnicas:**
+
+- [x] HIS-01: `ORDER_ACCESS_SECRET` validado em produção e documentado em `.env.example` e Compose.
+- [x] HIS-02: índice esparso por `accessTokenHash + createdAt` e leitura paginada no repositório.
+- [x] HIS-03: storage versionado do token em `frontend/src/features/orders/orderAccessToken.ts`.
+- [x] HIS-04: `get` aceita cabeçalhos adicionais; cliente de pedidos envia `Authorization` na criação e no histórico.
+- [x] HIS-05: store `orderHistory`, view `/meus-pedidos`, link no header e limpeza em `/privacidade`.
+
+**Status em 26/11/2026:** Épico 13 implementado. O cliente escolheu token no navegador como forma de identificação, aceitando que limpar dados ou trocar dispositivo remove o histórico local; nenhuma consulta usa telefone e a listagem não expõe PII.
+
+---
+
+## 18. Rastreabilidade requisito → história
 
 | Requisito | Histórias |
 |---|---|
@@ -496,10 +521,11 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | FR-LGPD-01 | US-080, US-093 |
 | FR-OPS-01 | US-011, US-103 |
 | Auditoria de conformidade AUD-01..14 | US-120 a US-126 |
+| Histórico do cliente por token (D-041) | US-130, US-131, US-132 |
 
 ---
 
-## 18. Bloqueios atuais
+## 19. Bloqueios atuais
 
 | Bloqueio | Histórias afetadas | Ação |
 |---|---|---|
@@ -513,7 +539,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 ---
 
-## 19. Regras de gestão
+## 20. Regras de gestão
 
 - Uma história por PR; se crescer, divida.
 - Não iniciar P1 antes de fechar P0 do mesmo fluxo.

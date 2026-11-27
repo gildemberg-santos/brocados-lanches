@@ -26,6 +26,7 @@ async function mountHeader(pinia = createPinia()) {
     routes: [
       { path: '/', name: 'home', component: StubView },
       { path: '/cardapio', name: 'menu', component: StubView },
+      { path: '/meus-pedidos', name: 'my-orders', component: StubView },
       { path: '/carrinho', name: 'cart', component: StubView },
     ],
   })
@@ -58,12 +59,13 @@ describe('SiteHeader', () => {
     expect(wrapper.text()).toContain('BROCADOS')
   })
 
-  it('offers navigation to home, menu and cart', async () => {
+  it('offers navigation to home, menu, order history and cart', async () => {
     const wrapper = await mountHeader()
     const links = wrapper.findAll('.site-header__link:not(.site-header__link--cart)')
 
-    expect(links.map((link) => link.text())).toEqual(['Início', 'Cardápio'])
+    expect(links.map((link) => link.text())).toEqual(['Início', 'Cardápio', 'Pedidos'])
     expect(links[1].attributes('href')).toBe('/cardapio')
+    expect(links[2].attributes('href')).toBe('/meus-pedidos')
     expect(wrapper.get('.site-header__link--cart').attributes('href')).toBe('/carrinho')
   })
 

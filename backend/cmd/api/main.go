@@ -110,6 +110,7 @@ func run() error {
 	orderService, err := service.NewOrderService(
 		orderRepository,
 		operationLocation,
+		service.WithOrderAccessSecret(cfg.OrderAccessSecret),
 		service.WithCustomerProfiles(customerProfileRepository, logger),
 	)
 	if err != nil {

@@ -61,6 +61,9 @@ describe('TermsView', () => {
     expect(text).toContain('estados finais')
     expect(text).toContain('Política de Privacidade')
     expect(wrapper.find('a[href="/privacidade"]').exists()).toBe(true)
+    expect(text).toContain('token opaco de acesso')
+    expect(text).toContain('Meus pedidos')
+    expect(text).toContain('sem cadastro nem consulta por telefone')
   })
 
   it('does not copy subscription rules from the reference terms', async () => {

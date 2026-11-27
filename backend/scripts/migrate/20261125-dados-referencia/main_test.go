@@ -113,10 +113,11 @@ func TestRunDryRunValidatesRepositorySeed(t *testing.T) {
 
 func TestRunRequiresExplicitConfirmation(t *testing.T) {
 	env := map[string]string{
-		"APP_ENV":           "production",
-		"MONGO_URI":         "mongodb://localhost:27017",
-		"MONGO_DB":          "brocados",
-		"MIGRATION_CONFIRM": "wrong",
+		"APP_ENV":             "production",
+		"MONGO_URI":           "mongodb://localhost:27017",
+		"MONGO_DB":            "brocados",
+		"ORDER_ACCESS_SECRET": "segredo-de-producao-com-mais-de-32-caracteres",
+		"MIGRATION_CONFIRM":   "wrong",
 	}
 	getenv := func(key string) string { return env[key] }
 

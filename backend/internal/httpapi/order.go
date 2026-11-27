@@ -6,10 +6,12 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
 	"github.com/brocados-lanches/api/internal/platform/ratelimit"
+	"github.com/brocados-lanches/api/internal/platform/token"
 	"github.com/brocados-lanches/api/internal/realtime"
 	"github.com/brocados-lanches/api/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -24,8 +26,9 @@ const maxQuoteBodyBytes = maxOrderBodyBytes
 // OrderService é a dependência dos handlers de pedido.
 type OrderService interface {
 	Quote(ctx context.Context, request domain.QuoteRequest) (domain.Quote, error)
-	Create(ctx context.Context, request domain.OrderRequest, idempotencyKey string) (domain.Order, bool, error)
+	Create(ctx context.Context, request domain.OrderRequest, idempotencyKey, accessToken string) (domain.Order, bool, error)
 	GetByPublicID(ctx context.Context, publicID string) (domain.Order, error)
+	ListByAccessToken(ctx context.Context, accessToken string, query domain.OrderHistoryQuery) (service.OrderHistoryPage, error)
 	StoreSettings(ctx context.Context) (domain.StoreSettings, error)
 }
 
@@ -71,6 +74,7 @@ type orderData struct {
 	TotalCents       int64  `json:"totalCents"`
 	CreatedAt        string `json:"createdAt"`
 	WhatsAppURL      string `json:"whatsappUrl"`
+	AccessToken      string `json:"accessToken"`
 }
 
 type trackingEnvelope struct {
@@ -94,6 +98,11 @@ type trackingData struct {
 type trackingItemData struct {
 	Name     string `json:"name"`
 	Quantity int    `json:"quantity"`
+}
+
+type orderHistoryEnvelope struct {
+	Data []trackingData `json:"data"`
+	Meta adminMeta      `json:"meta"`
 }
 
 // handleQuote cota um pedido sem persistir. O cliente envia apenas IDs e
@@ -190,13 +199,18 @@ func handleCreateOrder(orders OrderService, phoneLimiter *ratelimit.Limiter, hub
 			writeError(w, r, logger, err)
 			return
 		}
+		accessToken, err := parseOrderAccessToken(r)
+		if err != nil {
+			writeError(w, r, logger, err)
+			return
+		}
 
 		if !allowOrderPhone(phoneLimiter, request.Customer.Phone) {
 			writeRateLimited(w, r)
 			return
 		}
 
-		order, replayed, err := orders.Create(r.Context(), request, idempotencyKey)
+		order, replayed, err := orders.Create(r.Context(), request, idempotencyKey, accessToken)
 		if err != nil {
 			writeError(w, r, logger, err)
 			return
@@ -226,6 +240,55 @@ func handleCreateOrder(orders OrderService, phoneLimiter *ratelimit.Limiter, hub
 		w.Header().Set("Location", "/api/v1/orders/"+order.PublicID)
 		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, status, orderEnvelope{Data: newOrderData(order, whatsappURL)})
+	}
+}
+
+// handleOrderHistory devolve os pedidos ligados ao token guardado no navegador.
+// O token viaja no cabeçalho Authorization e nunca aparece na URL nem em logs.
+func handleOrderHistory(orders OrderService, tokenLimiter *ratelimit.Limiter, logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if orders == nil {
+			writeError(w, r, logger, errors.New("order service is not configured"))
+			return
+		}
+		accessToken, err := parseOrderAccessToken(r)
+		if err != nil {
+			writeError(w, r, logger, err)
+			return
+		}
+		if accessToken == "" {
+			writeError(w, r, logger, &malformedRequestError{
+				field:   "Authorization",
+				code:    domain.CodeRequired,
+				message: "Bearer token is required",
+			})
+			return
+		}
+		if !allowOrderToken(tokenLimiter, accessToken) {
+			writeRateLimited(w, r)
+			return
+		}
+		query, err := parseOrderHistoryQuery(r)
+		if err != nil {
+			writeError(w, r, logger, err)
+			return
+		}
+
+		page, err := orders.ListByAccessToken(r.Context(), accessToken, query)
+		if err != nil {
+			writeError(w, r, logger, err)
+			return
+		}
+		items := make([]trackingData, 0, len(page.Items))
+		for _, order := range page.Items {
+			items = append(items, newTrackingData(order, ""))
+		}
+
+		w.Header().Set("Cache-Control", "no-store")
+		writeJSON(w, http.StatusOK, orderHistoryEnvelope{
+			Data: items,
+			Meta: newAdminMeta(page.Page, page.PageSize, page.Total, page.TotalPages),
+		})
 	}
 }
 
@@ -268,6 +331,36 @@ func decodeOrderRequest(w http.ResponseWriter, r *http.Request) (domain.OrderReq
 	return request, nil
 }
 
+// parseOrderAccessToken aceita o token de histórico no cabeçalho Bearer.
+// Ausência é permitida apenas na criação do pedido, quando o servidor emite um.
+func parseOrderAccessToken(r *http.Request) (string, error) {
+	raw := strings.TrimSpace(r.Header.Get("Authorization"))
+	if raw == "" {
+		return "", nil
+	}
+	if len(raw) < 7 || !strings.EqualFold(raw[:7], "Bearer ") {
+		return "", &malformedRequestError{field: "Authorization", code: domain.CodeInvalid, message: "use Bearer token"}
+	}
+	value := strings.TrimSpace(raw[7:])
+	if err := token.ValidateOrderAccess(value); err != nil {
+		return "", &malformedRequestError{field: "Authorization", code: domain.CodeInvalid, message: "invalid history token"}
+	}
+	return value, nil
+}
+
+func parseOrderHistoryQuery(r *http.Request) (domain.OrderHistoryQuery, error) {
+	values := r.URL.Query()
+	page, err := parseOptionalInt(values.Get("page"), "page")
+	if err != nil {
+		return domain.OrderHistoryQuery{}, err
+	}
+	pageSize, err := parseOptionalInt(values.Get("pageSize"), "pageSize")
+	if err != nil {
+		return domain.OrderHistoryQuery{}, err
+	}
+	return domain.OrderHistoryQuery{Page: page, PageSize: pageSize}, nil
+}
+
 func validateIdempotencyHeader(key string) error {
 	if len(key) < domain.MinIdempotencyKeyLength || len(key) > domain.MaxIdempotencyKeyLength {
 		return &malformedRequestError{
@@ -290,6 +383,7 @@ func newOrderData(order domain.Order, whatsappURL string) orderData {
 		TotalCents:       order.TotalCents,
 		CreatedAt:        order.CreatedAt.UTC().Format(time.RFC3339),
 		WhatsAppURL:      whatsappURL,
+		AccessToken:      order.AccessToken,
 	}
 }
 

@@ -38,6 +38,7 @@ type orderDocument struct {
 	Note             string                 `bson:"note,omitempty"`
 	IdempotencyKey   string                 `bson:"idempotencyKey"`
 	RequestHash      string                 `bson:"requestHash"`
+	AccessTokenHash  string                 `bson:"accessTokenHash,omitempty"`
 	StatusHistory    []statusChangeDocument `bson:"statusHistory"`
 	ConfirmedAt      *time.Time             `bson:"confirmedAt,omitempty"`
 	CancelledAt      *time.Time             `bson:"cancelledAt,omitempty"`
@@ -141,6 +142,7 @@ func EnsureOrderIndexes(ctx context.Context, database *mongo.Database) error {
 		{Keys: bson.D{{Key: "status", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("orders_status_created")},
 		{Keys: bson.D{{Key: "createdAt", Value: -1}}, Options: options.Index().SetName("orders_created")},
 		{Keys: bson.D{{Key: "customer.phone", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("orders_phone_created")},
+		{Keys: bson.D{{Key: "accessTokenHash", Value: 1}, {Key: "createdAt", Value: -1}}, Options: options.Index().SetName("orders_access_token_created").SetSparse(true)},
 	}
 	if _, err := database.Collection(CollectionOrders).Indexes().CreateMany(ctx, indexes); err != nil {
 		return fmt.Errorf("ensure indexes on %s: %w", CollectionOrders, err)
@@ -171,6 +173,79 @@ func (r *OrderRepository) FindByPublicID(ctx context.Context, publicID string) (
 		return domain.Order{}, fmt.Errorf("find order by public id: %w", err)
 	}
 	return document.toDomain(), nil
+}
+
+// ListByAccessToken devolve uma página do histórico associado a um token. O
+// filtro usa apenas o hash: o token em claro nunca chega ao banco.
+func (r *OrderRepository) ListByAccessToken(ctx context.Context, accessTokenHash string, query domain.OrderHistoryQuery) (orders []domain.Order, total int64, err error) {
+	if accessTokenHash == "" {
+		return nil, 0, errors.New("access token hash is required")
+	}
+	page := query.Page
+	if page < 1 {
+		page = 1
+	}
+	pageSize := query.PageSize
+	if pageSize < 1 {
+		pageSize = 20
+	}
+
+	filter := bson.D{{Key: "accessTokenHash", Value: accessTokenHash}}
+	total, err = r.orders.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count orders by access token: %w", err)
+	}
+
+	opts := options.Find().
+		SetSort(bson.D{{Key: "createdAt", Value: -1}, {Key: "_id", Value: -1}}).
+		SetSkip(int64(page-1) * int64(pageSize)).
+		SetLimit(int64(pageSize))
+	cursor, err := r.orders.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list orders by access token: %w", err)
+	}
+	defer func() {
+		err = errors.Join(err, cursor.Close(ctx))
+	}()
+
+	orders = make([]domain.Order, 0)
+	for cursor.Next(ctx) {
+		var document orderDocument
+		if err := cursor.Decode(&document); err != nil {
+			return nil, 0, fmt.Errorf("decode order history: %w", err)
+		}
+		orders = append(orders, document.toDomain())
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate order history: %w", err)
+	}
+	return orders, total, nil
+}
+
+// SetAccessTokenHash associa um pedido já gravado ao token apresentado pelo
+// navegador. É usado em retries idempotentes e em pedidos anteriores ao token.
+func (r *OrderRepository) SetAccessTokenHash(ctx context.Context, id, accessTokenHash string) error {
+	if accessTokenHash == "" {
+		return errors.New("access token hash is required")
+	}
+	objectID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return fmt.Errorf("invalid order id %q: %w", id, err)
+	}
+	result, err := r.orders.UpdateOne(ctx,
+		bson.D{{Key: "_id", Value: objectID}},
+		bson.D{{Key: "$set", Value: bson.D{
+			{Key: "accessTokenHash", Value: accessTokenHash},
+			{Key: "updatedAt", Value: time.Now().UTC()},
+		}}},
+	)
+	if err != nil {
+		return fmt.Errorf("set order access token hash: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }
 
 // Create grava o pedido e seu número sequencial. Emimplantações com suporte a
@@ -278,12 +353,13 @@ func newOrderDocument(order domain.Order, number int64) (orderDocument, error) {
 			Method:         order.Payment.Method,
 			ChangeForCents: order.Payment.ChangeForCents,
 		},
-		Note:           order.Note,
-		IdempotencyKey: order.IdempotencyKey,
-		RequestHash:    order.RequestHash,
-		StatusHistory:  make([]statusChangeDocument, 0, len(order.StatusHistory)),
-		CreatedAt:      order.CreatedAt.UTC(),
-		UpdatedAt:      order.UpdatedAt.UTC(),
+		Note:            order.Note,
+		IdempotencyKey:  order.IdempotencyKey,
+		RequestHash:     order.RequestHash,
+		AccessTokenHash: order.AccessTokenHash,
+		StatusHistory:   make([]statusChangeDocument, 0, len(order.StatusHistory)),
+		CreatedAt:       order.CreatedAt.UTC(),
+		UpdatedAt:       order.UpdatedAt.UTC(),
 	}
 
 	if order.Address != nil {
@@ -369,12 +445,13 @@ func (d orderDocument) toDomain() domain.Order {
 			Method:         d.Payment.Method,
 			ChangeForCents: d.Payment.ChangeForCents,
 		},
-		Note:           d.Note,
-		IdempotencyKey: d.IdempotencyKey,
-		RequestHash:    d.RequestHash,
-		StatusHistory:  make([]domain.OrderStatusChange, 0, len(d.StatusHistory)),
-		CreatedAt:      d.CreatedAt,
-		UpdatedAt:      d.UpdatedAt,
+		Note:            d.Note,
+		IdempotencyKey:  d.IdempotencyKey,
+		RequestHash:     d.RequestHash,
+		AccessTokenHash: d.AccessTokenHash,
+		StatusHistory:   make([]domain.OrderStatusChange, 0, len(d.StatusHistory)),
+		CreatedAt:       d.CreatedAt,
+		UpdatedAt:       d.UpdatedAt,
 	}
 
 	if d.Address != nil {

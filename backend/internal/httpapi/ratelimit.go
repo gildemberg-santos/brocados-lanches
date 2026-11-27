@@ -21,6 +21,7 @@ const (
 	customerPerPhoneLimit = 3
 	quotePerIPLimit       = 30
 	trackingPerIPLimit    = 60
+	historyPerTokenLimit  = 30
 	menuPerIPLimit        = 120
 	adminPerSessionLimit  = 120
 )
@@ -33,6 +34,7 @@ type Limiters struct {
 	CustomerPhones  *ratelimit.Limiter
 	Quotes          *ratelimit.Limiter
 	Tracking        *ratelimit.Limiter
+	HistoryTokens   *ratelimit.Limiter
 	Menu            *ratelimit.Limiter
 	Admin           *ratelimit.Limiter
 }
@@ -46,6 +48,7 @@ func DefaultLimiters() Limiters {
 		CustomerPhones:  newLimiter(customerPerPhoneLimit),
 		Quotes:          newLimiter(quotePerIPLimit),
 		Tracking:        newLimiter(trackingPerIPLimit),
+		HistoryTokens:   newLimiter(historyPerTokenLimit),
 		Menu:            newLimiter(menuPerIPLimit),
 		Admin:           newLimiter(adminPerSessionLimit),
 	}
@@ -69,6 +72,9 @@ func (l *Limiters) fillDefaults() {
 	}
 	if l.Tracking == nil {
 		l.Tracking = newLimiter(trackingPerIPLimit)
+	}
+	if l.HistoryTokens == nil {
+		l.HistoryTokens = newLimiter(historyPerTokenLimit)
 	}
 	if l.Menu == nil {
 		l.Menu = newLimiter(menuPerIPLimit)
@@ -122,6 +128,14 @@ func allowOrderPhone(limiter *ratelimit.Limiter, phone string) bool {
 		return true
 	}
 	return limiter.Allow("phone|" + token.Hash(strings.ToLower(strings.TrimSpace(phone))))
+}
+
+// allowOrderToken limita o histórico por token sem guardar o token em claro.
+func allowOrderToken(limiter *ratelimit.Limiter, accessToken string) bool {
+	if limiter == nil || accessToken == "" {
+		return true
+	}
+	return limiter.Allow("history|" + token.Hash(accessToken))
 }
 
 // allowCustomerPhone usa a chave normalizada apenas como hash; o telefone

@@ -4,6 +4,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { CHECKOUT_PREFERENCES_KEY } from '../features/checkout/preferences'
+import { ORDER_ACCESS_TOKEN_KEY } from '../features/orders/orderAccessToken'
 import PrivacyView from './PrivacyView.vue'
 
 const StubView = defineComponent({ name: 'StubView', render: () => h('div') })
@@ -83,6 +84,9 @@ describe('PrivacyView', () => {
     expect(text).toContain('buscar e reaproveitar no próximo pedido')
     expect(text).toContain('Esse tratamento pode ser desativado no checkout')
     expect(text).toContain('perfil de conveniência no servidor: 24 meses')
+    expect(text).toContain('token opaco de acesso aos pedidos')
+    expect(text).toContain('Authorization')
+    expect(text).toContain('histórico de pedidos: permitir que você consulte novamente')
   })
 
   it('apaga as preferências salvas neste navegador', async () => {
@@ -97,6 +101,25 @@ describe('PrivacyView', () => {
     expect(localStorage.getItem(CHECKOUT_PREFERENCES_KEY)).toBeNull()
     expect(wrapper.get('[role="status"]').text()).toBe('Preferências apagadas deste navegador.')
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
+  })
+
+  it('apaga o token local e avisa que o histórico deixará de existir', async () => {
+    localStorage.setItem(
+      ORDER_ACCESS_TOKEN_KEY,
+      JSON.stringify({ version: 1, token: 'a'.repeat(43) }),
+    )
+    const wrapper = await mountPrivacy()
+    const button = wrapper.findAll('button')[1]
+
+    expect(button.text()).toBe('Apagar acesso aos meus pedidos')
+    expect(button.attributes('disabled')).toBeUndefined()
+
+    await button.trigger('click')
+
+    expect(localStorage.getItem(ORDER_ACCESS_TOKEN_KEY)).toBeNull()
+    expect(wrapper.get('[role="status"]').text()).toBe(
+      'Acesso aos pedidos apagado deste navegador. Faça um novo pedido para criar outro acesso.',
+    )
   })
 
   it('does not copy providers or features from the reference policy', async () => {

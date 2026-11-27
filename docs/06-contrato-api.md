@@ -1,6 +1,6 @@
 # Contrato de API — Brocados Lanches
 
-**Versão:** 1.3  
+**Versão:** 1.4  
 **Base:** `/api/v1`  
 **Atualizado em:** 26/11/2026  
 **Relacionados:** `04-arquitetura.md`, `05-modelo-de-dados.md`, `09-qualidade-e-testes.md`.
@@ -19,7 +19,8 @@
 - `Content-Type: application/json` em corpos JSON.
 - Limite de corpo: 1 MB.
 - Campos desconhecidos são rejeitados.
-- `POST /orders` exige `Idempotency-Key`.
+- `POST /orders` exige `Idempotency-Key` e aceita `Authorization: Bearer <accessToken>` opcional.
+- `GET /orders/history` exige `Authorization: Bearer <accessToken>`; o token nunca vai em query string, URL ou log.
 - `201` inclui `Location`; `204` não tem corpo.
 - Respostas com dados pessoais ou estado de pedido usam `Cache-Control: no-store`.
 - Mudança incompatível exige `/api/v2`.
@@ -45,6 +46,7 @@ Fora de `/api/v1`:
 | POST | `/customers/profile` | Consulta de conveniência por telefone (D-039) |
 | POST | `/orders/quote` | Cotação server-side sem persistir |
 | POST | `/orders` | Cria pedido persistido |
+| GET | `/orders/history` | Histórico do navegador por token opaco |
 | GET | `/orders/{publicId}` | Acompanhamento público mínimo |
 | WS | `/orders/{publicId}/events` | Sinais de mudança de status do pedido |
 
@@ -288,7 +290,10 @@ Regras:
 POST /api/v1/orders
 Content-Type: application/json
 Idempotency-Key: 4d1f6b1e-7c2a-4e2f-9f2a-1c3d5e7f9a0b
+Authorization: Bearer 7h3K9pQ2vX8mR5tY1wZ0aB6cD4eF7gH9jK2lM5nP8sA (opcional)
 ```
+
+O `Authorization` é opcional na criação. Quando ausente, o servidor emite um token a partir da chave de idempotência e de `ORDER_ACCESS_SECRET`; quando presente, o pedido é associado ao token já guardado no navegador. Um cabeçalho `Authorization` malformado ou com token inválido retorna `400 VALIDATION_ERROR`.
 
 ### Request
 
@@ -352,10 +357,13 @@ Para retirada:
     "deliveryFeeCents": 800,
     "totalCents": 6200,
     "createdAt": "2026-11-18T20:15:00Z",
-    "whatsappUrl": "https://wa.me/5585992358708?text=..."
+    "whatsappUrl": "https://wa.me/5585992358708?text=...",
+    "accessToken": "7h3K9pQ2vX8mR5tY1wZ0aB6cD4eF7gH9jK2lM5nP8sA"
   }
 }
 ```
+
+`accessToken` é opaco, tem 43 caracteres em base64url e é devolvido tanto na criação quanto no replay idempotente. O servidor grava apenas `SHA-256` dele; o token em claro nunca entra no banco, em log nem na URL. O navegador guarda esse valor e o reenvia em `Authorization` nos próximos pedidos.
 
 Headers:
 
@@ -443,7 +451,41 @@ Após recarregar a confirmação, o cliente vê número, status, itens e total p
 
 `404 NOT_FOUND` para ID inválido ou inexistente. Rate limit ativo: 60/min por IP; detalhes em `§15 Rate limits`.
 
-### 8.1. `WS /orders/{publicId}/events`
+### 8.1. `GET /orders/history`
+
+Lista os pedidos associados ao token opaco guardado no navegador. Não há senha, e-mail ou consulta por telefone.
+
+```http
+GET /api/v1/orders/history?page=1&pageSize=20
+Authorization: Bearer 7h3K9pQ2vX8mR5tY1wZ0aB6cD4eF7gH9jK2lM5nP8sA
+```
+
+`page` começa em `1`; `pageSize` vai de `1` a `100`, com padrão `20`. A ordenação é fixa, do mais recente para o mais antigo; o cliente não escolhe campo de ordenação.
+
+```json
+{
+  "data": [
+    {
+      "orderNumber": 1042,
+      "publicId": "3Jk9Qm2pX7vR5sT1aB8cD4",
+      "status": "preparing",
+      "fulfillment": "delivery",
+      "items": [{ "name": "BACON CHEDDAR", "quantity": 2 }],
+      "subtotalCents": 5400,
+      "deliveryFeeCents": 800,
+      "totalCents": 6200,
+      "createdAt": "2026-11-18T20:15:00Z",
+      "updatedAt": "2026-11-18T20:30:00Z",
+      "estimatedTime": "30-90 min"
+    }
+  ],
+  "meta": { "page": 1, "pageSize": 20, "total": 1, "totalPages": 1 }
+}
+```
+
+Cada item usa exatamente o formato mínimo de `GET /orders/{publicId}`: sem telefone, endereço, observação, troco, `whatsappUrl`, `_id` ou `accessToken`. Resposta com `Cache-Control: no-store`. Token ausente retorna `400 VALIDATION_ERROR`; token com forma válida mas sem pedidos associados retorna `200` com `data: []`. A página serve para descobrir `publicId`s; detalhe e atualizações continuam em `GET /orders/{publicId}` e `WS /orders/{publicId}/events`.
+
+### 8.2. `WS /orders/{publicId}/events`
 
 Canal WebSocket público de acompanhamento. O `publicId` vai no caminho; nenhum dado pessoal é enviado na conexão. O servidor envia primeiro `connected` e, depois, um sinal por mudança persistida:
 
@@ -621,7 +663,7 @@ GET /api/v1/admin/orders?status=pending&from=2026-11-18T00:00:00Z&to=2026-11-19T
 - Ordenação allowlist: `createdAt`, `number`, `status`, `totalCents`. Qualquer outro campo retorna `422 VALIDATION_ERROR`.
 - A fila devolve `customerName` com iniciais e `phone` com os últimos quatro dígitos (`****8708`); o detalhe completo exige sessão e inclui snapshot, cliente, endereço, zona, pagamento, itens e `statusHistory`.
 - Quando existe perfil de conveniência para o telefone do pedido, o detalhe inclui `customerProfile` com `name`, `phone`, `orderCount`, `lastOrderAt`, `address`, `fulfillment`, `zoneName`, `paymentMethod`, `optedOut`, `updatedAt` e `retainedUntil`. A chave normalizada `phoneKey` nunca é devolvida. Falha na leitura do perfil não falha o detalhe do pedido.
-- A única consulta pública por telefone é `POST /customers/profile` (§5.1), restrita à conveniência do checkout; histórico e contagem de pedidos continuam apenas no detalhe administrativo autenticado.
+- A única consulta pública por telefone é `POST /customers/profile` (§5.1), restrita à conveniência do checkout; histórico e contagem de pedidos de terceiros continuam apenas no detalhe administrativo autenticado. O histórico do próprio cliente é consultado por token opaco em `GET /orders/history` (§8.1), sem telefone.
 - Dados pessoais só para admin autenticado; não vão para log nem para auditoria.
 
 Transição:
@@ -744,12 +786,14 @@ Regras:
 | `POST /customers/profile` | 10/min | IP |
 | `POST /customers/profile` | 3/min | telefone |
 | `POST /orders/quote` | 30/min | IP |
+| `GET /orders/history` | 60/min | IP |
+| `GET /orders/history` | 30/min | hash do token |
 | `GET /orders/{publicId}` | 60/min | IP |
 | `WS /orders/{publicId}/events` | 60/min | IP (handshake) |
 | `GET /menu` | 120/min | IP |
 | Admin autenticado | 120/min | sessão |
 
-Respostas `429` incluem `Retry-After: 60` e o código `RATE_LIMITED`. Os limites são por instância, em janela fixa de 1 minuto; chaves de telefone e sessão entram como hash SHA-256, nunca em texto claro. Em deployment com múltiplas réplicas, o contador precisa passar para um store compartilhado.
+Respostas `429` incluem `Retry-After: 60` e o código `RATE_LIMITED`. Os limites são por instância, em janela fixa de 1 minuto; chaves de telefone, token e sessão entram como hash SHA-256, nunca em texto claro. Em deployment com múltiplas réplicas, o contador precisa passar para um store compartilhado.
 
 A resposta de sucesso inclui o cabeçalho `X-Request-Id`, que correlaciona a requisição aos logs estruturados sem dados pessoais.
 

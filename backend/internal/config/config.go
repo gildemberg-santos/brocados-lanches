@@ -14,6 +14,8 @@ type Config struct {
 	MongoURI string
 	MongoDB  string
 
+	OrderAccessSecret string
+
 	AdminCookieName        string
 	AdminCookieSecure      bool
 	AdminBootstrapName     string
@@ -28,6 +30,14 @@ func Load(getenv func(string) string) (Config, error) {
 		Port:     value(getenv("PORT"), "8080"),
 		MongoURI: mongoURI(getenv),
 		MongoDB:  value(getenv("MONGO_DB"), "brocados_dev"),
+	}
+
+	cfg.OrderAccessSecret = value(getenv("ORDER_ACCESS_SECRET"), "")
+	if cfg.OrderAccessSecret == "" {
+		if cfg.Env == "production" {
+			return Config{}, fmt.Errorf("ORDER_ACCESS_SECRET is required in production")
+		}
+		cfg.OrderAccessSecret = "brocados-development-order-access-secret"
 	}
 
 	cfg.AdminCookieName = value(getenv("ADMIN_SESSION_COOKIE"), "brocados_admin")
@@ -48,6 +58,9 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if strings.TrimSpace(cfg.MongoDB) == "" {
 		return Config{}, fmt.Errorf("MONGO_DB is required")
+	}
+	if cfg.Env == "production" && len(cfg.OrderAccessSecret) < 32 {
+		return Config{}, fmt.Errorf("ORDER_ACCESS_SECRET must have at least 32 characters in production")
 	}
 	if !validCookieName(cfg.AdminCookieName) {
 		return Config{}, fmt.Errorf("ADMIN_SESSION_COOKIE has invalid characters")

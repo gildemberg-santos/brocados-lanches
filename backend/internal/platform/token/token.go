@@ -2,6 +2,7 @@
 package token
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -25,4 +26,27 @@ func New() (string, error) {
 func Hash(value string) string {
 	sum := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(sum[:])
+}
+
+// DeriveOrderAccess emite o token de histórico a partir de uma chave opaca já
+// conhecida pelo cliente (a chave de idempotência do primeiro pedido). O segredo
+// do servidor impede que alguém derive o token apenas com essa chave.
+func DeriveOrderAccess(secret, source string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte("brocados-order-access|"))
+	mac.Write([]byte(source))
+	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}
+
+// ValidateOrderAccess confere a forma do token de histórico antes de qualquer
+// consulta. Tokens válidos têm 256 bits em base64url sem padding.
+func ValidateOrderAccess(value string) error {
+	if len(value) != 43 {
+		return fmt.Errorf("invalid order access token length")
+	}
+	decoded, err := base64.RawURLEncoding.DecodeString(value)
+	if err != nil || len(decoded) != 32 {
+		return fmt.Errorf("invalid order access token")
+	}
+	return nil
 }

@@ -38,7 +38,12 @@ import { RouterLink } from 'vue-router'
         </li>
         <li>
           a chave de idempotência evita que um mesmo envio gere dois pedidos. O acompanhamento
-          mostra apenas o status disponível, sem expor nome, telefone ou endereço de terceiros.
+          mostra apenas o status disponível, sem expor nome, telefone ou endereço de terceiros;
+        </li>
+        <li>
+          o servidor emite um token opaco de acesso após a gravação. Guardado no navegador, ele
+          permite consultar em “Meus pedidos” apenas os pedidos feitos naquele dispositivo, sem
+          cadastro nem consulta por telefone. Apagar os dados do navegador remove esse acesso.
         </li>
       </ul>
     </section>

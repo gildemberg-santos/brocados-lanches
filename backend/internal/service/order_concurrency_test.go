@@ -57,6 +57,14 @@ func (r *concurrentOrderReader) FindByPublicID(context.Context, string) (domain.
 	return domain.Order{}, domain.ErrNotFound
 }
 
+func (r *concurrentOrderReader) ListByAccessToken(context.Context, string, domain.OrderHistoryQuery) ([]domain.Order, int64, error) {
+	return nil, 0, nil
+}
+
+func (r *concurrentOrderReader) SetAccessTokenHash(context.Context, string, string) error {
+	return nil
+}
+
 func (r *concurrentOrderReader) Create(_ context.Context, order domain.Order) (domain.Order, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -101,7 +109,7 @@ func TestOrderServiceCreateConcurrentSameKeyCreatesOneOrder(t *testing.T) {
 		wait.Add(1)
 		go func() {
 			defer wait.Done()
-			order, replayed, err := service.Create(context.Background(), request, testIdempotencyKey)
+			order, replayed, err := service.Create(context.Background(), request, testIdempotencyKey, "")
 			results <- result{id: order.PublicID, replayed: replayed, err: err}
 		}()
 	}
@@ -133,7 +141,7 @@ func TestOrderServiceCreateDoesNotReturnHandoffWhenPersistenceFails(t *testing.T
 	reader, service := orderServiceFixture()
 	reader.createErr = errors.New("mongo indisponível")
 
-	order, replayed, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey)
+	order, replayed, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, "")
 	if !errors.Is(err, reader.createErr) {
 		t.Fatalf("error = %v, want persistence failure", err)
 	}

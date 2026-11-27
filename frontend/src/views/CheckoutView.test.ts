@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CHECKOUT_PREFERENCES_KEY, loadCheckoutPreferences } from '../features/checkout/preferences'
+import { loadOrderAccessToken, saveOrderAccessToken } from '../features/orders/orderAccessToken'
 import { fetchCustomerProfile } from '../services/customers'
 import { fetchDeliveryZones } from '../services/deliveryZones'
 import { fetchMenu } from '../services/menu'
@@ -60,6 +61,7 @@ const created = {
   totalCents: 3100,
   createdAt: '2026-11-22T22:00:00Z',
   whatsappUrl: 'https://wa.me/5585999999999?text=pedido',
+  accessToken: 'c'.repeat(43),
 }
 
 interface MountOptions {
@@ -573,6 +575,19 @@ describe('CheckoutView', () => {
     const stored = localStorage.getItem(CHECKOUT_PREFERENCES_KEY) ?? ''
     expect(stored).not.toContain('Sem cebola')
     expect(stored).not.toContain('50,00')
+    expect(loadOrderAccessToken()).toBe(created.accessToken)
+  })
+
+  it('reenvia o token salvo ao criar outro pedido', async () => {
+    const accessToken = 'a'.repeat(43)
+    saveOrderAccessToken(accessToken)
+    const { wrapper } = await mountCheckout({ seed: true })
+    await fillForm(wrapper)
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockedCreateOrder.mock.calls[0][2]).toBe(accessToken)
   })
 
   it('envia opt-out e apaga as preferências quando o cliente desmarca a opção', async () => {

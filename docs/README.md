@@ -1,7 +1,7 @@
 # Documentação — Brocados Lanches
 
-**Versão:** 1.2  
-**Atualizado em:** 25/11/2026  
+**Versão:** 1.3  
+**Atualizado em:** 26/11/2026  
 **Status:** documentação da V1 concluída; fases 1 a 4 entregues no código, Épico 8 parcialmente entregue, épicos 9 e 10 e decisões de negócio em aberto; auditoria de conformidade visual registrada em `14-auditoria-design-system.md`, com correções no Épico 12 do backlog.  
 **Entrada recomendada:** este arquivo.
 
@@ -62,9 +62,9 @@ Dentro de `docs/`, a precedência é:
 | `03-prd.md` | Todos | Problema, personas, escopo, requisitos e critérios de sucesso | Concluído |
 | `04-arquitetura.md` | Engenharia | Contexto, camadas, fluxos, segurança, deploy e observabilidade | Concluído |
 | `05-modelo-de-dados.md` | Backend, dados | Coleções, campos, índices, invariantes e retenção | Concluído |
-| `06-contrato-api.md` | Backend, frontend, QA | Endpoints, envelopes, erros, idempotência e transições | Concluído |
+| `06-contrato-api.md` | Backend, frontend, QA | Endpoints, envelopes, erros, idempotência, histórico por token e transições | Concluído |
 | `07-design-system-e-experiencia.md` | Design, frontend, produto | Tokens, componentes, telas, estados e acessibilidade | Concluído |
-| `08-backlog.md` | Produto, engenharia, QA | Épicos, histórias, tarefas, dependências e aceite | Vivo — épicos 8 a 10 em aberto |
+| `08-backlog.md` | Produto, engenharia, QA | Épicos, histórias, tarefas, dependências e aceite | Vivo — Épico 13 entregue; épicos 8 a 10 em aberto |
 | `09-qualidade-e-testes.md` | Engenharia, QA | Estratégia, matriz de testes, gates e cenários críticos | Vivo — cenários de erro, a11y e carga pendentes |
 | `10-operacao-e-lancamento.md` | Engenharia, operação | Ambientes, deploy, backup, monitoramento, LGPD e go-live | Concluído |
 | `11-roadmap.md` | Gestão, engenharia | Fases, marcos, caminho crítico e riscos | Concluído |

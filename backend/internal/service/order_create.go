@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
+	"github.com/brocados-lanches/api/internal/platform/token"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -16,11 +17,15 @@ type publicIDGenerator func() (string, error)
 
 // Create valida, calcula e persiste um pedido. Nenhum valor financeiro vem do
 // cliente; o mesmo domain.BuildQuote usado pela cotação é aplicado aqui.
-func (s *OrderService) Create(ctx context.Context, request domain.OrderRequest, idempotencyKey string) (domain.Order, bool, error) {
+func (s *OrderService) Create(ctx context.Context, request domain.OrderRequest, idempotencyKey, accessToken string) (domain.Order, bool, error) {
 	if err := validateIdempotencyKey(idempotencyKey); err != nil {
 		return domain.Order{}, false, err
 	}
 	if err := request.Validate(); err != nil {
+		return domain.Order{}, false, err
+	}
+	accessToken, accessTokenHash, err := s.resolveOrderAccessToken(idempotencyKey, accessToken)
+	if err != nil {
 		return domain.Order{}, false, err
 	}
 
@@ -36,6 +41,9 @@ func (s *OrderService) Create(ctx context.Context, request domain.OrderRequest, 
 	if found {
 		if existing.RequestHash != requestHash {
 			return domain.Order{}, false, domain.ErrConflict
+		}
+		if err := s.attachAccessToken(ctx, &existing, accessToken, accessTokenHash); err != nil {
+			return domain.Order{}, false, err
 		}
 		return existing, true, nil
 	}
@@ -67,6 +75,7 @@ func (s *OrderService) Create(ctx context.Context, request domain.OrderRequest, 
 		requestHash,
 		time.Now().UTC(),
 	)
+	order.AccessTokenHash = accessTokenHash
 
 	stored, err := s.reader.Create(ctx, order)
 	if err != nil {
@@ -80,12 +89,49 @@ func (s *OrderService) Create(ctx context.Context, request domain.OrderRequest, 
 			if !found || existing.RequestHash != requestHash {
 				return domain.Order{}, false, domain.ErrConflict
 			}
+			if err := s.attachAccessToken(ctx, &existing, accessToken, accessTokenHash); err != nil {
+				return domain.Order{}, false, err
+			}
 			return existing, true, nil
 		}
 		return domain.Order{}, false, err
 	}
+	// O repositório devolve o documento persistido, sem o token em claro.
+	stored.AccessToken = accessToken
 	s.syncCustomerProfile(ctx, stored, request)
 	return stored, false, nil
+}
+
+// resolveOrderAccessToken usa o token já guardado no navegador quando presente.
+// Na primeira compra, o servidor emite o token a partir da chave de idempotência
+// e de um segredo que nunca sai do servidor.
+func (s *OrderService) resolveOrderAccessToken(idempotencyKey, accessToken string) (string, string, error) {
+	if accessToken == "" {
+		accessToken = token.DeriveOrderAccess(s.orderAccessSecret, idempotencyKey)
+	}
+	if err := token.ValidateOrderAccess(accessToken); err != nil {
+		return "", "", &domain.ValidationError{
+			Field:   "accessToken",
+			Code:    domain.CodeInvalid,
+			Message: "invalid history token",
+		}
+	}
+	return accessToken, token.Hash(accessToken), nil
+}
+
+// attachAccessToken mantém o retry idempotente associado ao token apresentado
+// pelo navegador. Também preenche pedidos gravados antes do histórico existir.
+func (s *OrderService) attachAccessToken(ctx context.Context, order *domain.Order, accessToken, accessTokenHash string) error {
+	if order.AccessTokenHash == accessTokenHash {
+		order.AccessToken = accessToken
+		return nil
+	}
+	if err := s.reader.SetAccessTokenHash(ctx, order.ID, accessTokenHash); err != nil {
+		return fmt.Errorf("attach order access token: %w", err)
+	}
+	order.AccessToken = accessToken
+	order.AccessTokenHash = accessTokenHash
+	return nil
 }
 
 // syncCustomerProfile registra os dados de conveniência depois que o pedido já

@@ -47,8 +47,9 @@ O esqueleto da Fase 1 já inclui:
 - domínio e repositórios de catálogo com validação, índices idempotentes e testes de integração com MongoDB real;
 - API pública de catálogo com `GET /api/v1/menu` e `GET /api/v1/delivery-zones`, filtros de ativos/disponibilidade e testes de service e handler;
 - cotação server-side em `POST /api/v1/orders/quote`, sem persistência, com validação de itens/opções/adicionais/zona/status da loja e cálculo centralizado em `domain.BuildQuote`;
-- criação de pedido em `POST /api/v1/orders`, com idempotência, snapshot congelado, número sequencial, `publicId` opaco e link `wa.me` gerado após a persistência;
+- criação de pedido em `POST /api/v1/orders`, com idempotência, snapshot congelado, número sequencial, `publicId` opaco, link `wa.me` gerado após a persistência e token opaco de histórico devolvido ao navegador;
 - acompanhamento público em `GET /api/v1/orders/{publicId}`, sem telefone, endereço, observação ou `whatsappUrl`, com sinais de mudança em `WS /api/v1/orders/{publicId}/events`;
+- histórico do cliente em `GET /api/v1/orders/history`, paginado e autenticado por token no cabeçalho `Authorization`, sem login nem consulta por telefone, com a tela `/meus-pedidos`;
 - fila e detalhe administrativos acompanham criações e transições por `WS /api/v1/admin/orders/events`, com sessão e eventos sem PII;
 - autenticação administrativa em `/api/v1/admin/auth`: login/logout/me com Argon2id, sessão opaca hasheada em cookie `HttpOnly`, rotação, expiração ociosa/absoluta, CSRF por origem e rate limit de login; bootstrap do primeiro `owner` por `ADMIN_BOOTSTRAP_*`;
 - shell e guard do painel em `/admin`: login, rotas lazy, `me` no servidor, menu por papel (`owner`/`operator`), redirecionamento `401` para login e tela `403`; o proxy de desenvolvimento alinha `Origin`/`Host` à API;
@@ -62,7 +63,7 @@ O esqueleto da Fase 1 já inclui:
 - frontend Vue 3 com Vite, TypeScript strict, Pinia, Vue Router e Tailwind compilado;
 - home, cardápio com busca e filtro por categoria, detalhe de produto e personalização com grupos de opções, adicionais, observação e total estimado;
 - carrinho persistente com schema versionado, validação contra o catálogo, quantidade, remoção, limpeza, estado vazio e subtotal sem taxa; a taxa e o total aparecem no checkout, após a escolha de entrega/retirada e zona;
-- checkout com entrega/retirada, zona, endereço, pagamento, troco e validação por campo; preferências de entrega, contato, endereço e pagamento salvas no navegador após o pedido, sem observação nem troco, com opção de apagar em `/privacidade`; confirmação que limpa o carrinho somente após `201` e permite reenviar/copiar o link do WhatsApp;
+- checkout com entrega/retirada, zona, endereço, pagamento, troco e validação por campo; preferências de entrega, contato, endereço e pagamento salvas no navegador após o pedido, sem observação nem troco, com opção de apagar em `/privacidade`; token de histórico guardado no navegador e reenviado no próximo pedido; confirmação que limpa o carrinho somente após `201` e permite reenviar/copiar o link do WhatsApp;
 - estados de carregando, vazio, erro, esgotado e sucesso nas telas do catálogo, carrinho, checkout e pedido;
 - componentes reutilizáveis (`BaseButton`, `ProductCard`, `OptionGroup`, `AddonRow`, `PriceText`, `AdminOrderFilters`, `OrderStatusBadge`, `OrderStatusActions`, `AdminCatalogFilters`, `AdminCatalogForm`, `AdminCatalogList`, `AdminProductForm` e outros) e services/stores tipados;
 - tokens do design system importados diretamente de `design-system/tokens.css`;
@@ -207,7 +208,7 @@ A proposta de deploy usa **um único container** (estratégia do `restaurante-ca
 
 O `render.yaml` define um único web service `brocados-lanches` com `dockerfilePath: ./Dockerfile`, health check `/healthz` e plano `free` (cold start após inatividade).
 
-Se a proposta for aprovada, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados` e `API_PORT=3000`; ajuste `MONGO_DB` se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais.
+Se a proposta for aprovada, use **Render > New > Blueprint**, selecione a branch que contém o `render.yaml` e informe `MONGODB_URI` (MongoDB Atlas, com usuário e senha embutidos na URI), `ORDER_ACCESS_SECRET` (ao menos 32 caracteres), `ADMIN_BOOTSTRAP_NAME`, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD`. O blueprint define `MONGO_DB=brocados` e `API_PORT=3000`; ajuste `MONGO_DB` se o banco do Atlas tiver outro nome. `MONGODB_USERNAME` e `MONGODB_PASSWORD` não são lidos pelo app quando a URI já contém as credenciais.
 
 O MongoDB Atlas precisa aceitar a conexão do Render (allowlist `0.0.0.0/0` se não houver IP fixo, ou PrivateLink). Após o primeiro deploy e a criação do `owner`, remova `ADMIN_BOOTSTRAP_*` do Render.
 
@@ -243,6 +244,7 @@ make dev-web
 | `PORT` | `8080` | Porta interna da API |
 | `MONGO_URI` | `mongodb://localhost:27017` | Conexão usada fora do Compose; `MONGODB_URI` é aceito como alias |
 | `MONGO_DB` | `brocados_dev` | Banco da API |
+| `ORDER_ACCESS_SECRET` | valor fictício apenas em dev | Segredo HMAC para tokens de histórico; obrigatório com pelo menos 32 caracteres em produção |
 | `API_PORT` | `8080` | Porta publicada da API |
 | `WEB_PORT` | `8081` | Porta publicada da web |
 | `MONGO_PORT` | `27017` | Porta publicada do MongoDB |

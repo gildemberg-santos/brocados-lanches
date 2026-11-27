@@ -29,6 +29,7 @@ import {
 } from '../features/checkout/preferences'
 import type { CheckoutErrors, CheckoutForm } from '../features/checkout/checkout'
 import type { CheckoutPreferences } from '../features/checkout/preferences'
+import { loadOrderAccessToken, saveOrderAccessToken } from '../features/orders/orderAccessToken'
 import { fetchCustomerProfile } from '../services/customers'
 import { createOrder, fetchOrderQuote } from '../services/orders'
 import { useCartStore } from '../stores/cart'
@@ -240,7 +241,9 @@ async function submit(): Promise<void> {
 
   submitting.value = true
   try {
-    const created = await createOrder(request, idempotencyKey.value)
+    const savedAccessToken = loadOrderAccessToken()
+    const created = await createOrder(request, idempotencyKey.value, savedAccessToken ?? undefined)
+    saveOrderAccessToken(created.accessToken)
     saveHandoffUrl(created.publicId, created.whatsappUrl)
     if (form.value.saveCustomerProfile) {
       saveCheckoutPreferences(form.value)

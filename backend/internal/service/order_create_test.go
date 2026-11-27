@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/brocados-lanches/api/internal/domain"
+	"github.com/brocados-lanches/api/internal/platform/token"
 )
 
 const testIdempotencyKey = "4d1f6b1e-7c2a-4e2f-9f2a-1c3d5e7f9a0b"
@@ -49,7 +50,7 @@ func TestOrderServiceCreatePersistsAuthoritativeValues(t *testing.T) {
 		CreatedAt: time.Date(2026, 11, 22, 22, 0, 0, 0, time.UTC),
 	}
 
-	order, replayed, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey)
+	order, replayed, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, "")
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -68,6 +69,13 @@ func TestOrderServiceCreatePersistsAuthoritativeValues(t *testing.T) {
 	if reader.receivedOrder.RequestHash == "" || len(reader.receivedOrder.RequestHash) != 64 {
 		t.Errorf("request hash = %q", reader.receivedOrder.RequestHash)
 	}
+	expectedToken := token.DeriveOrderAccess("test-order-access-secret", testIdempotencyKey)
+	if order.AccessToken != expectedToken || reader.receivedOrder.AccessTokenHash != token.Hash(expectedToken) {
+		t.Errorf("access token/hash were not emitted and persisted")
+	}
+	if reader.receivedOrder.AccessToken != "" {
+		t.Error("raw access token must not be sent to the repository")
+	}
 }
 
 func TestOrderServiceCreateReplaysSameKey(t *testing.T) {
@@ -80,7 +88,7 @@ func TestOrderServiceCreateReplaysSameKey(t *testing.T) {
 	}
 	reader.existing.RequestHash = hash
 
-	order, replayed, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey)
+	order, replayed, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, "")
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -99,7 +107,7 @@ func TestOrderServiceCreateRejectsDifferentBodyForSameKey(t *testing.T) {
 	reader.existingFound = true
 	reader.existing = domain.Order{RequestHash: "hash-de-outra-requisicao"}
 
-	_, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey)
+	_, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, "")
 	if !errors.Is(err, domain.ErrConflict) {
 		t.Fatalf("error = %v, want ErrConflict", err)
 	}
@@ -108,7 +116,7 @@ func TestOrderServiceCreateRejectsDifferentBodyForSameKey(t *testing.T) {
 func TestOrderServiceCreateRequiresIdempotencyKey(t *testing.T) {
 	_, service := orderServiceFixture()
 
-	_, _, err := service.Create(context.Background(), createOrderRequestFixture(), "curta")
+	_, _, err := service.Create(context.Background(), createOrderRequestFixture(), "curta", "")
 	var validationError *domain.ValidationError
 	if !errors.As(err, &validationError) || validationError.Field != "Idempotency-Key" {
 		t.Fatalf("error = %v, want invalid key", err)
@@ -121,10 +129,56 @@ func TestOrderServiceCreateValidatesChangeAgainstServerTotal(t *testing.T) {
 	changeForCents := int64(6100)
 	request.Payment.ChangeForCents = &changeForCents
 
-	_, _, err := service.Create(context.Background(), request, testIdempotencyKey)
+	_, _, err := service.Create(context.Background(), request, testIdempotencyKey, "")
 	var validationError *domain.ValidationError
 	if !errors.As(err, &validationError) || validationError.Field != "payment.changeForCents" {
 		t.Fatalf("error = %v, want insufficient change", err)
+	}
+}
+
+func TestOrderServiceCreateUsesBrowserAccessToken(t *testing.T) {
+	reader, service := orderServiceFixture()
+	accessToken := token.DeriveOrderAccess("test-order-access-secret", "outro-pedido")
+
+	_, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, accessToken)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if reader.receivedOrder.AccessTokenHash != token.Hash(accessToken) {
+		t.Error("stored hash does not match the token presented by the browser")
+	}
+}
+
+func TestOrderServiceCreateReplayReattachesChangedAccessToken(t *testing.T) {
+	reader, service := orderServiceFixture()
+	reader.existingFound = true
+	reader.existing = domain.Order{ID: "665f1c2a9b1e4a0012a3b4f9", PublicID: "public-123", Number: 1042}
+	hash, err := domain.CanonicalRequestHash(createOrderRequestFixture())
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader.existing.RequestHash = hash
+	accessToken := token.DeriveOrderAccess("test-order-access-secret", "token-do-navegador")
+
+	order, replayed, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, accessToken)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if !replayed || order.AccessToken != accessToken {
+		t.Errorf("replay token = %q, replayed = %v", order.AccessToken, replayed)
+	}
+	if reader.attachedHash != token.Hash(accessToken) || reader.attachedID != reader.existing.ID {
+		t.Errorf("attached hash/id = %q/%q", reader.attachedHash, reader.attachedID)
+	}
+}
+
+func TestOrderServiceCreateRejectsInvalidAccessToken(t *testing.T) {
+	_, service := orderServiceFixture()
+
+	_, _, err := service.Create(context.Background(), createOrderRequestFixture(), testIdempotencyKey, "invalido")
+	var validationError *domain.ValidationError
+	if !errors.As(err, &validationError) || validationError.Field != "accessToken" {
+		t.Fatalf("error = %v, want invalid accessToken", err)
 	}
 }
 

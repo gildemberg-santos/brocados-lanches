@@ -43,6 +43,9 @@ onUnmounted(() => {
       <nav class="site-header__nav" aria-label="Navegação principal">
         <RouterLink class="site-header__link" to="/">Início</RouterLink>
         <RouterLink class="site-header__link" to="/cardapio">Cardápio</RouterLink>
+        <RouterLink class="site-header__link site-header__link--orders" to="/meus-pedidos">
+          Pedidos
+        </RouterLink>
         <RouterLink
           class="site-header__link site-header__link--cart"
           to="/carrinho"
@@ -151,7 +154,7 @@ onUnmounted(() => {
 
 @media (max-width: 519px) {
   .site-header__brand-name {
-    font-size: 26px;
+    font-size: 24px;
   }
 
   .site-header__brand-accent {
@@ -159,7 +162,7 @@ onUnmounted(() => {
   }
 
   .site-header__link {
-    padding-inline: 8px;
+    padding-inline: 6px;
   }
 
   .site-header__nav .site-header__link:first-child {

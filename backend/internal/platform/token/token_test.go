@@ -2,6 +2,7 @@ package token
 
 import (
 	"encoding/base64"
+	"strings"
 	"testing"
 )
 
@@ -37,5 +38,30 @@ func TestHash(t *testing.T) {
 	}
 	if first != Hash("token-a") {
 		t.Error("hash is not deterministic")
+	}
+}
+
+func TestDeriveOrderAccess(t *testing.T) {
+	first := DeriveOrderAccess("segredo", "chave-1")
+	second := DeriveOrderAccess("segredo", "chave-1")
+	differentKey := DeriveOrderAccess("segredo", "chave-2")
+	differentSecret := DeriveOrderAccess("outro-segredo", "chave-1")
+
+	if first != second {
+		t.Error("derived token is not deterministic")
+	}
+	if first == differentKey || first == differentSecret {
+		t.Error("derived token must depend on secret and source")
+	}
+	if err := ValidateOrderAccess(first); err != nil {
+		t.Fatalf("ValidateOrderAccess() error = %v", err)
+	}
+}
+
+func TestValidateOrderAccessRejectsInvalidTokens(t *testing.T) {
+	for _, value := range []string{"", "curto", strings.Repeat("a", 44), strings.Repeat("*", 43)} {
+		if err := ValidateOrderAccess(value); err == nil {
+			t.Errorf("ValidateOrderAccess(%q) error = nil, want error", value)
+		}
 	}
 }
