@@ -120,6 +120,15 @@ describe('useCategoryScrollSpy', () => {
     document.body.innerHTML = ''
   })
 
+  it('destaca a primeira categoria ao medir sem scroll prévio', async () => {
+    const { vm } = await mountHarness()
+
+    expect(vm.activeSlug).toBe('combos')
+
+    scrollTo(500)
+    expect(vm.activeSlug).toBe('combos')
+  })
+
   it('acompanha o scroll para baixo, incluindo o fim da página', async () => {
     const { vm } = await mountHarness()
 

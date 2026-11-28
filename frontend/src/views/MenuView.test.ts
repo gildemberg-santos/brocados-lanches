@@ -135,6 +135,20 @@ describe('MenuView', () => {
     expect(wrapper.find('a[href="/produto/brocadao-cheddar"]').exists()).toBe(true)
   })
 
+  it('destaca a primeira categoria no carregamento, antes de qualquer scroll', async () => {
+    mockedFetchMenu.mockResolvedValue(menu)
+
+    const { wrapper } = await mountMenu()
+    await flushPromises()
+
+    const hamburgueresButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Hambúrgueres')
+
+    expect(hamburgueresButton?.attributes('aria-pressed')).toBe('true')
+    expect(scrollToTop).not.toHaveBeenCalled()
+  })
+
   it('filtra por busca ignorando acentos e atualiza para o singular', async () => {
     mockedFetchMenu.mockResolvedValue(menu)
 

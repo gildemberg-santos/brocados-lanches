@@ -59,6 +59,12 @@ export function useCategoryScrollSpy(categories: Ref<MenuCategory[]>, enabled: R
       })
       .filter((section) => section.slug.length > 0)
 
+    // No topo não houve scroll para disparar o spy: a primeira categoria já
+    // deve começar destacada, como acontece no cardápio de referência.
+    if (!metrics.some((section) => section.slug === activeSlug.value)) {
+      activeSlug.value = metrics[0]?.slug ?? ''
+    }
+
     lastScrollY = window.scrollY
   }
 

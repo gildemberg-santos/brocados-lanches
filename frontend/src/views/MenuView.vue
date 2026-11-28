@@ -89,7 +89,9 @@ watch(
     }
 
     const slug = categoryFromQuery()
-    if (slug !== activeSlug.value) {
+    // Sem categoria na URL, o spy já destaca a primeira no carregamento:
+    // não é preciso rolar nem alterar a posição do usuário.
+    if (slug.length > 0 && slug !== activeSlug.value) {
       await nextTick()
       remeasure()
       scrollToCategory(slug)
@@ -180,6 +182,9 @@ onMounted(() => {
 <style scoped>
 .menu-page {
   display: grid;
+  /* A faixa de categorias é rolável: sem isso a coluna cresce até o
+     min-content dos chips e cria rolagem horizontal na página. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
 }
 

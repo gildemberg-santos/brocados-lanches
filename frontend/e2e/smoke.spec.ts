@@ -83,6 +83,14 @@ test.describe('smoke da base', () => {
     const firstChip = nav.getByRole('button').first()
     const categoryName = (await firstChip.textContent())?.trim() ?? ''
     expect(categoryName.length).toBeGreaterThan(0)
+    await expect(firstChip).toHaveAttribute('aria-pressed', 'true')
+
+    // A faixa de chips pode rolar horizontalmente, mas a página não pode.
+    const overflow = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    }))
+    expect(overflow.content).toBeLessThanOrEqual(overflow.viewport)
 
     await page.evaluate(() => window.scrollTo(0, 1200))
 
@@ -91,7 +99,7 @@ test.describe('smoke da base', () => {
       .evaluate((element) => Math.round(element.getBoundingClientRect().bottom))
     await expect
       .poll(() => nav.evaluate((element) => Math.round(element.getBoundingClientRect().top)))
-      .toBeGreaterThanOrEqual(headerBottom - 1)
+      .toBeGreaterThanOrEqual(headerBottom)
 
     await firstChip.click()
 
@@ -102,6 +110,24 @@ test.describe('smoke da base', () => {
           .evaluate((element) => Math.round(element.getBoundingClientRect().top)),
       )
       .toBeLessThan(180)
+  })
+
+  test('o último chip continua alcançável pela faixa rolável', async ({ page }) => {
+    await page.goto('/cardapio')
+
+    const nav = page.getByRole('navigation', { name: 'Categorias do cardápio' })
+    const lastChip = nav.getByRole('button').last()
+    const label = (await lastChip.textContent())?.trim() ?? ''
+
+    await page.evaluate(() => {
+      const inner = document.querySelector('[aria-label="Categorias do cardápio"] > div')
+      if (inner) inner.scrollLeft = inner.scrollWidth
+    })
+    await lastChip.click()
+
+    await expect(lastChip).toHaveAttribute('aria-pressed', 'true')
+    await expect(page).toHaveURL(/categoria=/)
+    await expect(page.getByRole('heading', { level: 2, name: label })).toBeInViewport()
   })
 
   test('CTA principal tem alvo de toque e não cria rolagem horizontal', async ({ page }) => {
