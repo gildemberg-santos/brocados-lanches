@@ -9,6 +9,7 @@ import {
   createIdempotencyKey,
   formatPhone,
   initialCheckoutForm,
+  isQuoteOutdatedError,
   isValidBrazilianPhone,
   normalizePhone,
   orderStatusLabel,
@@ -97,11 +98,12 @@ describe('checkout', () => {
       note: 'Deixar na portaria',
     }
 
-    const request = buildCreateOrderRequest([item], form)
+    const request = buildCreateOrderRequest([item], form, 6200)
 
     expect(request.customer).toEqual({ name: 'Maria Silva', phone: '+5585999999999' })
     expect(request.address?.city).toBe('Aquiraz')
     expect(request.payment).toEqual({ method: 'cash', changeForCents: 10000 })
+    expect(request.expectedTotalCents).toBe(6200)
     expect(request.note).toBe('Deixar na portaria')
   })
 
@@ -118,7 +120,7 @@ describe('checkout', () => {
       zipCode: '61700000',
     }
 
-    const request = buildCreateOrderRequest([item], form)
+    const request = buildCreateOrderRequest([item], form, 6200)
 
     expect(request.address?.complement).toBe('')
   })
@@ -126,7 +128,7 @@ describe('checkout', () => {
   it('omits address and fee-related fields on pickup', () => {
     const form = { ...initialCheckoutForm, fulfillment: 'pickup' as const }
 
-    const request = buildCreateOrderRequest([item], form)
+    const request = buildCreateOrderRequest([item], form, 6200)
 
     expect(request.zoneId).toBeUndefined()
     expect(request.address).toBeUndefined()
@@ -193,6 +195,23 @@ describe('checkout', () => {
       'Pedido não encontrado ou código de acompanhamento inválido.',
     )
     expect(checkoutApiMessage(new Error('unknown'))).toContain('Seus dados foram mantidos')
+    expect(
+      checkoutApiMessage(
+        new ApiError(422, 'VALIDATION_ERROR', 'pix is currently unavailable', [
+          { field: 'payment.method', code: 'INVALID' },
+        ]),
+      ),
+    ).toContain('Pix não está disponível')
+  })
+
+  it('identifies only the outdated quote conflict', () => {
+    const outdated = new ApiError(409, 'CONFLICT', 'total mudou', [
+      { field: 'expectedTotalCents', code: 'OUTDATED' },
+    ])
+
+    expect(isQuoteOutdatedError(outdated)).toBe(true)
+    expect(isQuoteOutdatedError(new ApiError(409, 'CONFLICT', 'replay'))).toBe(false)
+    expect(isQuoteOutdatedError(new Error('falha'))).toBe(false)
   })
 
   it('maps order statuses to Portuguese labels', () => {

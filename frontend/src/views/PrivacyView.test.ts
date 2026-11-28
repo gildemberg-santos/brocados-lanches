@@ -47,6 +47,8 @@ describe('PrivacyView', () => {
 
     expect(text).toContain('nome, telefone, endereço de entrega e observação do pedido')
     expect(text).toContain('canais já publicados pela loja')
+    expect(text).toContain('BR Code na confirmação, com o total do pedido já gravado')
+    expect(text).not.toContain('BR Code com o total cotado')
     expect(wrapper.find('a[href="/contato"]').exists()).toBe(true)
     expect(text).not.toContain('CNPJ')
     expect(text).not.toContain('+55')

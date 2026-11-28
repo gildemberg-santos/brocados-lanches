@@ -125,7 +125,7 @@ As metas serão medidas após o lançamento; ainda não há linha de base.
 | Catálogo | Categorias, produtos, grupos de opções, adicionais, disponibilidade, destaque e imagens |
 | Entrega | Delivery por zona e retirada; taxa por zona; retirada com taxa zero |
 | Pedido | Cotação server-side, criação persistida, snapshot, número sequencial, `publicId`, idempotência e handoff para WhatsApp |
-| Pagamento | Pix, cartão e dinheiro **na entrega/retirada**; troco; sem gateway online |
+| Pagamento | Pix cobrado **na confirmação do pedido gravado** por BR Code/QR local com o total persistido, sem gateway nem confirmação automática; cartão e dinheiro na entrega/retirada; troco; sem gateway online |
 | Admin | Login, sessão, papéis, catálogo, categorias, adicionais, zonas, status da loja, fila de pedidos, detalhe, transições e auditoria |
 | Conteúdo | Textos institucionais, contato, política de privacidade, termos e alergênicos |
 | Qualidade | Acessibilidade AA, SEO básico, testes, observabilidade, backup e go-live |
@@ -147,7 +147,7 @@ As metas serão medidas após o lançamento; ainda não há linha de base.
 
 1. O cliente valida catálogo, preços, taxas, horários, contatos e textos antes do lançamento.
 2. O WhatsApp da loja é o canal de fechamento; a API oficial não está contratada.
-3. O pagamento é combinado na entrega/retirada; a V1 não cobra online.
+3. Pix é cobrado na confirmação do pedido gravado por BR Code/QR local com o total persistido, sem gateway nem confirmação automática; cartão e dinheiro são combinados na entrega/retirada.
 4. A operação terá pelo menos um usuário `owner` e um `operator`.
 5. A hospedagem e o domínio ainda serão definidos; a API e a web serão same-origin.
 6. A loja opera em `America/Fortaleza`, com persistência em UTC.
@@ -287,7 +287,7 @@ A coluna “Aceite” resume o critério testável. O detalhamento de telas est�
 | FR-CHECKOUT-01 | Escolher delivery ou retirada | P0 | Retirada zera taxa e oculta endereço; delivery exige zona e endereço |
 | FR-CHECKOUT-02 | Selecionar zona ativa e calcular taxa | P0 | Taxa vem da API; zona inativa não aparece; troca de zona atualiza cotação |
 | FR-CHECKOUT-03 | Coletar nome, telefone e endereço | P0 | Telefone normalizado; endereço obrigatório só em delivery; erros por campo |
-| FR-CHECKOUT-04 | Escolher pagamento e troco | P0 | Pix/cartão/dinheiro; troco validado no servidor; sem dados de cartão |
+| FR-CHECKOUT-04 | Escolher pagamento e troco | P0 | Pix escolhido no checkout e cobrado na confirmação por BR Code/QR local com o total gravado, sem gateway; cartão/dinheiro na entrega; troco validado no servidor; sem dados de cartão |
 | FR-CHECKOUT-05 | Revisar total cotado pelo servidor | P0 | Subtotal, taxa e total vêm de `/orders/quote`; divergência bloqueia envio |
 | FR-ORDER-01 | Criar pedido persistido | P0 | `201` + `Location`; pedido sobrevive a recarregar/fechar aba; número e `publicId` retornados |
 | FR-ORDER-02 | Garantir idempotência | P0 | Mesma chave/corpo não duplica; mesma chave/corpo diferente retorna `409` |
@@ -295,6 +295,7 @@ A coluna “Aceite” resume o critério testável. O detalhamento de telas est�
 | FR-ORDER-04 | Fazer handoff para WhatsApp | P0 | URL contém número e mensagem do pedido; falha não apaga pedido; reenvio disponível |
 | FR-ORDER-05 | Acompanhar pedido por link opaco | P1 | `/pedido/{publicId}` mostra status e itens sem PII sensível; ID inválido retorna estado claro |
 | FR-ORDER-06 | Aplicar ciclo de status | P0 | Transições válidas funcionam; inválidas retornam `409`; timestamps registrados |
+| FR-ORDER-07 | Exibir cobrança Pix após a gravação | P1 | A confirmação monta BR Code com o `totalCents` persistido e `paymentMethod` devolvido pelo acompanhamento; nenhum QR no checkout |
 
 ### 8.2 Administração
 
@@ -398,7 +399,7 @@ Restrições:
 
 - monorepo Go + Vue + MongoDB, definido em `../AGENTS.md`;
 - API e web same-origin;
-- sem gateway de pagamento na V1;
+- sem gateway de pagamento na V1; o BR Code do Pix é gerado localmente;
 - sem dependência de CDN em produção;
 - sem PII em logs;
 - sem cálculo de preço no cliente.

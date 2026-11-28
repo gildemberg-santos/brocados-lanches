@@ -89,7 +89,7 @@ func paymentLabel(payment domain.OrderPayment) string {
 	case domain.PaymentMethodCard:
 		return "cartão na entrega"
 	case domain.PaymentMethodPix:
-		return "Pix na entrega"
+		return "Pix a pagar na confirmação (BR Code estático)"
 	default:
 		return payment.Method
 	}

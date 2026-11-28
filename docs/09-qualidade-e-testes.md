@@ -310,6 +310,29 @@ Estes cenários precisam existir em teste automatizado e, quando possível, em E
 - **Quando** o som é solicitado.
 - **Então** a chamada falha silenciosamente e a notificação visual permanece.
 
+### 5.28 Pix cobrado após gravar o pedido (D-053)
+
+- **Dado** Pix ativo, cotação válida e forma de pagamento `pix`.
+- **Quando** o cliente escolhe Pix no checkout.
+- **Então** o checkout não gera BR Code; ele informa que o pedido será gravado primeiro e o QR aparecerá na confirmação.
+- **Quando** `POST /orders` responde `201`.
+- **Então** a confirmação `/pedido/:publicId` monta localmente BR Code com `54` igual ao `totalCents` persistido, `62.05=***` e CRC16-CCITT/FFFF, exibindo QR em PNG e o Pix Copia e Cola, sem gateway ou confirmação automática.
+- **Dado** pedido gravado com Pix e configuração ativa.
+- **Quando** a confirmação é recarregada.
+- **Então** `GET /orders/{publicId}` devolve `paymentMethod: "pix"` e o BR Code é refeito com o mesmo total gravado.
+- **Dado** chave, nome ou cidade ausentes/inválidos, configuração desativada ou falha ao carregar `GET /store`.
+- **Quando** a confirmação tenta exibir a cobrança de um pedido com Pix.
+- **Então** nenhum BR Code aparece e a mensagem orienta a falar com a loja; o pedido gravado não é alterado.
+- **Dado** `operator` ou chamada pública à configuração do Pix.
+- **Quando** tenta ler ou alterar `GET/PATCH /admin/integrations/pix`.
+- **Então** recebe `403`/`401`; a auditoria de alterações registra apenas `active` e se os campos estão preenchidos, nunca a chave, o nome ou a cidade.
+- **Dado** integração Pix desativada no servidor e pedido enviado com `payment.method = "pix"`.
+- **Quando** uma aba antiga ou chamada direta à API tenta criar o pedido.
+- **Então** a API responde `422 VALIDATION_ERROR` com `details[0].field = "payment.method"` sem persistir; o checkout orienta a escolher outra forma de pagamento.
+- **Dado** total cotado exibido e alteração de preço ou taxa no servidor antes do envio.
+- **Quando** o cliente envia o pedido com `expectedTotalCents` divergente do total recalculado.
+- **Então** a API responde `409 CONFLICT` sem persistir, o checkout recota e mantém o carrinho para nova tentativa; o BR Code ainda não existe nessa etapa.
+
 ---
 
 ## 6. Backend

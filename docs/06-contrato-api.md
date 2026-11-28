@@ -40,7 +40,7 @@ Fora de `/api/v1`:
 
 | Método | Rota | Função |
 |---|---|---|
-| GET | `/store` | Status efetivo, horários, contato, prazo |
+| GET | `/store` | Status efetivo, horários, contato, prazo e configuração pública do Pix |
 | GET | `/menu` | Categorias, produtos, opções e adicionais ativos |
 | GET | `/delivery-zones` | Zonas ativas com taxa |
 | GET | `/uploads/{id}` | Imagem enviada pelo painel (D-045) |
@@ -74,6 +74,12 @@ Retorna o status efetivo calculado no servidor.
       { "day": "tuesday", "closed": true, "intervals": [] }
     ],
     "nextOpeningAt": "2026-11-19T21:00:00Z",
+    "pix": {
+      "active": true,
+      "key": "123e4567-e89b-12d3-a456-426614174000",
+      "merchantName": "BROCADOS LANCHES",
+      "merchantCity": "Aquiraz"
+    },
     "updatedAt": "2026-11-18T20:00:00Z"
   }
 }
@@ -84,6 +90,7 @@ Regras:
 - `status` é `open` ou `closed`.
 - `status = open` somente se o horário permitir e `isOpenManual` for `true`.
 - `nextOpeningAt` pode ser `null`.
+- `pix` traz a chave, o nome e a cidade do recebedor quando `active = true`. Com configuração desativada ou ausente, a resposta mantém `pix` com `active: false` e os demais campos vazios, para não expor valores antigos (D-053). A chave é um dado público do BR Code exibido na confirmação do pedido gravado, mas não é inventada nem versionada: vem do painel owner-only.
 - O frontend não recalcula o status.
 
 ---
@@ -289,7 +296,7 @@ Regras:
 - `unitPriceCents` é o preço base do produto; `optionsPriceCents` soma opções e adicionais; `lineTotalCents = (unitPriceCents + optionsPriceCents) * quantity`.
 - Pode retornar `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE` ou `VALIDATION_ERROR`.
 - Rate limit ativo: 30/min por IP; detalhes em `§15 Rate limits`.
-- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou. O cálculo está centralizado em `domain.BuildQuote` e é reutilizado pelo `POST /orders`.
+- O total da cotação é uma estimativa autoritativa do momento; o `POST /orders` recalcula e pode rejeitar se algo mudou. Quando o cliente reenvia `expectedTotalCents`, uma divergência retorna `409 CONFLICT` sem gravar para que o checkout recote e atualize o total exibido. O cálculo está centralizado em `domain.BuildQuote` e é reutilizado pelo `POST /orders`.
 
 ---
 
@@ -338,11 +345,12 @@ O `Authorization` é opcional na criação. Quando ausente, o servidor emite um 
     "method": "cash",
     "changeForCents": 10000
   },
+  "expectedTotalCents": 6200,
   "saveCustomerProfile": true
 }
 ```
 
-`saveCustomerProfile` é opcional; ausência significa `true`. Quando `false`, o servidor desativa o perfil de conveniência daquele telefone e remove os dados dele, sem afetar o pedido gravado. Preço, taxa, total e disponibilidade nunca vêm do cliente; a preferência também não entra no hash de idempotência. `customer.phone` segue a regra de telefone brasileiro descrita em `§5.1`; um número impossível é rejeitado antes da gravação e, portanto, nunca chega como destinatário do webhook.
+`saveCustomerProfile` é opcional; ausência significa `true`. Quando `false`, o servidor desativa o perfil de conveniência daquele telefone e remove os dados dele, sem afetar o pedido gravado. Preço, taxa, total e disponibilidade nunca vêm do cliente; a preferência também não entra no hash de idempotência. `expectedTotalCents` é opcional e serve somente como guarda otimista da cotação exibida: o servidor recalcula o total e responde `409 CONFLICT` sem gravar se houver divergência. Ele entra no corpo canônico e no hash de idempotência, mas nunca no cálculo nem no snapshot do pedido. O BR Code do Pix não é gerado aqui: ele aparece na confirmação com o `totalCents` gravado. `customer.phone` segue a regra de telefone brasileiro descrita em `§5.1`; um número impossível é rejeitado antes da gravação e, portanto, nunca chega como destinatário do webhook.
 
 Para retirada:
 
@@ -406,6 +414,8 @@ No replay idempotente, o header `Idempotent-Replayed: true` também é devolvido
 | Adicional não vinculado | `422 VALIDATION_ERROR` |
 | Quantidade inválida | `422 VALIDATION_ERROR` |
 | Troco insuficiente | `422 VALIDATION_ERROR` |
+| `payment.method = "pix"` com integração desativada | `422 VALIDATION_ERROR` (`details[0].field = "payment.method"`) |
+| `expectedTotalCents` divergente do total recalculado | `409 CONFLICT` (`details[0].field = "expectedTotalCents"`, `code = "OUTDATED"`) |
 | Telefone inválido | `422 VALIDATION_ERROR` |
 | Endereço ausente em delivery | `422 VALIDATION_ERROR` |
 | Chave idempotente conflitante | `409 CONFLICT` |
@@ -434,6 +444,7 @@ Retorna o acompanhamento público mínimo.
     "publicId": "3Jk9Qm2pX7vR5sT1aB8cD4",
     "status": "preparing",
     "fulfillment": "delivery",
+    "paymentMethod": "pix",
     "items": [
       { "name": "BACON CHEDDAR", "quantity": 2 }
     ],
@@ -458,7 +469,7 @@ Não retorna:
 - histórico interno de auditoria;
 - `whatsappUrl` (a URL contém a mensagem com PII e só é devolvida na criação do pedido).
 
-Após recarregar a confirmação, o cliente vê número, status, itens e total pelo `publicId`. A URL completa do WhatsApp não é devolvida pelo acompanhamento: ela fica apenas na resposta de criação e, para permitir o reenvio na mesma sessão, no `sessionStorage` do navegador sob a chave `brocados:handoff:{publicId}`. Ela não é gravada no servidor nem enviada em logs.
+`paymentMethod` é congelado no pedido e permite que a confirmação exiba o BR Code Pix mesmo após recarregar a página; não é dado pessoal. Após recarregar a confirmação, o cliente vê número, status, itens, total e forma de pagamento pelo `publicId`. A URL completa do WhatsApp não é devolvida pelo acompanhamento: ela fica apenas na resposta de criação e, para permitir o reenvio na mesma sessão, no `sessionStorage` do navegador sob a chave `brocados:handoff:{publicId}`. Ela não é gravada no servidor nem enviada em logs.
 
 `404 NOT_FOUND` para ID inválido ou inexistente. Rate limit ativo: 60/min por IP; detalhes em `§15 Rate limits`.
 
@@ -481,6 +492,7 @@ Authorization: Bearer 7h3K9pQ2vX8mR5tY1wZ0aB6cD4eF7gH9jK2lM5nP8sA
       "publicId": "3Jk9Qm2pX7vR5sT1aB8cD4",
       "status": "preparing",
       "fulfillment": "delivery",
+      "paymentMethod": "pix",
       "items": [{ "name": "BACON CHEDDAR", "quantity": 2 }],
       "subtotalCents": 5400,
       "deliveryFeeCents": 800,
@@ -748,6 +760,34 @@ CEP 61700-000
 Em transições, o texto inclui `✅ Status: Confirmado` (ou o rótulo do status correspondente) antes do link. O link usa o `id` hexadecimal do pedido, não o `publicId`, e é montado como `<ADMIN_BASE_URL>/admin/pedidos/<id>`; no desenvolvimento o padrão é `http://localhost:5173`, enquanto em produção a variável deve ser definida com HTTPS ou o link é omitido até o domínio ser decidido (D-049). O cabeçalho `X-Brocados-Event` continua trazendo `order.created` para criação e `order.updated` para qualquer transição persistida: a seleção do painel não altera esse contrato (D-048). Internamente, o notificador converte cada transição para a chave `order.<status>` e só envia o POST se essa chave estiver habilitada; com seleção explícita, um status futuro sem opção correspondente não é enviado, e com configuração legada (sem `events`) todos são enviados.
 - O evento é ignorado em replay de `Idempotency-Key` (resposta `200` com `Idempotent-Replayed: true`), para não duplicar notificação.
 - Os logs registram apenas categoria do erro, status HTTP e tipo do evento: sem URL completa, corpo, telefone, nome ou endereço.
+
+### 11.2 Integrações — Pix estático (owner)
+
+| Método | Rota | Papel | Função |
+|---|---|---|---|
+| GET | `/admin/integrations/pix` | owner | Configuração atual em `{ "data": ... }` |
+| PATCH | `/admin/integrations/pix` | owner | Atualiza chave, recebedor e estado |
+
+Resposta/corpo parcial:
+
+```json
+{
+  "active": true,
+  "key": "123e4567-e89b-12d3-a456-426614174000",
+  "merchantName": "BROCADOS LANCHES",
+  "merchantCity": "Aquiraz",
+  "createdAt": "2026-11-27T12:00:00Z",
+  "updatedAt": "2026-11-27T12:00:00Z"
+}
+```
+
+- `PATCH` é parcial e rejeita campos desconhecidos (`400`) e corpo vazio (`422`). Para ativar, exige `key`, `merchantName` e `merchantCity` preenchidos; a configuração resultante é validada por completo. A chave é apenas aparada e aceita CPF/CNPJ (com ou sem máscara), e-mail, telefone `+DDI...` em E.164 ou EVP (UUID), com até 77 caracteres (teto do subtemplate 26 do EMV); nome e cidade são higienizados no frontend antes de montar o BR Code, com limites de 25 e 15 caracteres (D-053).
+- A configuração fica em `store_settings.pix`, sem nova coleção. O PATCH da loja (`/admin/store`) não altera o Pix, e o PATCH do Pix não altera campos operacionais da loja; não há sobrescrita por documentos lidos em momentos diferentes.
+- A auditoria registra `entity: pix_settings` e apenas `active`, `keyConfigured`, `nameConfigured` e `cityConfigured` antes/depois. O valor da chave, o nome e a cidade nunca entram em auditoria ou log.
+- A leitura é restrita a `owner`; a chave definitiva deve ser informada pelo proprietário, não é inventada nem versionada no repositório.
+- `GET /store` devolve os três campos necessários à confirmação quando `active = true`. Configuração desativada ou legada sem o subdocumento devolve `pix: { "active": false, "key": "", "merchantName": "", "merchantCity": "" }`.
+- O BR Code é montado no navegador **depois** do `201`, na confirmação `/pedido/:publicId`, com o `totalCents` do pedido gravado e `TXID` fixo `***`, sem chamar gateway ou API externa. O checkout não gera QR. O `expectedTotalCents` reenviado no `POST /orders` protege apenas a cotação exibida antes do envio; em conflito, o checkout recota antes de nova tentativa e a cobrança continua usando o total persistido.
+- `POST /orders` valida `store_settings.pix.active` no servidor antes de calcular e gravar: com a integração desativada, `payment.method = "pix"` retorna `422 VALIDATION_ERROR` com `details[0].field = "payment.method"`, mesmo que uma aba antiga ainda ofereça o Pix. Pedidos já gravados e repetidos com a mesma chave continuam sendo devolvidos pelo replay idempotente; a confirmação consulta `GET /store` para exibir a cobrança.
 
 ---
 

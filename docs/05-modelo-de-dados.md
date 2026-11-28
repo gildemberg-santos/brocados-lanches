@@ -60,6 +60,7 @@ Documento único `_id: "main"`.
 | `instagram` | string | não | Handle ou URL |
 | `address` | string | sim | Endereço completo |
 | `webhook` | object | não | Configuração de notificações (D-042); ausente equivale a desativado |
+| `pix` | object | não | Configuração do BR Code estático (D-053); ausente equivale a desativado |
 | `createdAt` | datetime | sim | UTC |
 | `updatedAt` | datetime | sim | UTC |
 
@@ -99,6 +100,25 @@ Regras:
 - `events` contém as chaves habilitadas pelo `owner` (D-048): `order.created`, `order.confirmed`, `order.preparing`, `order.ready`, `order.out_for_delivery`, `order.picked_up`, `order.delivered` e `order.cancelled`. Sem o campo (documentos antigos) todos os eventos são enviados; com `events: []`, nenhum é enviado. As chaves são validadas na gravação, sem duplicatas.
 - O corpo do POST contém `number` (telefone do cliente congelado no pedido), `storeNumber` (`whatsapp` da loja, lido junto com a configuração) e `message`; por isso o campo é sensível e a leitura pela API é restrita a `owner` (D-046).
 - O envio é best-effort, assíncrono, sem retry e sem fila persistida; uma falha nunca altera o pedido já gravado.
+
+`pix`:
+
+```json
+{
+  "active": true,
+  "key": "123e4567-e89b-12d3-a456-426614174000",
+  "merchantName": "BROCADOS LANCHES",
+  "merchantCity": "Aquiraz",
+  "createdAt": "2026-11-27T12:00:00Z",
+  "updatedAt": "2026-11-27T12:00:00Z"
+}
+```
+
+- Ativo exige `key`, `merchantName` e `merchantCity` preenchidos; a chave aceita CPF/CNPJ (com ou sem máscara), e-mail, telefone `+DDI...` em E.164 ou EVP (UUID), com até 77 caracteres e sem espaços (teto do subtemplate 26 do EMV). Nome e cidade são validados após remoção de acentos/caracteres especiais, com limites de 25 e 15 caracteres (D-053).
+- A chave é informada pelo proprietário no painel owner-only; nenhum valor real é inventado ou versionado no repositório.
+- `GET /store` devolve chave/nome/cidade somente quando `active = true`; configuração desativada ou ausente devolve `active: false` e campos vazios.
+- O BR Code é montado no navegador com o total da cotação e TXID `***`, sem gateway, PSP ou confirmação automática. O pedido continua gravado no servidor antes do handoff.
+- O PATCH da loja não altera `pix`, e o PATCH do Pix não altera campos operacionais da loja (D-053).
 
 ### 3.2 `categories`
 
@@ -398,7 +418,7 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 | `_id` | ObjectID | sim | |
 | `actorId` | ObjectID | sim | Usuário admin |
 | `action` | string | sim | `create`, `update` ou `delete` |
-| `entity` | string | sim | `categories`, `products`, `addons`, `delivery_zones`, `store_settings`, `webhook_settings` ou `orders` |
+| `entity` | string | sim | `categories`, `products`, `addons`, `delivery_zones`, `store_settings`, `webhook_settings`, `pix_settings`, `admin_users`, `uploads` ou `orders` |
 | `entityId` | string | sim | ID alvo |
 | `before` | object | não | Snapshot mínimo |
 | `after` | object | não | Snapshot mínimo |
@@ -413,7 +433,7 @@ Regra de expiração: `expiresAt` é sempre `min(now + 8 h, absoluteExpiresAt)`.
 Regras:
 
 - Não guardar senha, token, telefone, endereço ou observação.
-- `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`; em `webhook_settings`, somente `active`, `urlConfigured` e a lista efetiva de `events` (nunca a URL).
+- `before`/`after` guardam apenas campos relevantes e não PII: em `store_settings`, somente `name`, `isOpen` e `deliveryTime`; em `webhook_settings`, somente `active`, `urlConfigured` e a lista efetiva de `events` (nunca a URL); em `pix_settings`, somente `active`, `keyConfigured`, `nameConfigured` e `cityConfigured` (nunca os valores).
 - Na exclusão manual de pedido (D-051), `action` é `delete`, `after` é omitido e `before` contém apenas `number`, `status`, `fulfillment` e `totalCents`.
 - A mutação e a auditoria são gravadas na mesma transação quando o MongoDB suporta; em standalone, em sequência.
 - Retenção de 12 meses; após isso, arquivar ou anonimizar.

@@ -150,6 +150,12 @@ const adminRoutes: RouteRecordRaw = {
       meta: { title: 'Webhook', roles: ['owner'] },
     },
     {
+      path: 'integracoes/pix',
+      name: 'admin-pix',
+      component: () => import('../views/admin/AdminPixView.vue'),
+      meta: { title: 'Pix', roles: ['owner'] },
+    },
+    {
       path: 'conta',
       name: 'admin-account',
       component: () => import('../views/admin/AdminAccountView.vue'),

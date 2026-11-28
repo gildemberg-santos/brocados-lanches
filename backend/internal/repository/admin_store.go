@@ -41,19 +41,48 @@ func (r *CatalogRepository) AdminUpdateStoreSettings(ctx context.Context, settin
 	return r.withStoreSettingsTransaction(ctx, write, audit)
 }
 
-// AdminUpdateWebhookSettings grava somente o subdocumento webhook. Assim um
-// PATCH da loja não sobrescreve a integração e um PATCH da integração não
-// restaura campos operacionais lidos antes de uma mutação concorrente.
+// AdminUpdateWebhookSettings grava somente o subdocumento webhook, criando o
+// documento único quando ele ainda não existe. Assim um PATCH da loja não
+// sobrescreve a integração e um PATCH da integração não restaura campos
+// operacionais lidos antes de uma mutação concorrente.
 func (r *CatalogRepository) AdminUpdateWebhookSettings(ctx context.Context, settings domain.StoreSettings, audit domain.AuditLog) error {
 	document := newStoreSettingsDocument(settings)
 
 	write := func(writeCtx context.Context) error {
-		update := bson.D{{Key: "$set", Value: bson.D{
-			{Key: "webhook", Value: document.Webhook},
-			{Key: "updatedAt", Value: document.UpdatedAt.UTC()},
-		}}}
-		if _, err := r.storeSettings.UpdateOne(writeCtx, bson.D{{Key: "_id", Value: domain.StoreSettingsID}}, update); err != nil {
+		update := bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "webhook", Value: document.Webhook},
+				{Key: "updatedAt", Value: document.UpdatedAt.UTC()},
+			}},
+			{Key: "$setOnInsert", Value: bson.D{{Key: "createdAt", Value: document.UpdatedAt.UTC()}}},
+		}
+		opts := options.UpdateOne().SetUpsert(true)
+		if _, err := r.storeSettings.UpdateOne(writeCtx, bson.D{{Key: "_id", Value: domain.StoreSettingsID}}, update, opts); err != nil {
 			return fmt.Errorf("update webhook settings: %w", err)
+		}
+		return nil
+	}
+
+	return r.withStoreSettingsTransaction(ctx, write, audit)
+}
+
+// AdminUpdatePixSettings grava somente o subdocumento pix, criando o documento
+// único quando ele ainda não existe. Um PATCH da loja ou do webhook não pode
+// sobrescrever a chave configurada por outra requisição.
+func (r *CatalogRepository) AdminUpdatePixSettings(ctx context.Context, settings domain.StoreSettings, audit domain.AuditLog) error {
+	document := newStoreSettingsDocument(settings)
+
+	write := func(writeCtx context.Context) error {
+		update := bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "pix", Value: document.Pix},
+				{Key: "updatedAt", Value: document.UpdatedAt.UTC()},
+			}},
+			{Key: "$setOnInsert", Value: bson.D{{Key: "createdAt", Value: document.UpdatedAt.UTC()}}},
+		}
+		opts := options.UpdateOne().SetUpsert(true)
+		if _, err := r.storeSettings.UpdateOne(writeCtx, bson.D{{Key: "_id", Value: domain.StoreSettingsID}}, update, opts); err != nil {
+			return fmt.Errorf("update pix settings: %w", err)
 		}
 		return nil
 	}
@@ -115,6 +144,14 @@ func newStoreSettingsDocument(settings domain.StoreSettings) storeSettingsDocume
 			Events:    copyWebhookEvents(settings.Webhook.Events),
 			CreatedAt: settings.Webhook.CreatedAt.UTC(),
 			UpdatedAt: settings.Webhook.UpdatedAt.UTC(),
+		},
+		Pix: pixSettingsDocument{
+			Active:       settings.Pix.Active,
+			Key:          settings.Pix.Key,
+			MerchantName: settings.Pix.MerchantName,
+			MerchantCity: settings.Pix.MerchantCity,
+			CreatedAt:    settings.Pix.CreatedAt.UTC(),
+			UpdatedAt:    settings.Pix.UpdatedAt.UTC(),
 		},
 		CreatedAt: settings.CreatedAt.UTC(),
 		UpdatedAt: settings.UpdatedAt.UTC(),

@@ -31,6 +31,8 @@ Em 27/11/2026, a fila do painel passou a permitir que somente `owner` exclua ped
 
 Em 27/11/2026, mudanças reais de status passaram a gerar notificação visual e sonora no acompanhamento público e na fila/detalhe administrativos (D-052). O evento `order.updated` do WebSocket aciona o toast `StatusToast` (`aria-live`, fechamento manual e 4 s) e um alerta sonoro curto gerado por Web Audio, sem arquivo de áudio ou requisição. Conexão, reconexão, carga inicial, eventos repetidos e pedidos de outra tela não disparam aviso; a transição feita pelo próprio operador no detalhe também avisa, sem duplicar quando o evento do servidor chega. Se o navegador bloquear o áudio, a notificação visual e o fluxo do pedido seguem normais.
 
+Em 27/11/2026, o checkout passou a oferecer Pix com cobrança depois do envio (D-053): o cliente escolhe `pix`, `POST /orders` grava o pedido e a confirmação `/pedido/:publicId` monta localmente um BR Code estático (EMV QRCPS-MPM) com o `totalCents` já persistido e `TXID` fixo `***`, exibindo QR Code PNG em Data URI e o campo “Pix Copia e Cola” com botão de copiar. Nenhum BR Code é gerado no checkout. Não há gateway, PSP, confirmação automática nem TXID por pedido nesta fase; o handoff para o WhatsApp continua disponível na confirmação. A chave, o nome do recebedor e a cidade são configurados somente pelo `owner` em `/admin/integracoes/pix` (`GET/PATCH /api/v1/admin/integrations/pix`, em `store_settings.pix`) e expostos de forma mínima por `GET /store` somente quando ativos — configuração desativada devolve `active: false` com os demais campos vazios —; a auditoria registra só se os campos estão preenchidos. A chave não é inventada nem versionada no repositório. A criação de pedido com `pix` é rejeitada pela API quando `store_settings.pix.active` está desativado, inclusive para uma aba aberta antes do desligamento. O acompanhamento público devolve `paymentMethod` para que a confirmação reconheça o Pix após recarregar, sem expor PII. `expectedTotalCents` continua como guarda otimista da cotação exibida no checkout: o servidor recalcula o total e devolve `409 CONFLICT` sem persistir quando há divergência, e o checkout recota antes de nova tentativa; a cobrança sempre usa o total gravado, nunca a cotação.
+
 Em 25/11/2026, uma auditoria de conformidade comparou as telas com o protótipo e com `docs/07-design-system-e-experiencia.md`. Os desvios, a severidade e as tarefas de correção estão registrados em `docs/14-auditoria-design-system.md` e no Épico 12 de `docs/08-backlog.md`. O Épico 12 foi concluído em 25/11/2026, com as decisões de design registradas em `docs/13-decisoes-e-pendencias.md` (D-029 a D-031); privacidade, termos e créditos foram publicados em 25/11/2026 (D-033), com o canal do titular nos canais já existentes em `/contato` e os créditos liberados para indexação.
 
 > A seção 5 de `docs/02-plano-de-producao.md` sugeria Next.js + Postgres. Esta decisão foi substituída pela stack definida neste arquivo.
@@ -365,7 +367,7 @@ handler → service → repository → MongoDB
 
 | Método | Rota | Função |
 |---|---|---|
-| GET | `/store` | Status efetivo, horários, contato, tempo de entrega |
+| GET | `/store` | Status efetivo, horários, contato, tempo de entrega e configuração pública do Pix |
 | GET | `/menu` | Categorias, produtos, adicionais e opções ativos |
 | GET | `/delivery-zones` | Zonas ativas com taxa |
 | GET | `/uploads/{id}` | Imagem enviada pelo painel, por identificador opaco (D-045) |
@@ -391,13 +393,14 @@ O pedido enviado pelo cliente contém apenas:
     "district": "...", "city": "Aquiraz", "state": "CE", "zipCode": "..."
   },
   "payment": { "method": "cash", "changeForCents": 10000 },
+  "expectedTotalCents": 6200,
   "saveCustomerProfile": true
 }
 ```
 
-`saveCustomerProfile` é opcional (padrão `true`); `false` desativa o perfil de conveniência no servidor sem alterar o pedido. Com a mesma opção habilitada, `POST /customers/profile` recebe apenas `{ "phone": "..." }` e devolve `{ "found": false }` ou os dados mínimos de conveniência; opt-out devolve `found: false`. Telefone vai no corpo, nunca na URL, e a resposta usa `Cache-Control: no-store`.
+`saveCustomerProfile` é opcional (padrão `true`); `false` desativa o perfil de conveniência no servidor sem alterar o pedido. Com a mesma opção habilitada, `POST /customers/profile` recebe apenas `{ "phone": "..." }` e devolve `{ "found": false }` ou os dados mínimos de conveniência; opt-out devolve `found: false`. Telefone vai no corpo, nunca na URL, e a resposta usa `Cache-Control: no-store`. `expectedTotalCents` é opcional e apenas guarda a cotação exibida: se o total recalculado divergir, o servidor responde `409 CONFLICT` sem gravar, para que o checkout recote e atualize o total exibido antes de tentar de novo.
 
-Preço, taxa, total e disponibilidade **nunca** vêm do cliente. A resposta inclui `orderNumber`, `publicId`, `status`, `totalCents`, `whatsappUrl` e `accessToken` do pedido já persistido. O token é opaco, vai no cabeçalho `Authorization` e nunca em URL, log ou listagem; só seu hash é gravado no pedido.
+Preço, taxa, total e disponibilidade **nunca** vêm do cliente; `expectedTotalCents` nunca é usado para calcular ou persistir o total. A resposta inclui `orderNumber`, `publicId`, `status`, `totalCents`, `whatsappUrl` e `accessToken` do pedido já persistido. O token é opaco, vai no cabeçalho `Authorization` e nunca em URL, log ou listagem; só seu hash é gravado no pedido.
 
 `POST /orders/quote` recebe apenas itens, `fulfillment` e `zoneId`, sem dados pessoais. Ele valida catálogo/zona e devolve subtotal, taxa e total sem persistir pedido; o `POST /orders` recalcula tudo antes de gravar.
 
@@ -421,6 +424,7 @@ Preço, taxa, total e disponibilidade **nunca** vêm do cliente. A resposta incl
 | WS | `/admin/orders/events` | Criações, mudanças de status e exclusões; exige sessão |
 | GET/POST/PATCH | `/admin/users` | Usuários admin; somente `owner` |
 | GET | `/admin/audit-logs` | Auditoria de mutações; somente `owner` |
+| GET/PATCH | `/admin/integrations/pix` | Configuração do BR Code estático; somente `owner` |
 
 Catálogo não é apagado fisicamente: use `active: false`.
 
@@ -470,10 +474,10 @@ Regras:
 - `publicId` é aleatório e não sequencial (128 bits, base64url).
 - `number` é sequencial e exibido como `#1042`; nunca use para acesso público.
 - Pedido guarda snapshot; não faça `lookup` de preço atual para renderizar histórico.
-- `store_settings` guarda `name`, `isOpen`, `openingHours`, `deliveryTime`, `whatsapp`, `instagram`, `address`, `webhook` (url, ativação e eventos habilitados), `createdAt`, `updatedAt`.
+- `store_settings` guarda `name`, `isOpen`, `openingHours`, `deliveryTime`, `whatsapp`, `instagram`, `address`, `webhook` (url, ativação e eventos habilitados), `pix` (chave, nome e cidade do recebedor, ativação, `createdAt`/`updatedAt`), `createdAt`, `updatedAt`.
 - Horário é avaliado em `America/Fortaleza`; status efetivo = horário permite **e** `isOpen` ligado.
 - `products.imageUrl` aceita URL absoluta ou caminho relativo (`/products/...` do seed ou `/api/v1/uploads/{id}` dos uploads); o tipo servido vem da assinatura do arquivo, nunca do `Content-Type` do cliente (D-045).
-- Pagamento V1: `pix`, `card`, `cash` — todos pagos na entrega/retirada, sem gateway online. Nenhum dado de cartão é armazenado.
+- Pagamento V1: `pix` é cobrado na confirmação do pedido gravado por BR Code local, sem gateway, PSP ou confirmação automática; `card` e `cash` são pagos na entrega/retirada. Nenhum dado de cartão é armazenado.
 - Perfil de cliente é apenas conveniência: escrita best-effort após o pedido gravado; a leitura pública restrita a `POST /customers/profile` devolve só o necessário para preencher o checkout e nunca histórico, observação, troco ou taxa; `optedOut` mantém tombstone mínimo, devolve `found: false` e impede recriação automática (D-038, D-039).
 - Migrações de dados são scripts versionados em `backend/scripts`; não altere documento em produção por comando manual sem registro.
 
@@ -575,7 +579,7 @@ Uma entrega só termina quando:
 | Decisão | Premissa atual da V1 |
 |---|---|
 | Handoff do WhatsApp | Link `wa.me` gerado após persistir o pedido; API oficial só se contratada |
-| Pagamento online | Não; pagamento na entrega/retirada (Pix, cartão, dinheiro) |
+| Pagamento online | Não; Pix cobrado na confirmação do pedido gravado por BR Code local sem gateway nem confirmação automática; cartão e dinheiro na entrega/retirada |
 | Hospedagem e domínio | Em aberto; API e web same-origin atrás de proxy reverso |
 | Catálogo real, fotos, logo e alergênicos | Aguardando cliente; seed é fictício |
 | Horários, feriados e tempo de entrega | Aguardando cliente; avaliar em `America/Fortaleza` |

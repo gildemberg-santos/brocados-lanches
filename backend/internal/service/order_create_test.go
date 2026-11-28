@@ -78,6 +78,90 @@ func TestOrderServiceCreatePersistsAuthoritativeValues(t *testing.T) {
 	}
 }
 
+func TestOrderServiceCreateRejectsOutdatedQuoteBeforePersisting(t *testing.T) {
+	reader, service := orderServiceFixture()
+	request := createOrderRequestFixture()
+	expected := int64(6100)
+	request.ExpectedTotalCents = &expected
+
+	_, _, err := service.Create(context.Background(), request, testIdempotencyKey, "")
+	var outdated *domain.QuoteOutdatedError
+	if !errors.As(err, &outdated) {
+		t.Fatalf("error = %v, want QuoteOutdatedError", err)
+	}
+	for _, call := range reader.calls {
+		if call == "create" {
+			t.Fatal("Create() persisted an order with an outdated quote")
+		}
+	}
+}
+
+func TestOrderServiceCreateRejectsPixWhenIntegrationIsInactive(t *testing.T) {
+	reader, service := orderServiceFixture()
+	request := createOrderRequestFixture()
+	request.Payment = domain.OrderPayment{Method: domain.PaymentMethodPix}
+
+	_, _, err := service.Create(context.Background(), request, testIdempotencyKey, "")
+	var validationError *domain.ValidationError
+	if !errors.As(err, &validationError) || validationError.Field != "payment.method" {
+		t.Fatalf("error = %v, want invalid payment.method", err)
+	}
+	for _, call := range reader.calls {
+		if call == "create" {
+			t.Fatal("Create() persisted a Pix order with the integration disabled")
+		}
+	}
+}
+
+func TestOrderServiceCreateAcceptsPixWhenIntegrationIsActive(t *testing.T) {
+	reader, service := orderServiceFixture()
+	reader.store.Pix = domain.PixSettings{
+		Active:       true,
+		Key:          "123e4567-e89b-12d3-a456-426614174000",
+		MerchantName: "Brocados Lanches",
+		MerchantCity: "Aquiraz",
+	}
+	service.publicID = func() (string, error) { return "public-123", nil }
+	request := createOrderRequestFixture()
+	request.Payment = domain.OrderPayment{Method: domain.PaymentMethodPix}
+
+	_, replayed, err := service.Create(context.Background(), request, testIdempotencyKey, "")
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if replayed {
+		t.Error("replayed = true, want false")
+	}
+	if reader.receivedOrder.Payment.Method != domain.PaymentMethodPix {
+		t.Errorf("payment method = %q, want pix", reader.receivedOrder.Payment.Method)
+	}
+}
+
+func TestOrderServiceCreateReplaysExistingPixAfterIntegrationDisabled(t *testing.T) {
+	reader, service := orderServiceFixture()
+	request := createOrderRequestFixture()
+	request.Payment = domain.OrderPayment{Method: domain.PaymentMethodPix}
+	hash, err := domain.CanonicalRequestHash(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader.existingFound = true
+	reader.existing = domain.Order{ID: "order-1", PublicID: "public-123", RequestHash: hash}
+
+	order, replayed, err := service.Create(context.Background(), request, testIdempotencyKey, "")
+	if err != nil {
+		t.Fatalf("Create() replay error = %v", err)
+	}
+	if !replayed || order.ID != "order-1" {
+		t.Errorf("order = %+v, replayed = %v", order, replayed)
+	}
+	for _, call := range reader.calls {
+		if call == "create" {
+			t.Fatal("Create() called repository insert on replay")
+		}
+	}
+}
+
 func TestOrderServiceCreateReplaysSameKey(t *testing.T) {
 	reader, service := orderServiceFixture()
 	reader.existingFound = true

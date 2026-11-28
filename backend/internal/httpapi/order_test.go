@@ -351,6 +351,7 @@ func TestOrderHistoryReturnsPagedSummaries(t *testing.T) {
 				PublicID:    "public-123",
 				Status:      domain.OrderStatusPending,
 				Fulfillment: domain.FulfillmentDelivery,
+				Payment:     domain.OrderPayment{Method: domain.PaymentMethodPix},
 				Items:       []domain.OrderItem{{Name: "Bacon Cheddar", Quantity: 2}},
 				TotalCents:  6200,
 				CreatedAt:   time.Date(2026, 11, 22, 22, 0, 0, 0, time.UTC),
@@ -376,6 +377,9 @@ func TestOrderHistoryReturnsPagedSummaries(t *testing.T) {
 	}
 	if len(body.Data) != 1 || body.Data[0].PublicID != "public-123" || body.Meta.Total != 1 {
 		t.Errorf("body = %+v", body)
+	}
+	if body.Data[0].PaymentMethod != domain.PaymentMethodPix {
+		t.Errorf("paymentMethod = %q, want %q", body.Data[0].PaymentMethod, domain.PaymentMethodPix)
 	}
 	if strings.Contains(response.Body.String(), "Maria Silva") {
 		t.Error("history must not expose customer PII")
@@ -546,6 +550,28 @@ func TestCreateOrderRequiresIdempotencyKey(t *testing.T) {
 	}
 }
 
+func TestCreateOrderAcceptsExpectedTotalAsQuoteGuard(t *testing.T) {
+	orders := &fakeOrderService{
+		created: createdOrderFixture(),
+		store:   domain.StoreSettings{WhatsApp: "(85) 99999-9999"},
+	}
+	body := strings.Replace(
+		validOrderBody,
+		`"note": "Deixar na portaria"`,
+		`"note": "Deixar na portaria", "expectedTotalCents": 6200`,
+		1,
+	)
+
+	response := performCreateOrderRequest(newOrderTestRouter(orders), testOrderHeaderKey, body)
+
+	if response.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201; body = %s", response.Code, response.Body.String())
+	}
+	if orders.receivedOrder.ExpectedTotalCents == nil || *orders.receivedOrder.ExpectedTotalCents != 6200 {
+		t.Fatalf("expectedTotalCents = %v, want 6200", orders.receivedOrder.ExpectedTotalCents)
+	}
+}
+
 func TestCreateOrderMapsConflict(t *testing.T) {
 	orders := &fakeOrderService{createdErr: domain.ErrConflict}
 	response := performCreateOrderRequest(newOrderTestRouter(orders), testOrderHeaderKey, validOrderBody)
@@ -555,10 +581,30 @@ func TestCreateOrderMapsConflict(t *testing.T) {
 	}
 }
 
+func TestCreateOrderMapsOutdatedQuoteToConflictWithDetail(t *testing.T) {
+	orders := &fakeOrderService{createdErr: &domain.QuoteOutdatedError{ExpectedCents: 6100, ActualCents: 6200}}
+	response := performCreateOrderRequest(newOrderTestRouter(orders), testOrderHeaderKey, validOrderBody)
+
+	if response.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409; body = %s", response.Code, response.Body.String())
+	}
+	var body errorEnvelope
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if body.Error.Code != codeConflict || len(body.Error.Details) != 1 {
+		t.Fatalf("error = %+v", body.Error)
+	}
+	if body.Error.Details[0].Field != "expectedTotalCents" || body.Error.Details[0].Code != "OUTDATED" {
+		t.Errorf("detail = %+v", body.Error.Details[0])
+	}
+}
+
 func TestTrackOrderHidesPersonalData(t *testing.T) {
 	order := createdOrderFixture()
 	order.Customer = domain.OrderCustomer{Name: "Maria Silva", Phone: "+5585999999999"}
 	order.Address = &domain.OrderAddress{Street: "Rua das Flores", Number: "450"}
+	order.Payment = domain.OrderPayment{Method: domain.PaymentMethodPix}
 	order.Items = []domain.OrderItem{{Name: "Bacon Cheddar", Quantity: 2}}
 	orders := &fakeOrderService{
 		tracked: order,
@@ -584,6 +630,9 @@ func TestTrackOrderHidesPersonalData(t *testing.T) {
 	}
 	if envelope.Data.EstimatedTime != "35-50 min" || len(envelope.Data.Items) != 1 {
 		t.Errorf("data = %+v", envelope.Data)
+	}
+	if envelope.Data.PaymentMethod != domain.PaymentMethodPix {
+		t.Errorf("paymentMethod = %q, want %q", envelope.Data.PaymentMethod, domain.PaymentMethodPix)
 	}
 }
 

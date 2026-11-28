@@ -54,6 +54,8 @@ Limitações:
 | Site | OlaClick, versão pública `4.00.68f345e-v2` |
 
 > Contato e endereço são dados públicos da loja, mas ainda precisam de confirmação antes do lançamento.
+>
+> O site de referência mostra Pix pago na entrega/retirada; na V1 a loja deliberadamente difere: o pedido é gravado primeiro e o Pix é cobrado na confirmação por BR Code/QR local com o total persistido, sem gateway (D-053).
 
 ### 3.1 Horários
 

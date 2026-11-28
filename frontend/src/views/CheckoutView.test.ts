@@ -8,8 +8,10 @@ import { CHECKOUT_PREFERENCES_KEY, loadCheckoutPreferences } from '../features/c
 import { loadOrderAccessToken, saveOrderAccessToken } from '../features/orders/orderAccessToken'
 import { fetchCustomerProfile } from '../services/customers'
 import { fetchDeliveryZones } from '../services/deliveryZones'
+import { ApiError } from '../services/http'
 import { fetchMenu } from '../services/menu'
 import { createOrder, fetchOrderQuote } from '../services/orders'
+import { fetchStoreStatus } from '../services/store'
 import { useCartStore } from '../stores/cart'
 import {
   makeCatalogProduct,
@@ -19,6 +21,7 @@ import {
   makeOptionGroup,
 } from '../test/fixtures/catalog'
 import type { CustomerProfileLookupResponse } from '../types/order'
+import type { PublicStoreStatus } from '../types/store'
 import CheckoutView from './CheckoutView.vue'
 
 vi.mock('../services/menu', () => ({ fetchMenu: vi.fn() }))
@@ -28,12 +31,14 @@ vi.mock('../services/orders', () => ({
   fetchOrderQuote: vi.fn(),
   createOrder: vi.fn(),
 }))
+vi.mock('../services/store', () => ({ fetchStoreStatus: vi.fn() }))
 
 const mockedFetchMenu = vi.mocked(fetchMenu)
 const mockedFetchDeliveryZones = vi.mocked(fetchDeliveryZones)
 const mockedFetchCustomerProfile = vi.mocked(fetchCustomerProfile)
 const mockedFetchOrderQuote = vi.mocked(fetchOrderQuote)
 const mockedCreateOrder = vi.mocked(createOrder)
+const mockedFetchStoreStatus = vi.mocked(fetchStoreStatus)
 
 const StubView = defineComponent({ name: 'StubView', render: () => h('div') })
 const product = makeCatalogProduct({
@@ -64,12 +69,33 @@ const created = {
   accessToken: 'c'.repeat(43),
 }
 
+const storeStatus: PublicStoreStatus = {
+  name: 'Brocados Lanches',
+  status: 'open',
+  isOpenManual: true,
+  timezone: 'America/Fortaleza',
+  deliveryTime: '30-90 min',
+  whatsapp: '+5585999999999',
+  instagram: '',
+  address: 'Rua das Flores, 100',
+  openingHours: [],
+  pix: {
+    active: true,
+    key: '123e4567-e89b-12d3-a456-426614174000',
+    merchantName: 'Brocados Lanches',
+    merchantCity: 'Aquiraz',
+  },
+  nextOpeningAt: null,
+  updatedAt: '2026-11-27T12:00:00Z',
+}
+
 interface MountOptions {
   seed?: boolean
   quoteError?: boolean
   createError?: boolean
   lookupResponse?: CustomerProfileLookupResponse
   lookupError?: boolean
+  storeStatus?: PublicStoreStatus
 }
 
 async function mountCheckout(options: MountOptions = {}) {
@@ -81,6 +107,7 @@ async function mountCheckout(options: MountOptions = {}) {
   }
 
   mockedFetchMenu.mockResolvedValue(menu)
+  mockedFetchStoreStatus.mockResolvedValue(options.storeStatus ?? storeStatus)
   mockedFetchDeliveryZones.mockResolvedValue([
     { id: 'zona-1', name: 'Centro', feeCents: 800, sortOrder: 1 },
   ])
@@ -145,7 +172,9 @@ async function fillForm(wrapper: CheckoutWrapper): Promise<void> {
   await wrapper.get('input[name="number"]').setValue('450')
   await wrapper.get('input[name="district"]').setValue('Tapera')
   await wrapper.get('input[name="zipCode"]').setValue('61700000')
-  await wrapper.get('input[name="changeFor"]').setValue('50,00')
+  if (wrapper.find('input[name="changeFor"]').exists()) {
+    await wrapper.get('input[name="changeFor"]').setValue('50,00')
+  }
   await wrapper.get('textarea[name="note"]').setValue('Sem cebola')
   await flushPromises()
   vi.advanceTimersByTime(300)
@@ -177,6 +206,209 @@ describe('CheckoutView', () => {
     expect(mockedFetchOrderQuote).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Escolha uma zona de entrega para calcular o total.')
     expect(wrapper.text()).not.toContain('Não foi possível')
+  })
+
+  it('não mostra BR Code no checkout: a cobrança vem após o pedido gravado', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await chooseDeliveryZone(wrapper)
+    await wrapper.get('input[name="paymentMethod"][value="pix"]').setValue(true)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="pix-payment-panel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="pix-brcode"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('o pedido é gravado no servidor primeiro')
+    expect(wrapper.text()).toContain('QR Code aparece na confirmação')
+  })
+
+  it('ignora cotação antiga quando a entrega muda durante o cálculo', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    let resolveFirst: (value: typeof quote) => void = () => {}
+    const firstQuote = new Promise<typeof quote>((resolve) => {
+      resolveFirst = resolve
+    })
+    const secondQuote = { ...quote, deliveryFeeCents: 0, totalCents: 2300 }
+    mockedFetchOrderQuote.mockReturnValueOnce(firstQuote).mockResolvedValue(secondQuote)
+
+    await chooseDeliveryZone(wrapper)
+    expect(mockedFetchOrderQuote).toHaveBeenCalledTimes(1)
+
+    await wrapper.get('input[name="fulfillment"][value="pickup"]').setValue(true)
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+    expect(mockedFetchOrderQuote).toHaveBeenCalledTimes(2)
+
+    resolveFirst(quote)
+    await flushPromises()
+
+    const review = wrapper.get('[data-testid="review-total"]')
+    expect(review.text()).toContain('23,00')
+    expect(review.text()).not.toContain('31,00')
+  })
+
+  it('recota quando o servidor recusa o total antigo', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await fillForm(wrapper)
+
+    const outdated = new ApiError(409, 'CONFLICT', 'O total do pedido mudou.', [
+      { field: 'expectedTotalCents', code: 'OUTDATED' },
+    ])
+    mockedCreateOrder.mockRejectedValueOnce(outdated)
+    mockedFetchOrderQuote.mockResolvedValueOnce({ ...quote, totalCents: 4100 })
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockedCreateOrder).toHaveBeenCalledTimes(1)
+    expect(mockedFetchOrderQuote).toHaveBeenCalledTimes(2)
+    expect(wrapper.get('[data-testid="review-total"]').text()).toContain('41,00')
+    expect(wrapper.text()).toContain('O total mudou. Revise o pedido e tente novamente.')
+    expect(wrapper.text()).not.toContain('código Pix')
+  })
+
+  it('avisa sobre total alterado com qualquer forma de pagamento', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await fillForm(wrapper)
+    mockedCreateOrder.mockRejectedValueOnce(
+      new ApiError(409, 'CONFLICT', 'O total do pedido mudou.', [
+        { field: 'expectedTotalCents', code: 'OUTDATED' },
+      ]),
+    )
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('O total mudou. Revise o pedido e tente novamente.')
+    expect(wrapper.text()).not.toContain('código Pix')
+  })
+
+  it('avisa falha na recotação em vez de dizer que o total mudou', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await fillForm(wrapper)
+    mockedCreateOrder.mockRejectedValueOnce(
+      new ApiError(409, 'CONFLICT', 'O total do pedido mudou.', [
+        { field: 'expectedTotalCents', code: 'OUTDATED' },
+      ]),
+    )
+    mockedFetchOrderQuote.mockRejectedValueOnce(new Error('falha'))
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockedCreateOrder).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Não foi possível atualizar o total')
+    expect(wrapper.text()).not.toContain('O total mudou')
+  })
+
+  it('revalida o troco com o novo total após conflito de cotação', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await fillForm(wrapper)
+    mockedCreateOrder.mockRejectedValueOnce(
+      new ApiError(409, 'CONFLICT', 'O total do pedido mudou.', [
+        { field: 'expectedTotalCents', code: 'OUTDATED' },
+      ]),
+    )
+    mockedFetchOrderQuote.mockResolvedValueOnce({ ...quote, totalCents: 6100 })
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockedCreateOrder).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Informe um valor maior ou igual ao total do pedido.')
+    expect(wrapper.text()).toContain('Revise os dados do pedido')
+  })
+
+  it('exibe mensagem específica quando o servidor recusa Pix desativado', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await fillForm(wrapper)
+    await wrapper.get('input[name="paymentMethod"][value="pix"]').setValue(true)
+    await flushPromises()
+    mockedCreateOrder.mockRejectedValueOnce(
+      new ApiError(422, 'VALIDATION_ERROR', 'pix is currently unavailable', [
+        { field: 'payment.method', code: 'INVALID' },
+      ]),
+    )
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Pix não está disponível no momento')
+  })
+
+  it('limpa o estado de cotação quando o carrinho esvazia durante o cálculo', async () => {
+    const { wrapper, cart } = await mountCheckout({ seed: true })
+    let resolveQuote: (value: typeof quote) => void = () => {}
+    mockedFetchOrderQuote.mockReturnValueOnce(
+      new Promise<typeof quote>((resolve) => {
+        resolveQuote = resolve
+      }),
+    )
+
+    await chooseDeliveryZone(wrapper)
+    expect(wrapper.text()).toContain('Calculando o total no servidor…')
+
+    cart.clear()
+    await flushPromises()
+    expect((wrapper.vm as unknown as { quoteLoading: boolean }).quoteLoading).toBe(false)
+    expect(wrapper.text()).not.toContain('Calculando o total no servidor…')
+    expect(wrapper.text()).toContain('Seu carrinho está vazio')
+    resolveQuote(quote)
+    await flushPromises()
+  })
+
+  it('não envia o pedido se o checkout mudar durante a recotação do envio', async () => {
+    const { wrapper } = await mountCheckout({ seed: true })
+    await fillForm(wrapper)
+    await wrapper.get('input[name="paymentMethod"][value="pix"]').setValue(true)
+    await flushPromises()
+
+    let resolveQuote: (value: typeof quote) => void = () => {}
+    const delayedQuote = new Promise<typeof quote>((resolve) => {
+      resolveQuote = resolve
+    })
+    mockedFetchOrderQuote.mockReturnValueOnce(delayedQuote)
+
+    const vm = wrapper.vm as unknown as { quotedRequest: string }
+    vm.quotedRequest = 'desatualizado'
+
+    const submission = wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(mockedFetchOrderQuote).toHaveBeenCalledTimes(2)
+
+    await wrapper.get('input[name="fulfillment"][value="pickup"]').setValue(true)
+    resolveQuote(quote)
+    await submission
+    await flushPromises()
+
+    expect(mockedCreateOrder).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('O carrinho mudou. Revise o pedido e tente novamente.')
+  })
+
+  it('impede o envio com Pix quando a integração está desativada', async () => {
+    const { wrapper } = await mountCheckout({
+      seed: true,
+      storeStatus: { ...storeStatus, pix: { ...storeStatus.pix, active: false } },
+    })
+    await chooseDeliveryZone(wrapper)
+    await wrapper.get('input[name="paymentMethod"][value="pix"]').setValue(true)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="pix-payment-panel"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Pix indisponível no momento')
+    expect((wrapper.get('button[type="submit"]').element as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('não envia o pedido com Pix quando a integração está desativada', async () => {
+    const { wrapper } = await mountCheckout({
+      seed: true,
+      storeStatus: { ...storeStatus, pix: { ...storeStatus.pix, active: false } },
+    })
+    await wrapper.get('input[name="paymentMethod"][value="pix"]').setValue(true)
+    await fillForm(wrapper)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockedCreateOrder).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Pix indisponível no momento')
   })
 
   it('preenche o checkout com as preferências salvas no próximo pedido', async () => {

@@ -16,6 +16,7 @@ const status: PublicStoreStatus = {
   instagram: '',
   address: 'Rua de Teste, 10',
   openingHours: [],
+  pix: { active: false, key: '', merchantName: '', merchantCity: '' },
   nextOpeningAt: null,
   updatedAt: '2026-11-22T12:00:00Z',
 }

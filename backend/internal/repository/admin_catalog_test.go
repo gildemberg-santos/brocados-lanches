@@ -107,6 +107,87 @@ func TestAdminCatalogRepositoryListFiltersAndPagination(t *testing.T) {
 	}
 }
 
+func TestAdminPixRepositoryUpdateAndAudit(t *testing.T) {
+	ctx := testContext(t)
+	database := openCatalogTestDatabase(t)
+	repository := newCatalogRepository(t, database)
+
+	settings := domain.StoreSettings{
+		Name: "Brocados Lanches", IsOpen: true, DeliveryTime: "30-90 min",
+		WhatsApp: "+5585992358708", Address: "Rua das Palmeiras, 123, Aquiraz-CE",
+		Pix: domain.PixSettings{
+			Active:       true,
+			Key:          "123e4567-e89b-12d3-a456-426614174000",
+			MerchantName: "Brocados Lanches",
+			MerchantCity: "Aquiraz",
+			CreatedAt:    testTime(), UpdatedAt: testTime(),
+		},
+		CreatedAt: testTime(), UpdatedAt: testTime(),
+	}
+	audit := adminTestAudit(domain.AuditActionUpdate, domain.AuditEntityPix, domain.StoreSettingsID)
+	if err := repository.AdminUpdatePixSettings(ctx, settings, audit); err != nil {
+		t.Fatalf("AdminUpdatePixSettings() error = %v", err)
+	}
+	stored, err := repository.GetStoreSettings(ctx)
+	if err != nil {
+		t.Fatalf("GetStoreSettings() error = %v", err)
+	}
+	if !stored.Pix.Active || stored.Pix.Key != settings.Pix.Key ||
+		stored.Pix.MerchantName != settings.Pix.MerchantName || stored.Pix.MerchantCity != settings.Pix.MerchantCity {
+		t.Fatalf("pix round-trip = %+v, want %+v", stored.Pix, settings.Pix)
+	}
+	if stored.Pix.Key == "" || !stored.Pix.UpdatedAt.Equal(testTime()) {
+		t.Fatalf("pix timestamps/key = %+v", stored.Pix)
+	}
+
+	// Um PATCH da loja não pode restaurar uma chave antiga lida antes da
+	// configuração atualizada pelo owner.
+	settings.Pix = domain.PixSettings{Key: "antigo@example.com"}
+	settings.UpdatedAt = testTime()
+	storeAudit := adminTestAudit(domain.AuditActionUpdate, domain.AuditEntityStore, domain.StoreSettingsID)
+	if err := repository.AdminUpdateStoreSettings(ctx, settings, storeAudit); err != nil {
+		t.Fatalf("AdminUpdateStoreSettings() with stale pix error = %v", err)
+	}
+	stored, err = repository.GetStoreSettings(ctx)
+	if err != nil || stored.Pix.Key != "123e4567-e89b-12d3-a456-426614174000" || !stored.Pix.Active {
+		t.Fatalf("pix sobrescrito por PATCH da loja: %+v, %v", stored.Pix, err)
+	}
+
+	count, err := database.Collection(CollectionAuditLogs).CountDocuments(ctx, bson.D{{Key: "entity", Value: domain.AuditEntityPix}})
+	if err != nil || count != 1 {
+		t.Fatalf("pix audit count = %d, err = %v; want 1", count, err)
+	}
+}
+
+func TestAdminWebhookRepositoryUpsertsFreshDocument(t *testing.T) {
+	ctx := testContext(t)
+	database := openCatalogTestDatabase(t)
+	repository := newCatalogRepository(t, database)
+
+	settings := domain.StoreSettings{
+		Webhook: domain.WebhookSettings{
+			URL: "https://hook.invalid/pedidos", Active: true,
+			CreatedAt: testTime(), UpdatedAt: testTime(),
+		},
+		UpdatedAt: testTime(),
+	}
+	audit := adminTestAudit(domain.AuditActionUpdate, domain.AuditEntityWebhook, domain.StoreSettingsID)
+	if err := repository.AdminUpdateWebhookSettings(ctx, settings, audit); err != nil {
+		t.Fatalf("AdminUpdateWebhookSettings() error = %v", err)
+	}
+
+	stored, err := repository.GetStoreSettings(ctx)
+	if err != nil {
+		t.Fatalf("GetStoreSettings() error = %v", err)
+	}
+	if stored.Webhook.URL != settings.Webhook.URL || !stored.Webhook.Active {
+		t.Fatalf("webhook não persistido em documento novo: %+v", stored.Webhook)
+	}
+	if !stored.CreatedAt.Equal(testTime()) {
+		t.Fatalf("createdAt = %s, esperado %s", stored.CreatedAt, testTime())
+	}
+}
+
 func TestAdminStoreRepositoryUpdateAndAudit(t *testing.T) {
 	ctx := testContext(t)
 	database := openCatalogTestDatabase(t)

@@ -135,9 +135,14 @@ export function buildQuoteRequest(items: CartItem[], form: CheckoutForm): OrderQ
   }
 }
 
-export function buildCreateOrderRequest(items: CartItem[], form: CheckoutForm): CreateOrderRequest {
+export function buildCreateOrderRequest(
+  items: CartItem[],
+  form: CheckoutForm,
+  quotedTotalCents: number,
+): CreateOrderRequest {
   const request: CreateOrderRequest = {
     ...buildQuoteRequest(items, form),
+    expectedTotalCents: quotedTotalCents,
     customer: {
       name: (form.customerName ?? '').trim(),
       phone: normalizePhone(form.phone),
@@ -210,6 +215,9 @@ export function validateCheckoutForm(
 }
 
 export function checkoutApiMessage(error: unknown): string {
+  if (isPixUnavailableError(error)) {
+    return 'O Pix não está disponível no momento. Escolha outra forma de pagamento.'
+  }
   if (error instanceof ApiError) {
     const messages: Record<string, string> = {
       NOT_FOUND: 'Pedido não encontrado ou código de acompanhamento inválido.',
@@ -223,6 +231,25 @@ export function checkoutApiMessage(error: unknown): string {
     return messages[error.code] ?? error.message
   }
   return 'Não foi possível enviar o pedido. Seus dados foram mantidos; tente novamente.'
+}
+
+function isPixUnavailableError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.code === 'VALIDATION_ERROR' &&
+    error.details.some((detail) => detail.field === 'payment.method')
+  )
+}
+
+/** Identifica o conflito de cotação para o checkout recotar sem apagar o carrinho. */
+export function isQuoteOutdatedError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.code === 'CONFLICT' &&
+    error.details.some(
+      (detail) => detail.field === 'expectedTotalCents' && detail.code === 'OUTDATED',
+    )
+  )
 }
 
 export function orderStatusLabel(status: string): string {

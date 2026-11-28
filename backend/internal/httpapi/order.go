@@ -86,6 +86,7 @@ type trackingData struct {
 	PublicID         string             `json:"publicId"`
 	Status           string             `json:"status"`
 	Fulfillment      string             `json:"fulfillment"`
+	PaymentMethod    string             `json:"paymentMethod"`
 	Items            []trackingItemData `json:"items"`
 	SubtotalCents    int64              `json:"subtotalCents"`
 	DeliveryFeeCents int64              `json:"deliveryFeeCents"`
@@ -409,6 +410,7 @@ func newTrackingData(order domain.Order, estimatedTime string) trackingData {
 		PublicID:         order.PublicID,
 		Status:           order.Status,
 		Fulfillment:      string(order.Fulfillment),
+		PaymentMethod:    order.Payment.Method,
 		Items:            items,
 		SubtotalCents:    order.SubtotalCents,
 		DeliveryFeeCents: order.DeliveryFeeCents,

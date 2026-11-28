@@ -5,6 +5,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { playNotificationSound } from '../features/orders/notificationSound'
+import { generatePixQrDataUri } from '../features/pix/qrcode'
 import { ApiError } from '../services/http'
 import { fetchTrackedOrder } from '../services/orders'
 import {
@@ -20,12 +21,14 @@ import OrderView from './OrderView.vue'
 vi.mock('../features/orders/notificationSound', () => ({
   playNotificationSound: vi.fn(() => true),
 }))
+vi.mock('../features/pix/qrcode', () => ({ generatePixQrDataUri: vi.fn() }))
 vi.mock('../services/orders', () => ({ fetchTrackedOrder: vi.fn() }))
 vi.mock('../services/realtime', () => ({ subscribeOrderEvents: vi.fn(() => vi.fn()) }))
 vi.mock('../services/store', () => ({ fetchStoreStatus: vi.fn() }))
 
 const mockedFetchTrackedOrder = vi.mocked(fetchTrackedOrder)
 const mockedPlayNotificationSound = vi.mocked(playNotificationSound)
+const mockedGeneratePixQrDataUri = vi.mocked(generatePixQrDataUri)
 const mockedSubscribeOrderEvents = vi.mocked(subscribeOrderEvents)
 const StubView = defineComponent({ name: 'StubView', render: () => h('div') })
 const tracked: TrackedOrder = {
@@ -33,6 +36,7 @@ const tracked: TrackedOrder = {
   publicId: 'public-123',
   status: 'confirmed',
   fulfillment: 'delivery',
+  paymentMethod: 'cash',
   items: [{ name: 'Brocado Cheddar', quantity: 2 }],
   subtotalCents: 5400,
   deliveryFeeCents: 800,
@@ -51,8 +55,18 @@ const storeStatus: PublicStoreStatus = {
   instagram: 'https://instagram.com/brocados',
   address: 'Rua das Flores, 100',
   openingHours: [],
+  pix: { active: false, key: '', merchantName: '', merchantCity: '' },
   nextOpeningAt: null,
   updatedAt: '2026-11-22T22:00:00Z',
+}
+const pixStoreStatus: PublicStoreStatus = {
+  ...storeStatus,
+  pix: {
+    active: true,
+    key: '123e4567-e89b-12d3-a456-426614174000',
+    merchantName: 'Brocados Lanches',
+    merchantCity: 'Aquiraz',
+  },
 }
 
 function createTestRouter() {
@@ -102,6 +116,7 @@ describe('OrderView', () => {
     vi.clearAllMocks()
     sessionStorage.clear()
     mockedSubscribeOrderEvents.mockReturnValue(vi.fn())
+    mockedGeneratePixQrDataUri.mockResolvedValue('data:image/png;base64,abc')
     vi.mocked(fetchStoreStatus).mockResolvedValue(storeStatus)
   })
 
@@ -119,6 +134,49 @@ describe('OrderView', () => {
     expect(wrapper.text()).toContain('Andamento do pedido')
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Confirmado')
     expect(wrapper.get('.handoff-link').text()).toContain('Abrir WhatsApp')
+    expect(wrapper.find('[data-testid="pix-payment-panel"]').exists()).toBe(false)
+  })
+
+  it('gera a cobrança Pix na confirmação com o total do pedido gravado', async () => {
+    vi.mocked(fetchStoreStatus).mockResolvedValue(pixStoreStatus)
+    const pixOrder: TrackedOrder = { ...tracked, paymentMethod: 'pix', totalCents: 4990 }
+
+    const wrapper = await mountOrder(
+      { whatsappUrl: 'https://wa.me/5585999999999?text=pedido' },
+      pixOrder,
+    )
+
+    const panel = wrapper.get('[data-testid="pix-payment-panel"]')
+    const brCode = (wrapper.get('[data-testid="pix-brcode"]').element as HTMLTextAreaElement).value
+    expect(brCode).toContain('br.gov.bcb.pix')
+    expect(brCode).toContain('540549.90')
+    expect(brCode).toMatch(/6304[0-9A-F]{4}$/)
+    expect(mockedGeneratePixQrDataUri).toHaveBeenCalledWith(brCode)
+    expect(panel.get('img').attributes('src')).toBe('data:image/png;base64,abc')
+    expect(wrapper.text()).toContain('Brocados Lanches')
+    expect(wrapper.text()).toContain('Aquiraz')
+    expect(wrapper.get('.order-registered').text()).toContain('Pedido registrado no servidor')
+  })
+
+  it('não gera cobrança Pix na confirmação quando o pedido foi pago de outra forma', async () => {
+    vi.mocked(fetchStoreStatus).mockResolvedValue(pixStoreStatus)
+
+    const wrapper = await mountOrder()
+
+    expect(wrapper.find('[data-testid="pix-payment-panel"]').exists()).toBe(false)
+    expect(mockedGeneratePixQrDataUri).not.toHaveBeenCalled()
+  })
+
+  it('avisa quando o pedido foi gravado com Pix mas a cobrança não pode ser exibida', async () => {
+    const pixOrder: TrackedOrder = { ...tracked, paymentMethod: 'pix' }
+
+    const wrapper = await mountOrder({}, pixOrder)
+
+    expect(wrapper.find('[data-testid="pix-payment-panel"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain(
+      'O pedido foi gravado com Pix, mas a cobrança não pode ser exibida agora.',
+    )
+    expect(wrapper.text()).toContain('Fale com a loja')
   })
 
   it('assina o canal público e recarrega o pedido quando o status muda', async () => {

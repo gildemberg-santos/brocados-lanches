@@ -52,6 +52,16 @@ func (s *OrderService) Create(ctx context.Context, request domain.OrderRequest, 
 	if err != nil {
 		return domain.Order{}, false, err
 	}
+	// A disponibilidade do Pix é do servidor: uma aba aberta antes do
+	// desligamento ou uma chamada direta à API não pode gravar pedido com Pix
+	// com a integração inativa.
+	if request.Payment.Method == domain.PaymentMethodPix && !catalog.Store.Pix.Active {
+		return domain.Order{}, false, &domain.ValidationError{
+			Field:   "payment.method",
+			Code:    domain.CodeInvalid,
+			Message: "pix is currently unavailable",
+		}
+	}
 	quote, err := domain.BuildQuote(quoteFromOrderRequest(request), catalog)
 	if err != nil {
 		return domain.Order{}, false, err

@@ -159,7 +159,7 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 | `CheckoutStep` | Indicador de etapa; não usar só cor |
 | `FulfillmentSelector` | Delivery/retirada com cartões |
 | `ZoneSelect` | Zona + taxa; estado sem zonas |
-| `PaymentSelector` | Pix/cartão/dinheiro; troco condicional |
+| Seletor de pagamento inline + `PixPaymentPanel` | Pix/cartão/dinheiro no checkout; a confirmação do Pix gravado mostra QR Code e Copia e Cola com o total persistido; troco condicional |
 | `OrderSummary` | Itens e total para revisão |
 | `OrderStatusTimeline` | Status atual e histórico público |
 
@@ -288,6 +288,7 @@ Implementado em `frontend/src/views/CheckoutView.vue` (US-122). A última seçã
 - Número do pedido, status, itens, total e prazo.
 - Botão “Abrir WhatsApp” e link copiável.
 - Aviso de que o pedido já está registrado.
+- Se o pedido foi gravado com Pix e `GET /store` devolve a configuração ativa, exibir `PixPaymentPanel` com QR Code e “Pix Copia e Cola” montados localmente a partir do `totalCents` do pedido; sem configuração, avisar para falar com a loja, sem alterar o pedido.
 - Link para voltar ao cardápio; o próprio caminho `/pedido/:publicId` serve de acompanhamento.
 - Se o WhatsApp falhar, manter pedido e oferecer reenvio pelo link guardado no `sessionStorage` na mesma sessão.
 

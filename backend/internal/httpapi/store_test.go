@@ -37,6 +37,10 @@ func TestGetStoreReturnsEffectiveStatus(t *testing.T) {
 			OpeningHours: []domain.OpeningHours{{
 				Day: "sunday", Intervals: []domain.OpeningInterval{{Open: "18:00", Close: "23:30"}},
 			}},
+			Pix: domain.PixSettings{
+				Active: true, Key: "123e4567-e89b-12d3-a456-426614174000",
+				MerchantName: "Brocados Lanches", MerchantCity: "Aquiraz",
+			},
 			UpdatedAt: time.Date(2026, 11, 22, 12, 0, 0, 0, time.UTC),
 		},
 		Status:        "closed",
@@ -64,8 +68,34 @@ func TestGetStoreReturnsEffectiveStatus(t *testing.T) {
 	if len(data.OpeningHours) != 1 || data.OpeningHours[0].Intervals[0].Close != "23:30" {
 		t.Errorf("openingHours = %+v", data.OpeningHours)
 	}
+	if !data.Pix.Active || data.Pix.Key != "123e4567-e89b-12d3-a456-426614174000" ||
+		data.Pix.MerchantName != "Brocados Lanches" || data.Pix.MerchantCity != "Aquiraz" {
+		t.Errorf("pix = %+v", data.Pix)
+	}
 	if data.UpdatedAt != "2026-11-22T12:00:00Z" {
 		t.Errorf("updatedAt = %q", data.UpdatedAt)
+	}
+}
+
+func TestGetStoreHidesInactivePixConfiguration(t *testing.T) {
+	view := service.StoreView{Settings: domain.StoreSettings{
+		Pix: domain.PixSettings{
+			Active: false, Key: "segredo@example.com",
+			MerchantName: "Brocados", MerchantCity: "Aquiraz",
+		},
+	}}
+	router := NewRouter(Dependencies{Store: &fakeStoreHandlerService{view: view}, Logger: testLogger()})
+
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/v1/store", nil))
+
+	var envelope storeEnvelope
+	if err := json.Unmarshal(response.Body.Bytes(), &envelope); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if envelope.Data.Pix.Active || envelope.Data.Pix.Key != "" ||
+		envelope.Data.Pix.MerchantName != "" || envelope.Data.Pix.MerchantCity != "" {
+		t.Errorf("pix inativo foi exposto: %+v", envelope.Data.Pix)
 	}
 }
 

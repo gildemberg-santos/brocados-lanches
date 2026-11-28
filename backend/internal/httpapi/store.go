@@ -19,6 +19,13 @@ type storeEnvelope struct {
 	Data storeResponse `json:"data"`
 }
 
+type storePixResponse struct {
+	Active       bool   `json:"active"`
+	Key          string `json:"key"`
+	MerchantName string `json:"merchantName"`
+	MerchantCity string `json:"merchantCity"`
+}
+
 type storeResponse struct {
 	Name          string                      `json:"name"`
 	Status        string                      `json:"status"`
@@ -29,6 +36,7 @@ type storeResponse struct {
 	Instagram     string                      `json:"instagram"`
 	Address       string                      `json:"address"`
 	OpeningHours  []adminOpeningHoursResponse `json:"openingHours"`
+	Pix           storePixResponse            `json:"pix"`
 	NextOpeningAt *string                     `json:"nextOpeningAt"`
 	UpdatedAt     string                      `json:"updatedAt"`
 }
@@ -69,6 +77,18 @@ func newStoreResponse(view service.StoreView) storeResponse {
 		nextOpeningAt = &formatted
 	}
 
+	// Configuração desativada não precisa ser exposta: o checkout mostra apenas
+	// que o Pix não está disponível naquele momento.
+	pix := storePixResponse{}
+	if settings.Pix.Active {
+		pix = storePixResponse{
+			Active:       true,
+			Key:          settings.Pix.Key,
+			MerchantName: settings.Pix.MerchantName,
+			MerchantCity: settings.Pix.MerchantCity,
+		}
+	}
+
 	return storeResponse{
 		Name:          settings.Name,
 		Status:        view.Status,
@@ -79,6 +99,7 @@ func newStoreResponse(view service.StoreView) storeResponse {
 		Instagram:     settings.Instagram,
 		Address:       settings.Address,
 		OpeningHours:  days,
+		Pix:           pix,
 		NextOpeningAt: nextOpeningAt,
 		UpdatedAt:     formatAdminTime(settings.UpdatedAt),
 	}

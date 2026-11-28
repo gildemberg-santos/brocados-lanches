@@ -110,6 +110,17 @@ func writeError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err
 			Code:    codeProductUnavailable,
 			Message: "Um ou mais itens não estão disponíveis.",
 		}
+	case errors.Is(err, domain.ErrQuoteOutdated):
+		status = http.StatusConflict
+		body = errorBody{
+			Code:    codeConflict,
+			Message: "O total do pedido mudou. Recalcule antes de enviar.",
+			Details: []errorDetail{{
+				Field:   "expectedTotalCents",
+				Code:    "OUTDATED",
+				Message: "the quoted total differs from the current total",
+			}},
+		}
 	case errors.Is(err, domain.ErrNotFound):
 		status = http.StatusNotFound
 		body = errorBody{

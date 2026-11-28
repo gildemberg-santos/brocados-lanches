@@ -23,7 +23,8 @@ const (
 	OrderStatusCancelled      = "cancelled"
 )
 
-// Formas de pagamento aceitas na V1, sempre na entrega ou retirada.
+// Formas de pagamento aceitas na V1. Pix é cobrado na confirmação do pedido
+// gravado por BR Code local; cartão e dinheiro são pagos na entrega ou retirada.
 const (
 	PaymentMethodCash = "cash"
 	PaymentMethodCard = "card"
@@ -52,6 +53,11 @@ type OrderRequest struct {
 	Address     *OrderAddress `json:"address,omitempty"`
 	Payment     OrderPayment  `json:"payment"`
 	Note        string        `json:"note,omitempty"`
+
+	// ExpectedTotalCents é uma guarda otimista opcional: o cliente reenvia o
+	// total que viu na cotação para detectar mudanças de catálogo ou taxa antes
+	// de gravar. O servidor recalcula o total e nunca usa este valor no cálculo.
+	ExpectedTotalCents *int64 `json:"expectedTotalCents,omitempty"`
 
 	// SaveCustomerProfile é opcional por compatibilidade: ausência significa
 	// salvar. Quando false, o perfil de conveniência é desativado no servidor.
@@ -163,6 +169,9 @@ func (r OrderRequest) Validate() error {
 	if err := validateMaxLength("note", r.Note, MaxOrderNoteLength); err != nil {
 		return err
 	}
+	if r.ExpectedTotalCents != nil && *r.ExpectedTotalCents <= 0 {
+		return invalid("expectedTotalCents", CodeInvalid, "must be a positive amount in cents")
+	}
 
 	if r.Fulfillment == FulfillmentDelivery {
 		if r.Address == nil {
@@ -187,6 +196,9 @@ func (r OrderRequest) Validate() error {
 
 // ValidateWithTotal aplica as regras que dependem do total calculado no servidor.
 func (r OrderRequest) ValidateWithTotal(totalCents int64) error {
+	if r.ExpectedTotalCents != nil && *r.ExpectedTotalCents != totalCents {
+		return &QuoteOutdatedError{ExpectedCents: *r.ExpectedTotalCents, ActualCents: totalCents}
+	}
 	if r.Payment.Method != PaymentMethodCash || r.Payment.ChangeForCents == nil {
 		return nil
 	}
@@ -278,21 +290,23 @@ func NewOrder(request OrderRequest, quote Quote, zone *OrderZone, id string, num
 // CanonicalRequestHash gera o hash do corpo usado na idempotência.
 func CanonicalRequestHash(request OrderRequest) (string, error) {
 	payload, err := json.Marshal(struct {
-		Items       []QuoteItem   `json:"items"`
-		Fulfillment Fulfillment   `json:"fulfillment"`
-		ZoneID      string        `json:"zoneId"`
-		Customer    OrderCustomer `json:"customer"`
-		Address     *OrderAddress `json:"address"`
-		Payment     OrderPayment  `json:"payment"`
-		Note        string        `json:"note"`
+		Items              []QuoteItem   `json:"items"`
+		Fulfillment        Fulfillment   `json:"fulfillment"`
+		ZoneID             string        `json:"zoneId"`
+		Customer           OrderCustomer `json:"customer"`
+		Address            *OrderAddress `json:"address"`
+		Payment            OrderPayment  `json:"payment"`
+		Note               string        `json:"note"`
+		ExpectedTotalCents *int64        `json:"expectedTotalCents,omitempty"`
 	}{
-		Items:       request.Items,
-		Fulfillment: request.Fulfillment,
-		ZoneID:      request.ZoneID,
-		Customer:    request.Customer,
-		Address:     request.Address,
-		Payment:     request.Payment,
-		Note:        request.Note,
+		Items:              request.Items,
+		Fulfillment:        request.Fulfillment,
+		ZoneID:             request.ZoneID,
+		Customer:           request.Customer,
+		Address:            request.Address,
+		Payment:            request.Payment,
+		Note:               request.Note,
+		ExpectedTotalCents: request.ExpectedTotalCents,
 	})
 	if err != nil {
 		return "", fmt.Errorf("marshal order request: %w", err)

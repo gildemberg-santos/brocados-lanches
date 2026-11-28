@@ -31,6 +31,7 @@ const status: PublicStoreStatus = {
       intervals: [],
     },
   ],
+  pix: { active: false, key: '', merchantName: '', merchantCity: '' },
   nextOpeningAt: null,
   updatedAt: '2026-11-25T12:00:00Z',
 }

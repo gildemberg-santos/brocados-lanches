@@ -94,6 +94,39 @@ func TestOrderRequestValidateWithTotal(t *testing.T) {
 	}
 }
 
+func TestOrderRequestValidateWithTotalRejectsOutdatedQuote(t *testing.T) {
+	request := orderRequestFixture()
+	expected := int64(6100)
+	request.ExpectedTotalCents = &expected
+
+	err := request.ValidateWithTotal(6200)
+	var outdated *QuoteOutdatedError
+	if !errors.As(err, &outdated) {
+		t.Fatalf("error = %v, want QuoteOutdatedError", err)
+	}
+	if outdated.ExpectedCents != 6100 || outdated.ActualCents != 6200 {
+		t.Errorf("totals = %+v", outdated)
+	}
+	if !errors.Is(err, ErrConflict) {
+		t.Error("outdated quote must map to a conflict")
+	}
+	if err := request.ValidateWithTotal(6100); err != nil {
+		t.Fatalf("ValidateWithTotal() with current quote error = %v", err)
+	}
+}
+
+func TestOrderRequestValidateRejectsInvalidExpectedTotal(t *testing.T) {
+	request := orderRequestFixture()
+	invalidTotal := int64(0)
+	request.ExpectedTotalCents = &invalidTotal
+
+	err := request.Validate()
+	var validationError *ValidationError
+	if !errors.As(err, &validationError) || validationError.Field != "expectedTotalCents" {
+		t.Fatalf("error = %v, want invalid expectedTotalCents", err)
+	}
+}
+
 func TestNewOrderFreezesQuoteValues(t *testing.T) {
 	_, catalog := quoteFixture()
 	request := orderRequestFixture()
@@ -168,6 +201,19 @@ func TestCanonicalRequestHash(t *testing.T) {
 	}
 	if fourth != first {
 		t.Error("hash changed with customer profile preference")
+	}
+
+	// A cotação reenviada é parte do corpo: trocar o total esperado exige nova
+	// chave de idempotência, evitando replay com uma cotação diferente.
+	withNewQuote := orderRequestFixture()
+	expected := int64(6200)
+	withNewQuote.ExpectedTotalCents = &expected
+	fifth, err := CanonicalRequestHash(withNewQuote)
+	if err != nil {
+		t.Fatalf("CanonicalRequestHash() quote error = %v", err)
+	}
+	if fifth == first {
+		t.Error("hash did not change with expected total")
 	}
 }
 

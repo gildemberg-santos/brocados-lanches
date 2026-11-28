@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { APIRequestContext, Page } from '@playwright/test'
 
-import { CHECKOUT_OPERATOR, ensureAdminApi } from './helpers/api'
+import { CHECKOUT_OPERATOR, configureTestPix, ensureAdminApi } from './helpers/api'
 
 const API_URL = 'http://127.0.0.1:8080'
 
@@ -9,6 +9,7 @@ interface TrackedOrder {
   data: {
     orderNumber: number
     status: string
+    paymentMethod: string
     items: Array<{ name: string; quantity: number }>
     totalCents: number
   }
@@ -36,6 +37,7 @@ async function assertOrderPersisted(
   expect(response.ok()).toBeTruthy()
   const order = (await response.json()) as TrackedOrder
   expect(order.data.status).toBe('pending')
+  expect(order.data.paymentMethod).toBe('pix')
   expect(order.data.items.length).toBeGreaterThan(0)
   expect(order.data.totalCents).toBe(expectedTotalCents)
 
@@ -50,6 +52,11 @@ test.describe('fluxo completo de pedido pela interface', () => {
   test.beforeAll(async ({ playwright }) => {
     const api = await ensureAdminApi(playwright, CHECKOUT_OPERATOR)
     await api.dispose()
+    await configureTestPix(playwright, true)
+  })
+
+  test.afterAll(async ({ playwright }) => {
+    await configureTestPix(playwright, false)
   })
 
   test('cardápio → personalização → carrinho → checkout → pedido persistido no painel', async ({
@@ -97,10 +104,12 @@ test.describe('fluxo completo de pedido pela interface', () => {
     const phone = uniquePhone()
     await page.getByLabel('Telefone').fill(phone)
     await page.getByLabel('Pix').check()
+    await expect(page.getByTestId('pix-payment-panel')).not.toBeVisible()
+    await expect(page.getByText('QR Code aparece na confirmação')).toBeVisible()
     await page.getByLabel('Observação (opcional)').fill('Pedido de teste automatizado')
 
     await expect(page.locator('.checkout-summary .summary-totals__final dd')).not.toHaveText(
-      'R$ 0,00',
+      /^R\$\s*0,00$/,
     )
     const displayedTotal = await page
       .locator('.checkout-summary .summary-totals__final dd')
@@ -129,6 +138,19 @@ test.describe('fluxo completo de pedido pela interface', () => {
       publicId,
       Math.round(expectedTotalCents),
     )
+
+    await expect(page.getByTestId('pix-payment-panel')).toBeVisible()
+    const brCode = await page.getByTestId('pix-brcode').inputValue()
+    expect(brCode).toContain('br.gov.bcb.pix')
+    const brCodeAmount = (Math.round(expectedTotalCents) / 100).toFixed(2)
+    const amountLength = String(brCodeAmount.length).padStart(2, '0')
+    expect(brCode).toContain(`54${amountLength}${brCodeAmount}`)
+    expect(brCode).toMatch(/6304[0-9A-F]{4}$/)
+
+    // Depois de recarregar, a cobrança continua na confirmação do pedido gravado.
+    await page.reload()
+    await expect(page.getByTestId('pix-payment-panel')).toBeVisible()
+    expect(await page.getByTestId('pix-brcode').inputValue()).toBe(brCode)
 
     await page.goto('/admin/login')
     await page.getByLabel('E-mail').fill(CHECKOUT_OPERATOR.email)

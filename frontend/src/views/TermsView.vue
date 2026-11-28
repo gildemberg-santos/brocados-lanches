@@ -73,9 +73,10 @@ import { RouterLink } from 'vue-router'
     <section aria-labelledby="terms-delivery-title">
       <h2 id="terms-delivery-title">4. Entrega, retirada e pagamento</h2>
       <p>
-        Na entrega, a taxa é a da zona escolhida. Na retirada, a taxa de entrega é zero. O pagamento
-        acontece na entrega ou na retirada, em Pix, cartão ou dinheiro; não há gateway online e
-        nenhum dado de cartão é solicitado.
+        Na entrega, a taxa é a da zona escolhida. Na retirada, a taxa de entrega é zero. No Pix, o
+        pedido é gravado no servidor primeiro e a confirmação mostra o QR Code e o código “Pix Copia
+        e Cola” com o total do pedido, sem gateway, confirmação automática ou TXID por pedido.
+        Cartão e dinheiro são pagos na entrega ou na retirada; nenhum dado de cartão é solicitado.
       </p>
       <p>
         No pagamento em dinheiro, você pode informar o valor para troco. A forma de pagamento e o

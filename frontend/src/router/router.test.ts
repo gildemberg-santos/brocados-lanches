@@ -54,6 +54,12 @@ describe('router', () => {
     expect(webhookRoute?.path).toBe('/admin/integracoes/webhook')
     expect(webhookRoute?.meta.roles).toEqual(['owner'])
     expect(typeof webhookRoute?.components?.default).toBe('function')
+
+    const pixRoute = router.getRoutes().find((candidate) => candidate.name === 'admin-pix')
+
+    expect(pixRoute?.path).toBe('/admin/integracoes/pix')
+    expect(pixRoute?.meta.roles).toEqual(['owner'])
+    expect(typeof pixRoute?.components?.default).toBe('function')
   })
 
   it('registers the 403 admin route', () => {

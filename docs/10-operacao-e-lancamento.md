@@ -336,6 +336,7 @@ Fluxo: detectar → conter → corrigir → comunicar → registrar postmortem s
 - perfil de conveniência no servidor, identificado pelo telefone normalizado, com nome, último endereço, entrega/retirada, zona e pagamento; observação e troco ficam de fora e o tratamento pode ser desativado no checkout (D-038). Com a opção habilitada, o checkout consulta esse perfil pelo telefone informado para preencher o próximo pedido, com limites por IP e telefone e sem devolver histórico ou taxa (D-039);
 - token opaco de histórico no navegador e seu hash SHA-256 no pedido; sem cadastro, senha ou consulta por telefone (D-041);
 - destino de webhook configurado pelo `owner`, que recebe o telefone do cliente, o WhatsApp da loja e a mensagem do pedido em cada evento habilitado (criação e status selecionados no painel; D-042, D-046, D-048). O envio é best-effort e o operador é responsável pelo destino e pelo tratamento desses dados;
+- chave Pix, nome e cidade do recebedor configurados pelo `owner` e usados no BR Code exibido na confirmação do pedido gravado (D-053). Não são dados do cliente, não entram em auditoria nem em log e não são versionados no repositório;
 - eventos de erro no Sentry: mensagem sanitizada, rota sem query/identificador, método, status e duração, sem identificação de usuário, headers, corpo ou dados do pedido (D-047). A política completa está em `/privacidade`.
 
 Não coletar CPF, e-mail de cliente ou dados de cartão.
@@ -348,6 +349,7 @@ Não coletar CPF, e-mail de cliente ou dados de cartão.
 - conveniência: reaproveitar escolhas no próximo pedido no navegador e no perfil por telefone, com opt-out no checkout e exclusão pelos canais da loja;
 - histórico: consultar novamente, neste navegador, os pedidos feitos aqui por meio do token opaco;
 - integração: notificar automações externas configuradas pelo `owner` sobre pedidos criados e atualizados (D-042);
+- pagamento: permitir que o cliente pague Pix após a gravação do pedido, pela confirmação com BR Code/QR local do total persistido, sem gateway nem confirmação automática (D-053);
 - cumprir obrigação legal;
 - segurança e auditoria.
 
@@ -444,7 +446,7 @@ Canal do titular publicado na política de privacidade em 25/11/2026: os canais 
 
 - [ ] Catálogo, preços, opções e adicionais validados.
 - [ ] Zonas, taxas, prazo e horários validados.
-- [ ] WhatsApp, endereço, Instagram e pagamentos validados.
+- [ ] WhatsApp, endereço, Instagram e pagamentos validados; chave, nome e cidade do recebedor Pix configurados no painel pelo `owner` (D-053).
 - [ ] Fotos, logo, alergênicos e textos aprovados.
 - [x] Política de privacidade e termos publicados em 25/11/2026.
 - [x] Página de contato e canal do titular publicado em `/contato`.

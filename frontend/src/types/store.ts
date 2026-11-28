@@ -1,4 +1,5 @@
 import type { AdminOpeningHour } from './adminCatalog'
+import type { PublicPixSettings } from './adminPix'
 
 /** Status efetivo da loja, calculado pelo servidor (GET /store). */
 export interface PublicStoreStatus {
@@ -11,6 +12,7 @@ export interface PublicStoreStatus {
   instagram: string
   address: string
   openingHours: AdminOpeningHour[]
+  pix: PublicPixSettings
   nextOpeningAt: string | null
   updatedAt: string
 }

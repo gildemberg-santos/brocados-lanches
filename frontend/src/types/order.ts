@@ -73,6 +73,8 @@ export interface CreateOrderRequest extends OrderQuoteRequest {
     changeForCents?: number
   }
   note: string
+  /** Guarda otimista da cotação; o servidor recalcula e nunca confia neste valor. */
+  expectedTotalCents?: number
   saveCustomerProfile?: boolean
 }
 
@@ -94,6 +96,8 @@ export interface TrackedOrder {
   publicId: string
   status: string
   fulfillment: Fulfillment
+  /** Formato de pagamento congelado no pedido; usado para exibir a cobrança Pix após a gravação. */
+  paymentMethod?: PaymentMethod
   items: Array<{ name: string; quantity: number }>
   subtotalCents: number
   deliveryFeeCents: number

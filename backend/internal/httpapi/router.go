@@ -33,6 +33,7 @@ type Dependencies struct {
 	AdminOrders      AdminOrderService
 	AdminUsers       AdminUsersService
 	Webhooks         AdminWebhookService
+	Pix              AdminPixService
 	Uploads          UploadService
 	Notifier         OrderNotifier
 	Events           *realtime.Hub
@@ -172,6 +173,9 @@ func NewRouter(deps Dependencies) http.Handler {
 
 				protected.Get("/integrations/webhook", handleAdminGetWebhook(deps.Webhooks, logger))
 				protected.Patch("/integrations/webhook", handleAdminUpdateWebhook(deps.Webhooks, logger))
+
+				protected.Get("/integrations/pix", handleAdminGetPix(deps.Pix, logger))
+				protected.Patch("/integrations/pix", handleAdminUpdatePix(deps.Pix, logger))
 
 				protected.Delete("/orders/{id}", handleAdminDeleteOrder(deps.AdminOrders, deps.Events, logger))
 			})

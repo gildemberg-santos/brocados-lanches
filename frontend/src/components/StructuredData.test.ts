@@ -28,6 +28,7 @@ const status: PublicStoreStatus = {
   instagram: '',
   address: 'Rua das Palmeiras, 123',
   openingHours: [],
+  pix: { active: false, key: '', merchantName: '', merchantCity: '' },
   nextOpeningAt: null,
   updatedAt: '2026-11-25T12:00:00Z',
 }

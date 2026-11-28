@@ -140,10 +140,10 @@ func TestBuildWhatsAppURLPaymentAndPickupLabels(t *testing.T) {
 			want:        "Retirada na loja",
 		},
 		{
-			name:        "pix na entrega",
+			name:        "pix cobrado na confirmação",
 			payment:     domain.OrderPayment{Method: domain.PaymentMethodPix},
 			fulfillment: domain.FulfillmentDelivery,
-			want:        "Pagamento: Pix na entrega",
+			want:        "Pagamento: Pix a pagar na confirmação (BR Code estático)",
 		},
 		{
 			name:        "dinheiro sem troco",

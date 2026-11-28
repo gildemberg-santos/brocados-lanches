@@ -10,6 +10,7 @@ var (
 	ErrValidation         = errors.New("validation error")
 	ErrNotFound           = errors.New("not found")
 	ErrConflict           = errors.New("conflict")
+	ErrQuoteOutdated      = fmt.Errorf("quoted total is outdated: %w", ErrConflict)
 	ErrStoreClosed        = errors.New("store closed")
 	ErrZoneUnavailable    = errors.New("delivery zone unavailable")
 	ErrProductUnavailable = errors.New("product unavailable")
@@ -56,6 +57,23 @@ func invalid(field, code, message string) error {
 		Code:    code,
 		Message: message,
 	}
+}
+
+// QuoteOutdatedError indica que o total cotado no navegador divergiu do total
+// recalculado no servidor. O pedido não foi gravado e o cliente deve recotar.
+type QuoteOutdatedError struct {
+	ExpectedCents int64
+	ActualCents   int64
+}
+
+// Error implementa error.
+func (e *QuoteOutdatedError) Error() string {
+	return ErrQuoteOutdated.Error()
+}
+
+// Unwrap permite mapear o erro para 409 CONFLICT.
+func (e *QuoteOutdatedError) Unwrap() error {
+	return ErrQuoteOutdated
 }
 
 // prefixValidationError adiciona o caminho do pai ao campo de um erro de validação.

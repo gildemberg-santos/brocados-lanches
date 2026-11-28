@@ -36,6 +36,7 @@ type StoreSettings struct {
 	Instagram    string
 	Address      string
 	Webhook      WebhookSettings
+	Pix          PixSettings
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -76,6 +77,9 @@ func (s StoreSettings) Validate() error {
 		return err
 	}
 	if err := s.Webhook.Validate(); err != nil {
+		return err
+	}
+	if err := s.Pix.Validate(); err != nil {
 		return err
 	}
 	return validateOpeningHours(s.OpeningHours)

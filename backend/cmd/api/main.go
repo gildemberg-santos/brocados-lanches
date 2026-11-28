@@ -175,6 +175,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	adminPixService, err := service.NewAdminPixService(catalogRepository)
+	if err != nil {
+		return err
+	}
 	uploadRepository, err := repository.NewUploadRepository(database)
 	if err != nil {
 		return err
@@ -223,6 +227,7 @@ func run() error {
 			AdminOrders:      adminOrderService,
 			AdminUsers:       adminUsersService,
 			Webhooks:         adminWebhookService,
+			Pix:              adminPixService,
 			Uploads:          uploadService,
 			Notifier:         webhookNotifier,
 			Events:           eventsHub,

@@ -72,7 +72,9 @@ onMounted(() => {
       </ul>
       <p>
         O endereço é solicitado apenas na entrega; na retirada, não é pedido. Não solicitamos CPF,
-        e-mail de cliente nem dados de cartão. Nenhum pagamento é processado neste site.
+        e-mail de cliente nem dados de cartão. O site não processa pagamentos: no Pix, apenas monta
+        o BR Code na confirmação, com o total do pedido já gravado, para pagamento no aplicativo do
+        banco; cartão e dinheiro são pagos na entrega ou na retirada.
       </p>
 
       <h3>Do painel administrativo</h3>

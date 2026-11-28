@@ -24,6 +24,15 @@ type webhookSettingsDocument struct {
 	UpdatedAt time.Time `bson:"updatedAt"`
 }
 
+type pixSettingsDocument struct {
+	Active       bool      `bson:"active"`
+	Key          string    `bson:"key"`
+	MerchantName string    `bson:"merchantName"`
+	MerchantCity string    `bson:"merchantCity"`
+	CreatedAt    time.Time `bson:"createdAt"`
+	UpdatedAt    time.Time `bson:"updatedAt"`
+}
+
 type storeSettingsDocument struct {
 	ID           string                  `bson:"_id"`
 	Name         string                  `bson:"name"`
@@ -34,6 +43,7 @@ type storeSettingsDocument struct {
 	Instagram    string                  `bson:"instagram"`
 	Address      string                  `bson:"address"`
 	Webhook      webhookSettingsDocument `bson:"webhook,omitempty"`
+	Pix          pixSettingsDocument     `bson:"pix,omitempty"`
 	CreatedAt    time.Time               `bson:"createdAt"`
 	UpdatedAt    time.Time               `bson:"updatedAt"`
 }
@@ -64,6 +74,14 @@ func (d storeSettingsDocument) toDomain() domain.StoreSettings {
 			Events:    d.Webhook.Events,
 			CreatedAt: d.Webhook.CreatedAt,
 			UpdatedAt: d.Webhook.UpdatedAt,
+		},
+		Pix: domain.PixSettings{
+			Active:       d.Pix.Active,
+			Key:          d.Pix.Key,
+			MerchantName: d.Pix.MerchantName,
+			MerchantCity: d.Pix.MerchantCity,
+			CreatedAt:    d.Pix.CreatedAt,
+			UpdatedAt:    d.Pix.UpdatedAt,
 		},
 		CreatedAt: d.CreatedAt,
 		UpdatedAt: d.UpdatedAt,

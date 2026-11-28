@@ -15,6 +15,7 @@ import {
   formatCents,
   formatPhone,
   initialCheckoutForm,
+  isQuoteOutdatedError,
   normalizePhone,
   validateCheckoutForm,
 } from '../features/checkout/checkout'
@@ -35,12 +36,14 @@ import { createOrder, fetchOrderQuote } from '../services/orders'
 import { useCartStore } from '../stores/cart'
 import { useDeliveryZonesStore } from '../stores/deliveryZones'
 import { useMenuStore } from '../stores/menu'
+import { useStoreStatusStore } from '../stores/storeStatus'
 import type { OrderQuote } from '../types/order'
 
 const router = useRouter()
 const cart = useCartStore()
 const menu = useMenuStore()
 const zones = useDeliveryZonesStore()
+const storeStatus = useStoreStatusStore()
 
 const form = ref<CheckoutForm>({ ...initialCheckoutForm })
 const errors = ref<CheckoutErrors>({})
@@ -73,8 +76,31 @@ const missingDeliveryZone = computed(
 )
 const canQuote = computed(() => !cart.isEmpty && !missingDeliveryZone.value)
 const quoteTotalCents = computed(() => quote.value?.totalCents ?? null)
+const pixSelected = computed(() => form.value.paymentMethod === 'pix')
+
+const pixUnavailableMessage = computed(() => {
+  if (!pixSelected.value) {
+    return ''
+  }
+  if (storeStatus.state === 'idle' || storeStatus.state === 'loading') {
+    return 'Carregando a disponibilidade do Pix...'
+  }
+  if (storeStatus.state === 'error') {
+    return 'Não foi possível carregar a configuração do Pix. Escolha outra forma de pagamento ou tente novamente.'
+  }
+  if (!storeStatus.status?.pix.active) {
+    return 'Pix indisponível no momento. Escolha outra forma de pagamento.'
+  }
+  return ''
+})
+
 const canSubmit = computed(
-  () => !cart.isEmpty && !submitting.value && !quoteLoading.value && quote.value !== null,
+  () =>
+    !cart.isEmpty &&
+    !submitting.value &&
+    !quoteLoading.value &&
+    quote.value !== null &&
+    pixUnavailableMessage.value === '',
 )
 
 function quoteSignature(): string {
@@ -86,6 +112,7 @@ async function requestQuote(): Promise<void> {
     quote.value = null
     quotedRequest.value = ''
     quoteError.value = ''
+    quoteLoading.value = false
     return
   }
 
@@ -94,19 +121,32 @@ async function requestQuote(): Promise<void> {
     quoteTimer = null
   }
 
+  // Uma resposta antiga não pode reaparecer depois que zona ou carrinho mudam:
+  // o total exibido precisa ser o mais recente antes de gravar o pedido.
+  const request = buildQuoteRequest(cart.items, form.value)
+  const signature = JSON.stringify(request)
+  const isCurrent = (): boolean => signature === quoteSignature()
+
   quoteLoading.value = true
   quoteError.value = ''
   try {
-    const request = buildQuoteRequest(cart.items, form.value)
     const result = await fetchOrderQuote(request)
+    if (!isCurrent()) {
+      return
+    }
     quote.value = result
-    quotedRequest.value = JSON.stringify(request)
+    quotedRequest.value = signature
   } catch (error: unknown) {
+    if (!isCurrent()) {
+      return
+    }
     quote.value = null
     quotedRequest.value = ''
     quoteError.value = checkoutApiMessage(error)
   } finally {
-    quoteLoading.value = false
+    if (isCurrent()) {
+      quoteLoading.value = false
+    }
   }
 }
 
@@ -115,6 +155,10 @@ function scheduleQuote(): void {
     clearTimeout(quoteTimer)
   }
   if (!canQuote.value) {
+    quote.value = null
+    quotedRequest.value = ''
+    quoteError.value = ''
+    quoteLoading.value = false
     return
   }
   quoteTimer = setTimeout(() => {
@@ -221,8 +265,38 @@ async function submit(): Promise<void> {
     submitError.value = 'Não foi possível calcular o total. Tente novamente.'
     return
   }
+  if (pixUnavailableMessage.value) {
+    submitError.value = pixUnavailableMessage.value
+    return
+  }
 
-  const request = buildCreateOrderRequest(cart.items, form.value)
+  if (quoteSignature() !== quotedRequest.value) {
+    await requestQuote()
+    if (quoteError.value) {
+      submitError.value = 'Não foi possível calcular o total. Tente novamente.'
+      return
+    }
+    if (quoteSignature() !== quotedRequest.value) {
+      submitError.value = 'O carrinho mudou. Revise o pedido e tente novamente.'
+      return
+    }
+    if (!quote.value) {
+      submitError.value = 'Não foi possível calcular o total. Tente novamente.'
+      return
+    }
+    errors.value = validateCheckoutForm(form.value, quoteTotalCents.value)
+    if (Object.keys(errors.value).length > 0) {
+      return
+    }
+    if (pixUnavailableMessage.value) {
+      submitError.value = pixUnavailableMessage.value
+      return
+    }
+  }
+
+  // O pedido é montado depois da cotação: o total cotado vai como guarda
+  // otimista e o servidor recusa gravar se ele divergir do total recalculado.
+  const request = buildCreateOrderRequest(cart.items, form.value, quote.value.totalCents)
   // A mesma chave deve ser reutilizada em retries: se a resposta se perdeu,
   // o servidor devolve o pedido já gravado em vez de criar outro. Uma nova
   // chave só faz sentido quando o conteúdo do pedido muda.
@@ -230,13 +304,6 @@ async function submit(): Promise<void> {
   if (requestSignature !== lastRequestSignature.value) {
     idempotencyKey.value = createIdempotencyKey()
     lastRequestSignature.value = requestSignature
-  }
-  if (quoteSignature() !== quotedRequest.value) {
-    await requestQuote()
-    if (!quote.value) {
-      submitError.value = 'O carrinho mudou. Revise o pedido e tente novamente.'
-      return
-    }
   }
 
   submitting.value = true
@@ -258,7 +325,28 @@ async function submit(): Promise<void> {
       state: { whatsappUrl: created.whatsappUrl },
     })
   } catch (error: unknown) {
-    submitError.value = checkoutApiMessage(error)
+    if (isQuoteOutdatedError(error)) {
+      // O servidor não gravou nada: recota para que o total da tela volte a
+      // refletir o catálogo atual antes de uma nova tentativa.
+      quote.value = null
+      quotedRequest.value = ''
+      quoteError.value = ''
+      lastRequestSignature.value = ''
+      await requestQuote()
+      if (quoteError.value || !quote.value || quoteSignature() !== quotedRequest.value) {
+        submitError.value = 'Não foi possível atualizar o total. Revise o pedido e tente novamente.'
+        return
+      }
+      // O novo total pode invalidar o troco informado para dinheiro.
+      errors.value = validateCheckoutForm(form.value, quoteTotalCents.value)
+      if (Object.keys(errors.value).length > 0) {
+        submitError.value = 'O total mudou. Revise os dados do pedido e tente novamente.'
+        return
+      }
+      submitError.value = 'O total mudou. Revise o pedido e tente novamente.'
+    } else {
+      submitError.value = checkoutApiMessage(error)
+    }
   } finally {
     submitting.value = false
   }
@@ -300,7 +388,7 @@ watch(
 )
 
 onMounted(async () => {
-  await Promise.all([menu.ensureLoaded(), zones.ensureLoaded()])
+  await Promise.all([menu.ensureLoaded(), zones.ensureLoaded(), storeStatus.load()])
 
   const preferences = loadCheckoutPreferences()
   savedPreferences.value = preferences
@@ -556,7 +644,8 @@ onUnmounted(() => {
             </label>
           </div>
           <p class="payment-note">
-            Pagamento na entrega ou retirada. Nenhum dado de cartão é solicitado.
+            Com Pix, o pedido é gravado no servidor primeiro e o QR Code aparece na confirmação.
+            Dinheiro e cartão são pagos na entrega ou retirada. Nenhum dado de cartão é solicitado.
           </p>
           <label v-if="form.paymentMethod === 'cash'" class="field">
             <span>Troco para</span>
@@ -574,6 +663,9 @@ onUnmounted(() => {
               {{ errors.changeFor }}
             </small>
           </label>
+          <p v-if="pixUnavailableMessage" class="pix-unavailable" role="status">
+            {{ pixUnavailableMessage }}
+          </p>
           <label class="field">
             <span>Observação (opcional)</span>
             <textarea
@@ -794,6 +886,16 @@ onUnmounted(() => {
 .checkout-hint {
   margin: 0;
   color: var(--text-sub);
+  font-size: var(--font-size-caption);
+  line-height: 1.5;
+}
+
+.pix-unavailable {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--status-error);
+  border-radius: 12px;
+  color: var(--status-error);
   font-size: var(--font-size-caption);
   line-height: 1.5;
 }

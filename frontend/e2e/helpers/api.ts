@@ -170,6 +170,25 @@ export async function ensureAdminApi(
   return context
 }
 
+export async function configureTestPix(playwright: Playwright, active: boolean): Promise<void> {
+  // EVP fictícia de teste; a chave real é informada pelo proprietário no painel.
+  const owner = await playwright.request.newContext({ baseURL: API_URL })
+  try {
+    await loginAdmin(owner)
+    const response = await owner.patch('/api/v1/admin/integrations/pix', {
+      data: {
+        active,
+        key: active ? '123e4567-e89b-12d3-a456-426614174000' : '',
+        merchantName: active ? 'Pix Teste E2E' : '',
+        merchantCity: active ? 'Aquiraz' : '',
+      },
+    })
+    expect(response.ok()).toBeTruthy()
+  } finally {
+    await owner.dispose()
+  }
+}
+
 export async function fetchCatalog(context: APIRequestContext): Promise<CatalogFixture> {
   const menuResponse = await context.get('/api/v1/menu')
   expect(menuResponse.ok()).toBeTruthy()
@@ -219,7 +238,7 @@ export function buildOrderRequest(
       state: 'CE',
       zipCode: '61700000',
     },
-    payment: options.payment ?? { method: 'pix' },
+    payment: options.payment ?? { method: 'cash', changeForCents: 10_000 },
     note: '',
   }
 }

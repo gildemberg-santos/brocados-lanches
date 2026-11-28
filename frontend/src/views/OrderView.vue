@@ -6,12 +6,14 @@ import BaseButton from '../components/BaseButton.vue'
 import ErrorState from '../components/ErrorState.vue'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 import OrderStatusTimeline from '../components/OrderStatusTimeline.vue'
+import PixPaymentPanel from '../components/PixPaymentPanel.vue'
 import PriceText from '../components/PriceText.vue'
 import StatusToast from '../components/StatusToast.vue'
 import { formatOrderDateTime } from '../features/admin-orders/format'
 import { checkoutApiMessage, orderStatusLabel } from '../features/checkout/checkout'
 import { readHandoffUrl } from '../features/checkout/handoff'
 import { useOrderStatusNotifications } from '../features/orders/statusNotifications'
+import { buildPixBrCode } from '../features/pix/brcode'
 import { fetchTrackedOrder } from '../services/orders'
 import {
   subscribeOrderEvents,
@@ -73,6 +75,42 @@ const hasStoreContact = computed(
     storeInstagramUrl.value.length > 0 ||
     storeAddress.value.length > 0,
 )
+
+const pixSettings = computed(() => storeStatus.value?.pix ?? null)
+const pixOrder = computed(() => (order.value?.paymentMethod === 'pix' ? order.value : null))
+
+// O BR Code é gerado depois da resposta 201: o valor vem do snapshot gravado,
+// nunca da cotação que apareceu no checkout.
+const pixBrCode = computed(() => {
+  const currentOrder = pixOrder.value
+  const settings = pixSettings.value
+  if (!currentOrder || !settings?.active) {
+    return ''
+  }
+  try {
+    return buildPixBrCode({
+      key: settings.key,
+      merchantName: settings.merchantName,
+      merchantCity: settings.merchantCity,
+      amountCents: currentOrder.totalCents,
+    })
+  } catch {
+    return ''
+  }
+})
+
+const pixUnavailableMessage = computed(() => {
+  if (!pixOrder.value) {
+    return ''
+  }
+  if (store.state === 'idle' || store.state === 'loading') {
+    return 'Carregando a configuração do Pix...'
+  }
+  if (store.state === 'error' || !pixSettings.value?.active || pixBrCode.value === '') {
+    return 'O pedido foi gravado com Pix, mas a cobrança não pode ser exibida agora. Fale com a loja para receber os dados do pagamento.'
+  }
+  return ''
+})
 
 async function copyHandoffUrl(): Promise<void> {
   try {
@@ -174,6 +212,17 @@ onUnmounted(() => {
           Guarde o código acima para acompanhar o status.
         </p>
       </section>
+
+      <PixPaymentPanel
+        v-if="pixBrCode && pixSettings"
+        :br-code="pixBrCode"
+        :amount-cents="order.totalCents"
+        :merchant-name="pixSettings.merchantName"
+        :merchant-city="pixSettings.merchantCity"
+      />
+      <p v-if="pixUnavailableMessage" class="order-pix-unavailable" role="status">
+        {{ pixUnavailableMessage }}
+      </p>
 
       <section v-if="handoffUrl" class="order-handoff" aria-labelledby="handoff-title">
         <h2 id="handoff-title">Envie o pedido para a loja</h2>
@@ -317,6 +366,7 @@ onUnmounted(() => {
 .order-time,
 .order-id,
 .order-registered,
+.order-pix-unavailable,
 .order-handoff p,
 .order-receipt,
 .order-contact p {
@@ -328,6 +378,13 @@ onUnmounted(() => {
 
 .order-id {
   overflow-wrap: anywhere;
+}
+
+.order-pix-unavailable {
+  padding: 12px;
+  border: 1px solid var(--status-error);
+  border-radius: 12px;
+  color: var(--status-error);
 }
 
 .handoff-actions {

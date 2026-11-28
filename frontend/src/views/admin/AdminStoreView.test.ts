@@ -39,6 +39,7 @@ const storeStatus: PublicStoreStatus = {
   instagram: '@brocados',
   address: 'Rua de Teste, 10',
   openingHours: [],
+  pix: { active: false, key: '', merchantName: '', merchantCity: '' },
   nextOpeningAt: '2026-11-23T02:00:00Z',
   updatedAt: '2026-11-22T12:00:00Z',
 }
