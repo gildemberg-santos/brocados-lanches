@@ -44,6 +44,20 @@ textarea {
   font: inherit;
 }
 
+/* Checkbox Neon do design system: nativo, compacto e na cor da marca. */
+input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+
+input[type='checkbox']:disabled {
+  cursor: not-allowed;
+}
+
 a {
   color: var(--brand-neon);
 }

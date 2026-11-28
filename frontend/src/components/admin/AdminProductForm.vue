@@ -613,7 +613,7 @@ function submit(): void {
   font-weight: 700;
 }
 
-.product-form input,
+.product-form input:not([type='checkbox']),
 .product-form select,
 .product-form textarea,
 .product-form__small {

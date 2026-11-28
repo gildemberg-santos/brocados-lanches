@@ -524,14 +524,18 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | ID | História | Prioridade | Tam. | Depende de | Aceite |
 |---|---|---|---|---|---|
 | US-140 | Modal de cadastro no painel | P2 | M | US-062, US-066 | Produto, categoria, adicional, local/taxa e usuário abrem em `BaseModal` centralizado sobre a listagem; `role="dialog"` e `aria-modal`; ESC, overlay e botão fechar cancelam sem salvar; foco vai ao primeiro campo e retorna ao botão de origem; rolagem travada durante o modal; testes Vitest das cinco telas e do modal, e E2E de centramento/ESC em 375/1280 px |
+| US-141 | Checkbox conforme o design system | P2 | P | US-062 | Todos os checkboxes usam 18×18 px e `accent-color: var(--brand-primary)`; selectors de input de texto não os estilizam; E2E valida produto, categoria e loja; sem mudança de semântica em seleções múltiplas, opt-in ou horários |
 
 **Tarefas técnicas:**
 
 - [x] CAD-01: componente `BaseModal` com overlay, `role="dialog"`, `aria-modal`, `aria-labelledby`, foco preso, ESC, travamento da rolagem e retorno de foco.
 - [x] CAD-02: remover títulos duplicados dos formulários e envolver os cinco formulários no modal.
 - [x] CAD-03: atualizar testes das views para verificar título, diálogo e cancelamento por ESC.
+- [x] DS-01: regra global de checkbox nativo 18×18 px com `accent-color: var(--brand-primary)`.
+- [x] DS-02: excluir checkbox dos seletores genéricos de input em catálogo, produto, loja e Pix.
+- [x] DS-03: E2E de cor e dimensão nos formulários de produto, categoria e loja.
 
-**Status em 28/11/2026:** US-140 implementada. Nenhuma rota, payload ou regra de negócio mudou; decisão registrada em D-054.
+**Status em 28/11/2026:** US-140 e US-141 implementadas. Nenhuma rota, payload ou regra de negócio mudou; decisões registradas em D-054 e D-055.
 
 ---
 

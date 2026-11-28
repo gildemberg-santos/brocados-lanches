@@ -251,7 +251,7 @@ function submit(): void {
   font-weight: 700;
 }
 
-.catalog-form input,
+.catalog-form input:not([type='checkbox']),
 .catalog-form textarea,
 .catalog-form__slug-button {
   width: 100%;

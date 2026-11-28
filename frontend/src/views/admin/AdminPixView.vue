@@ -217,7 +217,7 @@ onMounted(() => {
   font-weight: 700;
 }
 
-.pix-form input {
+.pix-form input:not([type='checkbox']) {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;

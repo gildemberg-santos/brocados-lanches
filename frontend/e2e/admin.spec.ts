@@ -142,6 +142,50 @@ test.describe('acesso ao painel administrativo', () => {
     expect(new URL(page.url()).pathname).toBe('/admin/categorias')
   })
 
+  test('checkboxes de ativação seguem o padrão neon do design system', async ({ page }) => {
+    await useAdminSession(page)
+
+    const telas = [
+      { url: '/admin/produtos', abrir: 'Novo produto' },
+      { url: '/admin/categorias', abrir: 'Nova categoria' },
+      { url: '/admin/loja' },
+    ]
+
+    for (const tela of telas) {
+      await page.goto(tela.url)
+      if (tela.abrir) {
+        await page.getByRole('button', { name: tela.abrir }).click()
+        await expect(page.getByRole('dialog')).toBeVisible()
+      }
+
+      await expect(page.locator('input[type="checkbox"]').first()).toBeVisible()
+      const estilos = await page.locator('input[type="checkbox"]').evaluateAll((inputs) => {
+        const referencia = document.createElement('span')
+        referencia.style.color = 'var(--brand-primary)'
+        document.body.appendChild(referencia)
+        const corDaMarca = getComputedStyle(referencia).color
+        referencia.remove()
+
+        return inputs.map((input) => {
+          const style = getComputedStyle(input)
+          return {
+            accentColor: style.accentColor,
+            corDaMarca,
+            width: style.width,
+            height: style.height,
+          }
+        })
+      })
+
+      expect(estilos.length, `checkboxes em ${tela.url}`).toBeGreaterThan(0)
+      for (const estilo of estilos) {
+        expect(estilo.accentColor, `accent em ${tela.url}`).toBe(estilo.corDaMarca)
+        expect(estilo.width, `largura em ${tela.url}`).toBe('18px')
+        expect(estilo.height, `altura em ${tela.url}`).toBe('18px')
+      }
+    }
+  })
+
   test('pedido criado aparece na fila e muda de status pelo painel', async ({ page, request }) => {
     const created = await createTestOrder(request)
 

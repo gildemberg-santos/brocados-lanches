@@ -185,6 +185,8 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 
 Desde 28/11/2026, criar ou editar produto, categoria, adicional, local/taxa e usuário abre o formulário em `BaseModal`, centralizado na viewport, com overlay, foco preso, ESC para fechar, travamento da rolagem e retorno de foco ao botão de origem. A listagem permanece na mesma rota; o modal não substitui as páginas de configuração da loja, integrações ou conta.
 
+Desde 28/11/2026, todo checkbox usa o “Checkbox Neon” do protótipo: controle nativo de 18×18 px com `accent-color: var(--brand-primary)` e label com alvo de toque de 44 px. Seletores genéricos de `input` não aplicam largura, altura, padding ou fundo de campo de texto ao checkbox (D-055). Esse padrão cobre disponibilidade, destaque, ativo, vínculo de adicionais, obrigatoriedade de grupo, eventos de webhook, Pix, loja, horários e opt-in do checkout; listagens e kill switch mantêm seus controles atuais até decisão de padronização.
+
 ---
 
 ## 5. Telas do cliente

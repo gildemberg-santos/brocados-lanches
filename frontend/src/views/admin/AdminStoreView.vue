@@ -378,7 +378,7 @@ onMounted(() => {
   font-weight: 700;
 }
 
-.store-form input,
+.store-form input:not([type='checkbox']),
 .store-form__small {
   min-height: 44px;
   padding: 10px 12px;
