@@ -146,7 +146,7 @@ onBeforeUnmount(release)
   z-index: 60;
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
 }
 
 .base-modal__backdrop {
@@ -158,9 +158,11 @@ onBeforeUnmount(release)
 .base-modal__panel {
   position: relative;
   width: min(920px, 100%);
-  max-height: min(90vh, 900px);
+  /* `dvh` acompanha a barra do navegador e o teclado no mobile. */
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
-  padding: 24px;
+  overscroll-behavior: contain;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
   border: 1px solid var(--bg-border);
   border-radius: 24px;
   background: var(--bg-surface);
@@ -208,6 +210,10 @@ onBeforeUnmount(release)
 @media (min-width: 768px) {
   .base-modal {
     padding: 32px;
+  }
+
+  .base-modal__panel {
+    max-height: min(900px, calc(100dvh - 64px));
   }
 }
 </style>

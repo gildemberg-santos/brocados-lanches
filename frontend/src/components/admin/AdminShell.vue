@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 import { adminRoleLabel, visibleAdminNav } from '../../features/admin/auth'
 import { useAdminAuthStore } from '../../stores/adminAuth'
 
 const auth = useAdminAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const items = computed(() => visibleAdminNav(auth.role))
 const roleLabel = computed(() => adminRoleLabel(auth.role))
@@ -14,6 +15,7 @@ const isDrawerOpen = ref(false)
 const menuButton = ref<HTMLButtonElement | null>(null)
 const drawer = ref<HTMLElement | null>(null)
 const drawerCloseButton = ref<HTMLButtonElement | null>(null)
+let previousOverflow = ''
 
 async function openDrawer(): Promise<void> {
   isDrawerOpen.value = true
@@ -21,10 +23,12 @@ async function openDrawer(): Promise<void> {
   drawerCloseButton.value?.focus()
 }
 
-async function closeDrawer(): Promise<void> {
+async function closeDrawer(returnFocus = true): Promise<void> {
   isDrawerOpen.value = false
   await nextTick()
-  menuButton.value?.focus()
+  if (returnFocus) {
+    menuButton.value?.focus()
+  }
 }
 
 function handleDrawerKeydown(event: KeyboardEvent): void {
@@ -58,14 +62,30 @@ function handleDrawerKeydown(event: KeyboardEvent): void {
 
 watch(isDrawerOpen, (open) => {
   if (open) {
+    previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleDrawerKeydown)
   } else {
+    document.body.style.overflow = previousOverflow
     window.removeEventListener('keydown', handleDrawerKeydown)
   }
 })
 
+// Navegação externa ao drawer (histórico, link programático) também o fecha.
+watch(
+  () => route.fullPath,
+  (next, previous) => {
+    if (isDrawerOpen.value && next !== previous) {
+      void closeDrawer(false)
+    }
+  },
+)
+
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleDrawerKeydown)
+  if (isDrawerOpen.value) {
+    document.body.style.overflow = previousOverflow
+  }
 })
 
 async function logout(): Promise<void> {
@@ -119,7 +139,11 @@ async function logout(): Promise<void> {
     </div>
 
     <template v-if="isDrawerOpen">
-      <div class="admin-shell__backdrop" data-testid="admin-drawer-backdrop" @click="closeDrawer" />
+      <div
+        class="admin-shell__backdrop"
+        data-testid="admin-drawer-backdrop"
+        @click="closeDrawer()"
+      />
 
       <aside
         id="admin-drawer"
@@ -137,7 +161,7 @@ async function logout(): Promise<void> {
             type="button"
             class="admin-shell__drawer-close"
             data-testid="admin-drawer-close"
-            @click="closeDrawer"
+            @click="closeDrawer()"
           >
             Fechar
           </button>
@@ -149,11 +173,24 @@ async function logout(): Promise<void> {
             :key="item.name"
             class="admin-shell__link"
             :to="{ name: item.name }"
-            @click="closeDrawer"
+            @click="closeDrawer()"
           >
             {{ item.label }}
           </RouterLink>
         </nav>
+
+        <div class="admin-shell__drawer-identity">
+          <span class="admin-shell__drawer-user">{{ auth.userName || 'Operação' }}</span>
+          <span class="admin-shell__drawer-role">{{ roleLabel }}</span>
+          <button
+            type="button"
+            class="admin-shell__logout"
+            data-testid="admin-drawer-logout"
+            @click="logout"
+          >
+            Sair
+          </button>
+        </div>
       </aside>
     </template>
   </div>
@@ -203,8 +240,9 @@ async function logout(): Promise<void> {
   letter-spacing: 0.16em;
 }
 
+/* No mobile a identidade e o logout ficam no drawer, livre do header estreito. */
 .admin-shell__identity {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 10px;
 }
@@ -250,7 +288,8 @@ async function logout(): Promise<void> {
 .admin-shell__main {
   width: min(1120px, 100%);
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  /* Reserva o toast fixo para que o último conteúdo não fique atrás dele. */
+  padding: 24px 16px calc(96px + env(safe-area-inset-bottom));
 }
 
 .admin-shell__menu-button {
@@ -287,7 +326,8 @@ async function logout(): Promise<void> {
   width: min(320px, 85vw);
   flex-direction: column;
   overflow-y: auto;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
   border-left: 1px solid var(--bg-border);
   background: var(--bg-surface);
 }
@@ -347,9 +387,36 @@ async function logout(): Promise<void> {
   color: var(--text-main);
 }
 
+.admin-shell__drawer-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--bg-border);
+}
+
+.admin-shell__drawer-user {
+  font-weight: 700;
+}
+
+.admin-shell__drawer-role {
+  color: var(--text-sub);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.admin-shell__drawer-identity .admin-shell__logout {
+  width: 100%;
+}
+
 @media (min-width: 768px) {
   .admin-shell__header {
     padding-inline: 24px;
+  }
+
+  .admin-shell__identity {
+    display: flex;
   }
 
   .admin-shell__body {
@@ -370,14 +437,8 @@ async function logout(): Promise<void> {
 
   .admin-shell__menu-button,
   .admin-shell__backdrop,
-  .admin-shell__drawer {
-    display: none;
-  }
-}
-
-@media (max-width: 419px) {
-  .admin-shell__user,
-  .admin-shell__role {
+  .admin-shell__drawer,
+  .admin-shell__drawer-identity {
     display: none;
   }
 }

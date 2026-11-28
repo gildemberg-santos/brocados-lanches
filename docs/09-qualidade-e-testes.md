@@ -393,7 +393,7 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 - Checkout: delivery/retirada, zona, troco, cotação, erro.
 - Admin auth: login, logout, 401, papel, bootstrap de sessão único, recarga forçada e mensagens de erro por código.
 - Guard do admin: visitante redirecionado com `redirect`, operador bloqueado em rota de owner, owner liberado, login redirecionado quando já autenticado.
-- Shell do admin: menu por papel, atalhos mobile e logout.
+- Shell do admin: menu por papel, atalhos mobile e logout no header (desktop) e no drawer (mobile), com foco, travamento da rolagem e fechamento ao trocar de rota (D-057).
 - Filtros e paginação.
 - Catálogo administrativo: carregar, filtrar, paginar, criar/editar e desativar categorias, adicionais, zonas e produtos; erro de sessão, conflito de slug, validação por campo e rejeição de valor monetário inválido (não convertido em zero).
 - Configuração da loja: carregar, validar horários/contato, salvar, sessão expirada e erro de permissão.
@@ -413,10 +413,10 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 - `AdminCatalogForm`: slug gerado, validação, edição e conversão de reais para centavos.
 - `AdminProductForm`: grupos/opções, adicionais, alergênicos e validação.
 - `AdminStoreView`: horários, dias da semana, validação de WhatsApp e salvamento.
-- `BaseModal`: fechado, `role="dialog"`, `aria-modal`, título, foco no primeiro campo, foco preso, ESC, backdrop, botão fechar, retorno de foco e travamento da rolagem; cinco views de cadastro verificam abertura e título, e o E2E valida o centramento e o ESC em 375/1280 px.
+- `BaseModal`: fechado, `role="dialog"`, `aria-modal`, título, foco no primeiro campo, foco preso, ESC, backdrop, botão fechar, retorno de foco e travamento da rolagem; cinco views de cadastro verificam abertura e título, e o E2E valida centramento, ESC e permanência dentro da viewport em 375/1280 px. Em mobile o painel usa `dvh`, `safe-area` e `overscroll-behavior: contain` (D-057).
 - Checkbox: E2E valida `accent-color` da marca e 18×18 px nos formulários de produto, categoria e loja; a regra global cobre também os demais checkboxes (D-055).
 - `MobileTabBar`: quatro destinos, rota ativa, badge e rótulo acessível do carrinho; `App` esconde a barra em admin e nas rotas com `hideTabBar`, e o spacer em fluxo reserva a navegação ou a barra de carrinho sem estender a superfície do rodapé atrás delas (D-056).
-- `Drawer`: foco, ESC, retorno de foco.
+- `Drawer`: foco, ESC, retorno de foco, travamento/restauração da rolagem, logout e fechamento em troca de rota sem roubar o foco do botão “Menu” (D-057).
 
 ### 7.3 Services
 
@@ -483,6 +483,7 @@ pnpm lint
 - Acesso anônimo a rota protegida redirecionado para `/admin/login` com `redirect`, e credenciais inválidas exibindo mensagem genérica (US-061).
 - Pedido ponta a ponta: cardápio → personalização → carrinho → checkout → confirmação → fila → detalhe → `Confirmar pedido`, em desktop e mobile (US-040 a US-043, US-070 a US-072); o link de handoff continua disponível após recarregar a confirmação.
 - Cenários de falha em `e2e/failure-scenarios.spec.ts`: `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE`, retirada com taxa zero, troco congelado, idempotência, `409` em transição inválida e `UNAUTHORIZED` após logout.
+- Drawer e modal do painel cabem na viewport em 375/1280 px, com rolagem travada e restaurada na navegação (US-143). Verificação local de 28/11/2026 com API mockada em 320/375/1280 px: `scrollWidth === clientWidth`, 12 links no drawer, `overflow: hidden` enquanto aberto e restauração ao navegar, modal inteiro dentro da viewport em todos os tamanhos.
 - CRUD de catálogo e configuração da loja cobertos por Vitest; E2E dessas telas ainda pendente.
 - Monitoramento de erros coberto por testes Go/Vitest do sanitizador, da captura só de 5xx e do recoverer, além do validador estático executado por `make test-sentry` e `make sentry-check`.
 

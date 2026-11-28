@@ -142,6 +142,47 @@ test.describe('acesso ao painel administrativo', () => {
     expect(new URL(page.url()).pathname).toBe('/admin/categorias')
   })
 
+  test('navegação e modal cabem na viewport em mobile e desktop', async ({ page }) => {
+    await useAdminSession(page)
+    const viewport = page.viewportSize()
+    if (!viewport) {
+      throw new Error('Viewport indefinida para validar o painel')
+    }
+
+    await page.goto('/admin')
+    if (viewport.width < 768) {
+      const menu = page.getByTestId('admin-menu-button')
+      await expect(menu).toBeVisible()
+      await menu.click()
+
+      const drawer = page.getByTestId('admin-drawer')
+      await expect(drawer).toBeVisible()
+      expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden')
+
+      await drawer.getByRole('link', { name: 'Pedidos' }).click()
+      await expect(page).toHaveURL(/\/admin\/pedidos$/)
+      await expect(drawer).toHaveCount(0)
+      expect(await page.evaluate(() => document.body.style.overflow)).toBe('')
+    } else {
+      await expect(page.getByRole('navigation', { name: 'Navegação do painel' })).toBeVisible()
+      await expect(page.getByTestId('admin-menu-button')).toBeHidden()
+    }
+
+    await page.goto('/admin/categorias')
+    await page.getByRole('button', { name: 'Nova categoria' }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    const box = await dialog.boundingBox()
+    if (!box) {
+      throw new Error('Modal sem dimensões para validar a viewport')
+    }
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+    ).toBeLessThanOrEqual(0)
+  })
+
   test('checkboxes de ativação seguem o padrão neon do design system', async ({ page }) => {
     await useAdminSession(page)
 
