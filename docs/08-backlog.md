@@ -2,7 +2,7 @@
 
 **Versão:** 1.2  
 **Atualizado em:** 26/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-067 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual; Épico 14 com US-140 concluída em 28/11/2026.
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-067 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual; Épico 14 com US-140 a US-142 concluídas em 28/11/2026.
 
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`, `14-auditoria-design-system.md`.
 
@@ -515,7 +515,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 ---
 
-## 18. Épico 14 — Cadastro do painel em modal
+## 18. Épico 14 — Cadastro do painel em modal e ajustes de UI
 
 **Origem:** pedido do solicitante em 28/11/2026 para disponibilizar criação e edição em modal centralizado, sem sair da tela da lista.
 **Objetivo:** manter a listagem visível e padronizar a abertura dos formulários com foco e fechamento acessíveis.
@@ -525,6 +525,8 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 |---|---|---|---|---|---|
 | US-140 | Modal de cadastro no painel | P2 | M | US-062, US-066 | Produto, categoria, adicional, local/taxa e usuário abrem em `BaseModal` centralizado sobre a listagem; `role="dialog"` e `aria-modal`; ESC, overlay e botão fechar cancelam sem salvar; foco vai ao primeiro campo e retorna ao botão de origem; rolagem travada durante o modal; testes Vitest das cinco telas e do modal, e E2E de centramento/ESC em 375/1280 px |
 | US-141 | Checkbox conforme o design system | P2 | P | US-062 | Todos os checkboxes usam 18×18 px e `accent-color: var(--brand-primary)`; selectors de input de texto não os estilizam; E2E valida produto, categoria e loja; sem mudança de semântica em seleções múltiplas, opt-in ou horários |
+| US-142 | Fundação e navegação mobile do cliente | P1 | M | US-030, US-125 | `viewport-fit=cover` e `safe-area` em header, barra de carrinho, toast e drawer; `100dvh`; campos com 16 px abaixo de 768 px; barra inferior fixa com Início, Cardápio, Pedidos e Carrinho; produto e checkout escondem a barra; home mantém a barra de carrinho acima da navegação; rodapé termina acima das barras e spacer em fluxo reserva a altura com o fundo da página; testes Vitest da barra, do rodapé, do spacer e do shell |
+| US-143 | Ergonomia mobile do painel | P1 | M | US-061, US-126, US-140 | Header mobile com marca e “Menu”; identidade e logout no fim do drawer completo, sem bottom nav; rolagem travada enquanto o drawer está aberto e fechamento ao navegar por histórico/rota programática; conteúdo com espaço para o toast; `BaseModal` com `dvh`, `safe-area` e `overscroll-behavior: contain`; sem scroll horizontal em 320/375 px e sem mudança de tokens; testes Vitest do shell e E2E do drawer e do modal em 375/1280 px |
 
 **Tarefas técnicas:**
 
@@ -534,8 +536,14 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 - [x] DS-01: regra global de checkbox nativo 18×18 px com `accent-color: var(--brand-primary)`.
 - [x] DS-02: excluir checkbox dos seletores genéricos de input em catálogo, produto, loja e Pix.
 - [x] DS-03: E2E de cor e dimensão nos formulários de produto, categoria e loja.
+- [x] MOB-01: viewport com `viewport-fit=cover`, `100dvh` e `safe-area` no header, barra de carrinho, toast e drawer; rodapé terminando acima das barras fixas.
+- [x] MOB-02: campos de texto com 16 px no mobile para evitar o zoom automático do iOS.
+- [x] MOB-03: `MobileTabBar` fixa com Início, Cardápio, Pedidos e Carrinho; produto e checkout escondem a barra e a home mantém a barra de carrinho acima dela.
+- [x] ADM-01: identidade e logout movidos para o fim do drawer mobile, com o header reduzido a marca e “Menu”.
+- [x] ADM-02: rolagem travada no drawer, fechamento em troca de rota e espaço inferior reservado para o toast.
+- [x] ADM-03: `BaseModal` com `100dvh`, `safe-area` e `overscroll-behavior: contain`; testes Vitest e E2E em 375/1280 px.
 
-**Status em 28/11/2026:** US-140 e US-141 implementadas. Nenhuma rota, payload ou regra de negócio mudou; decisões registradas em D-054 e D-055.
+**Status em 28/11/2026:** US-140, US-141, US-142 e US-143 implementadas. Nenhuma rota, payload ou regra de negócio mudou; decisões registradas em D-054, D-055, D-056 e D-057.
 
 ---
 
@@ -564,6 +572,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | Auditoria de conformidade AUD-01..14 | US-120 a US-126 |
 | Histórico do cliente por token (D-041) | US-130, US-131, US-132 |
 | Cadastro do painel em modal (D-054) | US-140 |
+| Experiência mobile do cliente (D-056) | US-142 |
 
 ---
 

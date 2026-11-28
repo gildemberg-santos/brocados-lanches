@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import BaseButton from '../components/BaseButton.vue'
@@ -12,6 +12,7 @@ import PriceText from '../components/PriceText.vue'
 import ProductCardCompact from '../components/ProductCardCompact.vue'
 import ProductImage from '../components/ProductImage.vue'
 import { buildCartLines, calculateSubtotalCents } from '../features/cart/cart'
+import { useHeroRotation } from '../features/home/useHeroRotation'
 import { useCartStore } from '../stores/cart'
 import { useMenuStore } from '../stores/menu'
 import { useStoreStatusStore } from '../stores/storeStatus'
@@ -21,9 +22,56 @@ const cart = useCartStore()
 const statusStore = useStoreStatusStore()
 const router = useRouter()
 
+const {
+  current: rotatedFeatured,
+  index: heroIndex,
+  canRotate,
+  paused,
+  reducedMotion,
+  select,
+  togglePause,
+  setInteracting,
+} = useHeroRotation(computed(() => menu.featuredProducts))
+
 const heroProduct = computed(
-  () => menu.featuredProducts[0] ?? menu.products.find((product) => product.available),
+  () => rotatedFeatured.value ?? menu.products.find((product) => product.available),
 )
+
+const heroHovered = ref(false)
+const heroFocused = ref(false)
+
+function syncHeroInteraction(): void {
+  setInteracting(heroHovered.value || heroFocused.value)
+}
+
+function onHeroMouseEnter(): void {
+  heroHovered.value = true
+  syncHeroInteraction()
+}
+
+function onHeroMouseLeave(): void {
+  heroHovered.value = false
+  syncHeroInteraction()
+}
+
+function onHeroFocusIn(): void {
+  heroFocused.value = true
+  syncHeroInteraction()
+}
+
+function onHeroFocusOut(event: FocusEvent): void {
+  const currentTarget = event.currentTarget
+  const relatedTarget = event.relatedTarget
+  if (
+    currentTarget instanceof HTMLElement &&
+    relatedTarget instanceof Node &&
+    currentTarget.contains(relatedTarget)
+  ) {
+    return
+  }
+  heroFocused.value = false
+  syncHeroInteraction()
+}
 
 const isLoading = computed(() => menu.state === 'loading' || menu.state === 'idle')
 
@@ -85,8 +133,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" tabindex="-1" class="page-shell home">
-    <section class="home-hero" :class="{ 'home-hero--with-feature': heroProduct }">
+  <main
+    id="conteudo"
+    tabindex="-1"
+    class="page-shell home"
+    :class="{ 'home--with-cart-bar': !cart.isEmpty }"
+  >
+    <section
+      class="home-hero"
+      :class="{ 'home-hero--with-feature': heroProduct }"
+      @mouseenter="onHeroMouseEnter"
+      @mouseleave="onHeroMouseLeave"
+      @focusin="onHeroFocusIn"
+      @focusout="onHeroFocusOut"
+    >
       <div class="home-hero__copy">
         <p class="eyebrow">Brocados Lanches</p>
         <h1>Seu lanche, do seu jeito.</h1>
@@ -96,26 +156,60 @@ onMounted(() => {
         <RouterLink class="home-hero__cta" :to="{ name: 'menu' }">Abrir cardápio</RouterLink>
       </div>
 
-      <RouterLink
-        v-if="heroProduct"
-        class="home-hero__spotlight"
-        :to="{ name: 'product', params: { slug: heroProduct.slug } }"
-      >
-        <span class="home-hero__media">
-          <ProductImage
-            :src="heroProduct.imageUrl"
-            :alt="heroProduct.imageAlt.length > 0 ? heroProduct.imageAlt : heroProduct.name"
-            :width="480"
-            :height="360"
-            eager
-          />
-        </span>
-        <span class="home-hero__spotlight-body">
-          <span class="home-hero__spotlight-label">Destaque</span>
-          <strong>{{ heroProduct.name }}</strong>
-          <PriceText :value-cents="heroProduct.priceCents" />
-        </span>
-      </RouterLink>
+      <div v-if="heroProduct" class="home-hero__feature">
+        <RouterLink
+          class="home-hero__spotlight"
+          :to="{ name: 'product', params: { slug: heroProduct.slug } }"
+        >
+          <span class="home-hero__media">
+            <ProductImage
+              :src="heroProduct.imageUrl"
+              :alt="heroProduct.imageAlt.length > 0 ? heroProduct.imageAlt : heroProduct.name"
+              :width="480"
+              :height="360"
+              eager
+            />
+          </span>
+          <span class="home-hero__spotlight-body">
+            <span class="home-hero__spotlight-label">
+              Destaque<span v-if="canRotate">
+                {{ heroIndex + 1 }}/{{ menu.featuredProducts.length }}</span
+              >
+            </span>
+            <strong>{{ heroProduct.name }}</strong>
+            <PriceText :value-cents="heroProduct.priceCents" />
+          </span>
+        </RouterLink>
+
+        <div
+          v-if="canRotate"
+          class="home-hero__controls"
+          role="group"
+          aria-label="Controles dos destaques"
+        >
+          <button
+            v-if="!reducedMotion"
+            type="button"
+            class="home-hero__pause"
+            :aria-pressed="paused"
+            @click="togglePause"
+          >
+            {{ paused ? 'Retomar rotação' : 'Pausar rotação' }}
+          </button>
+          <div class="home-hero__dots" role="group" aria-label="Escolher destaque">
+            <button
+              v-for="(product, position) in menu.featuredProducts"
+              :key="product.id"
+              type="button"
+              class="home-hero__dot"
+              :class="{ 'home-hero__dot--active': position === heroIndex }"
+              :aria-label="`Ver destaque ${position + 1}: ${product.name}`"
+              :aria-current="position === heroIndex ? 'true' : undefined"
+              @click="select(position)"
+            />
+          </div>
+        </div>
+      </div>
     </section>
 
     <section
@@ -325,6 +419,67 @@ onMounted(() => {
   line-height: 1.2;
 }
 
+.home-hero__feature {
+  display: grid;
+  align-self: stretch;
+  gap: 10px;
+}
+
+.home-hero__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.home-hero__pause {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--bg-border);
+  border-radius: 999px;
+  background: var(--bg-input);
+  color: var(--text-sub);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}
+
+.home-hero__pause:hover {
+  border-color: var(--brand-primary);
+  color: var(--text-main);
+}
+
+.home-hero__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.home-hero__dot {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.home-hero__dot::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg-border);
+  content: '';
+}
+
+.home-hero__dot--active::before {
+  background: var(--brand-primary);
+}
+
 .home-status {
   display: grid;
   gap: 8px;
@@ -413,7 +568,9 @@ onMounted(() => {
   max-width: 100%;
   gap: 8px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding-bottom: 4px;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
 }
 
@@ -424,6 +581,10 @@ onMounted(() => {
 .featured-grid {
   display: grid;
   gap: 10px;
+}
+
+.home--with-cart-bar {
+  padding-bottom: calc(160px + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 640px) {
@@ -448,6 +609,12 @@ onMounted(() => {
 
   .featured-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .home--with-cart-bar {
+    padding-bottom: 80px;
   }
 }
 

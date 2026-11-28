@@ -183,9 +183,13 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 | `AuditLogTable` | Ator, ação, entidade, data; sem PII |
 | `UserForm` | Nome, e-mail, papel, ativo |
 
-Desde 28/11/2026, criar ou editar produto, categoria, adicional, local/taxa e usuário abre o formulário em `BaseModal`, centralizado na viewport, com overlay, foco preso, ESC para fechar, travamento da rolagem e retorno de foco ao botão de origem. A listagem permanece na mesma rota; o modal não substitui as páginas de configuração da loja, integrações ou conta.
+Desde 28/11/2026, criar ou editar produto, categoria, adicional, local/taxa e usuário abre o formulário em `BaseModal`, centralizado na viewport, com overlay, foco preso, ESC para fechar, travamento da rolagem e retorno de foco ao botão de origem. A listagem permanece na mesma rota; o modal não substitui as páginas de configuração da loja, integrações ou conta. Em telas pequenas o painel usa `dvh` e `safe-area` no modal, com `overscroll-behavior: contain` para não rolar a página por trás do diálogo quando o conteúdo chega ao fim (D-057).
+
+Desde 28/11/2026, o `AdminShell` mantém o drawer completo do D-029 e reorganiza só o que competia por espaço no header mobile: nome/papel e “Sair” aparecem no fim do drawer, e o topo fica com marca e botão “Menu”. Abrir o drawer trava a rolagem do fundo e a restaura ao fechar; navegar pelo histórico ou por rota programática também fecha o drawer, sem devolver o foco ao botão “Menu” nesses casos. O conteúdo reserva `96px + safe-area-inset-bottom` para o toast fixo em mobile; no desktop a identidade e o logout voltam ao header e a sidebar permanece. Nenhum atalho novo, cor ou token foi introduzido (D-057).
 
 Desde 28/11/2026, todo checkbox usa o “Checkbox Neon” do protótipo: controle nativo de 18×18 px com `accent-color: var(--brand-primary)` e label com alvo de toque de 44 px. Seletores genéricos de `input` não aplicam largura, altura, padding ou fundo de campo de texto ao checkbox (D-055). Esse padrão cobre disponibilidade, destaque, ativo, vínculo de adicionais, obrigatoriedade de grupo, eventos de webhook, Pix, loja, horários e opt-in do checkout; listagens e kill switch mantêm seus controles atuais até decisão de padronização.
+
+Desde 28/11/2026, o cliente tem fundação mobile própria (D-056): o viewport usa `viewport-fit=cover` e `safe-area` no header, barra de carrinho, toast e drawer; a altura mínima usa `100dvh`; campos de texto têm 16 px abaixo de 768 px para o Safari do iOS não dar zoom ao focar; e a navegação principal vira uma barra inferior fixa (`MobileTabBar`) com Início, Cardápio, Pedidos e Carrinho. A home mantém a `CartSummaryBar` acima da barra; produto e checkout escondem a navegação para priorizar o CTA. No fim da página, o rodapé termina acima das barras fixas: um spacer em fluxo, com o fundo da página, reserva 72 px para a navegação ou 140 px para a navegação mais a barra de carrinho, mais o `safe-area-inset-bottom`. Assim a superfície do rodapé não continua atrás da barra e as duas faixas não parecem uma só. O desktop continua com os links no header.
 
 ---
 
@@ -202,7 +206,9 @@ Desde 28/11/2026, todo checkbox usa o “Checkbox Neon” do protótipo: control
 - Cartão de endereço, WhatsApp e horário.
 - Barra fixa de carrinho no mobile; sidebar no desktop (a sidebar fica pendente de decisão em §14).
 
-Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummaryBar` aparece somente com itens, exibe contagem e subtotal calculados a partir do catálogo e leva a `/carrinho`; some a partir de 768 px para não concorrer com a navegação desktop.
+Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummaryBar` aparece somente com itens, exibe contagem e subtotal calculados a partir do catálogo e leva a `/carrinho`; some a partir de 768 px para não concorrer com a navegação desktop. No mobile, ela fica acima da navegação inferior fixa e o spacer em fluxo reserva espaço para as duas após o rodapé (D-056).
+
+Desde 28/11/2026, com mais de um produto disponível marcado como destaque, o hero alterna entre eles a cada 6 segundos em ciclo (`frontend/src/features/home/useHeroRotation.ts`), para que todos tenham o mesmo tempo de exposição; a grade “Mais pedidos” continua mostrando todos. O card informa a posição (por exemplo, `1/3`), e abaixo dele ficam o botão “Pausar/Retomar rotação” e os pontos para escolher diretamente qualquer destaque, com alvo de toque de 44 px. A rotação para quando o ponteiro ou o foco entra no hero, quando a aba fica oculta e quando o sistema pede movimento reduzido; nesse último caso o botão de pausa não aparece, mas os pontos seguem disponíveis. Com um único destaque ou apenas o fallback para produto disponível, não há controles. Nenhum token, cor, fonte ou componente visual novo foi criado (D-058).
 
 **Estados:**
 
@@ -573,6 +579,9 @@ Regras:
 - [ ] Textos em português e sem jargão.
 - [ ] Preços formatados em BRL.
 - [ ] Imagens com alt e dimensões.
+- [ ] Barra inferior não cobre conteúdo, toast ou CTA em aparelhos com safe-area; o rodapé termina acima dela e da barra de carrinho, sem superfície estendida atrás das duas.
+- [ ] Campos de texto com 16 px no mobile, sem zoom automático no iOS.
+- [ ] `100dvh` mantém o layout correto com a barra do navegador mobile visível.
 - [ ] Modal/drawer com foco preso.
 - [ ] `prefers-reduced-motion` testado.
 - [ ] `make design-check` passando.

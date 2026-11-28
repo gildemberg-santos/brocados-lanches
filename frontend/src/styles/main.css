@@ -22,6 +22,11 @@
   color-scheme: dark;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 72px;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -29,6 +34,7 @@
 body {
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   background: var(--bg-primary);
   color: var(--text-main);
@@ -58,6 +64,18 @@ input[type='checkbox']:disabled {
   cursor: not-allowed;
 }
 
+/*
+ * iOS dá zoom automático em campos com fonte menor que 16 px.
+ * A regra usa especificidade acima dos estilos com escopo dos componentes.
+ */
+@media (max-width: 767px) {
+  body input:not([type='checkbox']):not([type='radio']),
+  body select,
+  body textarea {
+    font-size: 16px;
+  }
+}
+
 a {
   color: var(--brand-neon);
 }
@@ -69,6 +87,7 @@ a {
 
 #app {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .page-shell {

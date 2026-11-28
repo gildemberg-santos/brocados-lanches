@@ -30,6 +30,7 @@ defineEmits<{
   background: var(--bg-surface);
   color: var(--text-sub);
   font-weight: 700;
+  scroll-snap-align: start;
   white-space: nowrap;
   cursor: pointer;
   transition:

@@ -21,7 +21,9 @@ async function mountFooter() {
   await router.push('/')
   await router.isReady()
 
-  return mount(SiteFooter, { global: { plugins: [router] } })
+  return mount(SiteFooter, {
+    global: { plugins: [router] },
+  })
 }
 
 describe('SiteFooter', () => {
@@ -49,5 +51,11 @@ describe('SiteFooter', () => {
       '/creditos',
     ])
     expect(wrapper.text()).not.toMatch(/\+55/)
+  })
+
+  it('termina após os links, sem reservar espaço das barras fixas', async () => {
+    const wrapper = await mountFooter()
+
+    expect(wrapper.classes()).toEqual(['site-footer'])
   })
 })

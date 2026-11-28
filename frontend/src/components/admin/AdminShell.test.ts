@@ -61,9 +61,11 @@ async function openDrawer(wrapper: VueWrapper): Promise<void> {
 describe('AdminShell', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    document.body.style.overflow = ''
   })
 
   afterEach(() => {
+    document.body.style.overflow = ''
     document.body.innerHTML = ''
   })
 
@@ -131,13 +133,14 @@ describe('AdminShell', () => {
 
     await openDrawer(wrapper)
 
+    const drawer = wrapper.get('[data-testid="admin-drawer"]')
     const closeButton = wrapper.get('[data-testid="admin-drawer-close"]').element
-    const links = wrapper.get('[data-testid="admin-drawer"]').findAll('nav a')
-    const lastLink = links[links.length - 1]?.element
-    expect(lastLink).toBeDefined()
+    const focusable = drawer.findAll('a[href], button:not([disabled])')
+    const lastFocusable = focusable[focusable.length - 1]?.element
+    expect(lastFocusable).toBeDefined()
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true }))
-    expect(document.activeElement).toBe(lastLink)
+    expect(document.activeElement).toBe(lastFocusable)
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }))
     expect(document.activeElement).toBe(closeButton)
@@ -153,14 +156,51 @@ describe('AdminShell', () => {
     expect(wrapper.findAll('main')).toHaveLength(0)
   })
 
-  it('encerra a sessão e volta para o login', async () => {
+  it('encerra a sessão pelo header e pelo drawer e volta para o login', async () => {
     const { wrapper, router, auth } = await mountShell('owner')
     const logout = vi.spyOn(auth, 'logout').mockResolvedValue()
 
-    await wrapper.get('.admin-shell__logout').trigger('click')
+    await wrapper.get('.admin-shell__header .admin-shell__logout').trigger('click')
     await flushPromises()
 
     expect(logout).toHaveBeenCalledTimes(1)
     expect(router.currentRoute.value.name).toBe('admin-login')
+
+    await openDrawer(wrapper)
+    await wrapper.get('[data-testid="admin-drawer-logout"]').trigger('click')
+    await flushPromises()
+
+    expect(logout).toHaveBeenCalledTimes(2)
+    expect(router.currentRoute.value.name).toBe('admin-login')
+  })
+
+  it('trava a rolagem do fundo enquanto o drawer está aberto e a restaura ao fechar', async () => {
+    const { wrapper } = await mountShell('owner')
+
+    expect(document.body.style.overflow).toBe('')
+
+    await openDrawer(wrapper)
+    expect(document.body.style.overflow).toBe('hidden')
+
+    await wrapper.get('[data-testid="admin-drawer-close"]').trigger('click')
+    await flushPromises()
+    expect(document.body.style.overflow).toBe('')
+
+    wrapper.unmount()
+  })
+
+  it('fecha o drawer ao navegar sem roubar o foco do botão Menu', async () => {
+    const { wrapper, router } = await mountShell('owner')
+    const menuButton = wrapper.get('[data-testid="admin-menu-button"]')
+
+    await openDrawer(wrapper)
+    expect(wrapper.find('[data-testid="admin-drawer"]').exists()).toBe(true)
+
+    await router.push({ name: 'admin-orders' })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="admin-drawer"]').exists()).toBe(false)
+    expect(document.activeElement).not.toBe(menuButton.element)
+    expect(document.body.style.overflow).toBe('')
   })
 })

@@ -183,7 +183,9 @@ onMounted(() => {
   max-width: 100%;
   gap: 8px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding-bottom: 4px;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
 }
 

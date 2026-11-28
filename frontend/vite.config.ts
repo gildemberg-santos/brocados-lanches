@@ -19,6 +19,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    // Túnel de desenvolvimento usado para testar a aplicação fora do host local.
+    // Mantemos allowlist explícita em vez de aceitar qualquer Host.
+    allowedHosts: ['overhelpful-readily-lynell.ngrok-free.dev'],
     fs: {
       allow: ['..'],
     },
