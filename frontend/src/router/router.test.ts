@@ -99,4 +99,15 @@ describe('router', () => {
     expect(resolved.meta.noindex).toBe(true)
     expect(typeof resolved.matched[0]?.components?.default).toBe('function')
   })
+
+  it('preserva o scroll ao trocar somente a categoria na query do cardápio', () => {
+    const behavior = router.options.scrollBehavior
+    type Normalized = Parameters<NonNullable<typeof behavior>>[0]
+    const normalized = (path: string): Normalized => router.resolve(path) as unknown as Normalized
+
+    expect(
+      behavior?.(normalized('/cardapio?categoria=bebidas'), normalized('/cardapio'), null),
+    ).toBe(false)
+    expect(behavior?.(normalized('/cardapio'), normalized('/'), null)).toEqual({ top: 0 })
+  })
 })

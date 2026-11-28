@@ -2,7 +2,7 @@
 
 **Versão:** 1.2  
 **Atualizado em:** 26/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-067 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual; Épico 14 com US-140 a US-142 concluídas em 28/11/2026.
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-067 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual; Épico 14 com US-140 a US-143 concluídas em 28/11/2026; Épico 15 com US-144 implementada em 28/11/2026.
 
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`, `14-auditoria-design-system.md`.
 
@@ -547,12 +547,35 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 ---
 
-## 19. Rastreabilidade requisito → história
+## 19. Épico 15 — Navegação por categorias no cardápio
+
+**Origem:** pedido do solicitante em 28/11/2026 para reproduzir no Brocados a organização por categorias e a navegação observadas em `menuaqui.com.br/burger-demo`.
+**Objetivo:** transformar categorias em destinos de scroll dentro do cardápio, com barra sticky, destaque ativo e clique que reposiciona a página.
+**Fora do escopo:** mudança de contrato da API, persistência, preços, disponibilidade e substituição da busca em grade única.
+
+| ID | História | Prioridade | Tam. | Depende de | Aceite |
+|---|---|---|---|---|---|
+| US-144 | Seções e barra de categorias no cardápio | P1 | M | US-021, US-023 | `/cardapio` sem busca mostra uma seção por categoria com `id="categoria-<slug>"`, título e grade; `MenuCategoryNav` fica sticky abaixo do header, usa `CategoryPill` com `aria-pressed` e acompanha o scroll por limites de 10 px; clique destaca na hora e chama `scrollIntoView` com offset de 132/124 px; `?categoria` abre a âncora e acompanha o clique sem resetar scroll; busca continua filtrando em grade única; testes Vitest e E2E em 375/1280 px |
+
+**Tarefas técnicas:**
+
+- [x] CAT-01: extrair `categorySectionId` e a resolução da categoria ativa em `features/catalog/categorySections.ts`, com testes de table-driven dos limiares.
+- [x] CAT-02: criar `useCategoryScrollSpy` com medição no mount/resize, pausa durante scroll programado e reativação por interação ou estabilidade.
+- [x] CAT-03: criar `MenuCategoryNav` reaproveitando `CategoryPill`, sem token, cor ou componente visual novo.
+- [x] CAT-04: converter `MenuView` de grade filtrada por categoria para seções âncora, mantendo busca, esgotado e contagem.
+- [x] CAT-05: ajustar `scrollBehavior` para não devolver ao topo em mudança de query na mesma rota e cobrir com teste.
+- [x] CAT-06: E2E de sticky e reposicionamento da seção em 375/1280 px.
+
+**Status em 28/11/2026:** US-144 implementada; decisão registrada em D-059. Nenhuma API ou regra de negócio mudou.
+
+---
+
+## 20. Rastreabilidade requisito → história
 
 | Requisito | Histórias |
 |---|---|
 | FR-STORE-01/02 | US-021, US-023, US-025 |
-| FR-MENU-01/02 | US-021, US-023 |
+| FR-MENU-01/02 | US-021, US-023, US-144 |
 | FR-PRODUCT-01/02/03 | US-024 |
 | FR-CART-01/02 | US-030, US-031 |
 | FR-CHECKOUT-01..05 | US-032, US-033, US-034 |

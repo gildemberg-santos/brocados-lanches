@@ -50,7 +50,7 @@ Nenhum desses achados bloqueia segurança ou persistência do pedido; por isso v
 | Tela | Situação | Base | Observação |
 |---|---|---|---|
 | Home `/` | Parcial | `07` §5.1 e protótipo Tela 00 | Hero, categorias, destaques e contatos OK; falta barra fixa de carrinho no mobile e aviso de que o pedido não pode ser concluído com a loja fechada |
-| Cardápio `/cardapio` | Conforme | `07` §5.2 e protótipo Tela 01 | Busca, filtro, grid 2/3 colunas, esgotado, contagem e estados presentes |
+| Cardápio `/cardapio` | Conforme | `07` §5.2 e protótipo Tela 01 | Busca, seções por categoria com barra sticky e scroll spy (US-144/D-059), grid 2/3 colunas, esgotado, contagem e estados presentes |
 | Produto `/produto/:slug` | Conforme | `07` §5.3 e protótipo Tela 02 | Imagem, alergênicos, grupos, adicionais, observação, preço e CTA sticky presentes |
 | Carrinho `/carrinho` | Conforme | `07` §5.4 e protótipo Tela 03 | Itens, quantidade, remoção, limpeza, totais, aviso de total final e estado vazio presentes |
 | Checkout `/checkout` | Parcial | `07` §5.5 | Regras de negócio OK; 4 etapas (3 na retirada) em vez das 5 do documento e token CSS inválido |

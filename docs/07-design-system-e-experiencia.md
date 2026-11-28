@@ -219,16 +219,22 @@ Desde 28/11/2026, com mais de um produto disponível marcado como destaque, o he
 
 ### 5.2 Cardápio — `/cardapio`
 
-**Objetivo:** encontrar e adicionar produtos.
+**Objetivo:** encontrar, navegar e adicionar produtos.
 
-- Busca por nome/descrição.
-- Filtro por categoria.
+- Busca por nome/descrição; durante a busca a página mostra uma grade única de resultados e esconde a navegação por categorias.
+- Sem busca, cada categoria ativa vira uma `<section>` com `id` estável (`categoria-<slug>`), título e grade própria; a ordem segue `sortOrder` de `GET /menu`.
+- Barra `MenuCategoryNav` com `CategoryPill` em `position: sticky`, logo abaixo do `SiteHeader` (`top` de 64 px no desktop e 56 px no mobile, somados ao `safe-area-inset-top`), `z-index: 30` e faixa horizontal com `overflow-x: auto` e scrollbar oculto. Ela usa apenas tokens existentes e não cria cor, fonte ou componente visual novo (D-059).
+- O chip ativo usa `aria-pressed="true"` e acompanha o scroll: ao descer, entra a última seção cujo topo passou de 10 px; ao subir, volta à primeira cuja base ainda passa de 10 px (a última usa −90 px). No topo, a primeira categoria fica ativa; no fim do documento, a última.
+- Clicar em um chip destaca a categoria imediatamente, chama `scrollIntoView({ behavior: 'smooth', block: 'start' })` e usa `scroll-margin-top` de 132 px no desktop e 124 px no mobile para o título parar abaixo do header e da barra. Com `prefers-reduced-motion`, o scroll é instantâneo. A query `?categoria=<slug>` é atualizada sem forçar o scroll da rota e continua servindo para deep links da home.
+- Durante o scroll programado o spy fica pausado até 20 frames estáveis ou interação do usuário (`wheel`, `touchmove`, `keydown`/`pointerdown`), para não sobrescrever a escolha do clique.
 - Grade 2 colunas no mobile, 3 no desktop.
 - Produto esgotado com selo e ação desabilitada.
 - Contagem de resultados.
 - Carrinho persistente.
 
 **Estados:** carregando, vazio por busca, erro, sucesso ao adicionar.
+
+Implementado em `frontend/src/views/MenuView.vue`, `frontend/src/components/MenuCategoryNav.vue`, `frontend/src/features/catalog/categorySections.ts` e `frontend/src/features/catalog/useCategoryScrollSpy.ts` (US-144).
 
 ### 5.3 Produto — `/produto/:slug`
 

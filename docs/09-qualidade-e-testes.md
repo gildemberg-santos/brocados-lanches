@@ -387,7 +387,7 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 
 - Catálogo: carregar uma vez, forçar recarga, erro, retry, produto/categoria por slug e somente destaques disponíveis.
 - Home: estados de carregando, vazio, erro e sucesso; navegação para o cardápio com categoria; rotação do hero com múltiplos destaques (ciclo a cada 6 s, pausa/retomada, pontos com reinício do tempo de exposição, pausa por interação/aba oculta, movimento reduzido e ausência de controles com um só destaque).
-- Cardápio: busca sem acento/caixa, filtro por categoria, contagem, busca sem resultado e produto esgotado.
+- Cardápio: busca sem acento/caixa, contagem, busca sem resultado, produto esgotado, seções por categoria com âncora estável, resolução do spy nos dois sentidos e no topo/fim, clique que reposiciona e atualiza a query, pausa do spy no scroll programado e reativação por interação (US-144/D-059).
 - Personalização: obrigatoriedade, mínimo/máximo, adicionais, observação, preço estimado, esgotado e produto não encontrado.
 - Carrinho: adicionar, somar quantidade, remover, limpar, persistir, migrar versão.
 - Checkout: delivery/retirada, zona, troco, cotação, erro.
@@ -479,7 +479,7 @@ pnpm lint
 
 ### 8.4 Cobertura implementada
 
-- Smoke da home, navegação para o cardápio e health/readiness pelo proxy.
+- Smoke da home, navegação para o cardápio, barra de categorias grudada abaixo do header e clique que reposiciona a seção, além de health/readiness pelo proxy.
 - Acesso anônimo a rota protegida redirecionado para `/admin/login` com `redirect`, e credenciais inválidas exibindo mensagem genérica (US-061).
 - Pedido ponta a ponta: cardápio → personalização → carrinho → checkout → confirmação → fila → detalhe → `Confirmar pedido`, em desktop e mobile (US-040 a US-043, US-070 a US-072); o link de handoff continua disponível após recarregar a confirmação.
 - Cenários de falha em `e2e/failure-scenarios.spec.ts`: `STORE_CLOSED`, `PRODUCT_UNAVAILABLE`, `ZONE_UNAVAILABLE`, retirada com taxa zero, troco congelado, idempotência, `409` em transição inválida e `UNAUTHORIZED` após logout.
@@ -642,6 +642,7 @@ O backend usa `golangci-lint` v2 quando instalado; sem ele, `make lint` faz apen
 | História | Teste principal |
 |---|---|
 | US-023 | Home/cardápio no Vitest + smoke E2E de navegação |
+| US-144 | `categorySections` e `useCategoryScrollSpy` no Vitest + `MenuCategoryNav`/`MenuView` no Vitest + smoke E2E de sticky/reposicionamento |
 | US-024 | Opções e adicionais no service + componente `OptionGroup` |
 | US-032 | Cotação no service + handler + store |
 | US-040 | Criação de pedido no service + handler + repository + E2E de retirada/troco |

@@ -74,6 +74,36 @@ test.describe('smoke da base', () => {
     expect(layout.spacerBg).toBe(layout.bodyBg)
   })
 
+  test('categorias grudam abaixo do header e o clique reposiciona a seção', async ({ page }) => {
+    await page.goto('/cardapio')
+
+    const nav = page.getByRole('navigation', { name: 'Categorias do cardápio' })
+    await expect(nav).toBeVisible()
+
+    const firstChip = nav.getByRole('button').first()
+    const categoryName = (await firstChip.textContent())?.trim() ?? ''
+    expect(categoryName.length).toBeGreaterThan(0)
+
+    await page.evaluate(() => window.scrollTo(0, 1200))
+
+    const headerBottom = await page
+      .locator('.site-header')
+      .evaluate((element) => Math.round(element.getBoundingClientRect().bottom))
+    await expect
+      .poll(() => nav.evaluate((element) => Math.round(element.getBoundingClientRect().top)))
+      .toBeGreaterThanOrEqual(headerBottom - 1)
+
+    await firstChip.click()
+
+    await expect
+      .poll(() =>
+        page
+          .getByRole('heading', { level: 2, name: categoryName })
+          .evaluate((element) => Math.round(element.getBoundingClientRect().top)),
+      )
+      .toBeLessThan(180)
+  })
+
   test('CTA principal tem alvo de toque e não cria rolagem horizontal', async ({ page }) => {
     await page.goto('/')
 

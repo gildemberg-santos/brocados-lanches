@@ -184,7 +184,13 @@ const adminRoutes: RouteRecordRaw = {
 
 const router = createRouter({
   history: createWebHistory(),
-  scrollBehavior: () => ({ top: 0 }),
+  scrollBehavior: (to, from) => {
+    // A categoria do cardápio vive na query: trocar o chip não pode devolver o scroll ao topo.
+    if (to.path === from.path) {
+      return false
+    }
+    return { top: 0 }
+  },
   routes: [
     ...publicRoutes,
     {
