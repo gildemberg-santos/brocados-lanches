@@ -206,6 +206,8 @@ Desde 28/11/2026, o cliente tem fundação mobile própria (D-056): o viewport u
 
 Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummaryBar` aparece somente com itens, exibe contagem e subtotal calculados a partir do catálogo e leva a `/carrinho`; some a partir de 768 px para não concorrer com a navegação desktop. No mobile, ela fica acima da navegação inferior fixa e o spacer em fluxo reserva espaço para as duas após o rodapé (D-056).
 
+Desde 28/11/2026, com mais de um produto disponível marcado como destaque, o hero alterna entre eles a cada 6 segundos em ciclo (`frontend/src/features/home/useHeroRotation.ts`), para que todos tenham o mesmo tempo de exposição; a grade “Mais pedidos” continua mostrando todos. O card informa a posição (por exemplo, `1/3`), e abaixo dele ficam o botão “Pausar/Retomar rotação” e os pontos para escolher diretamente qualquer destaque, com alvo de toque de 44 px. A rotação para quando o ponteiro ou o foco entra no hero, quando a aba fica oculta e quando o sistema pede movimento reduzido; nesse último caso o botão de pausa não aparece, mas os pontos seguem disponíveis. Com um único destaque ou apenas o fallback para produto disponível, não há controles. Nenhum token, cor, fonte ou componente visual novo foi criado (D-058).
+
 **Estados:**
 
 - carregando: skeleton do hero e cards;

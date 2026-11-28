@@ -386,7 +386,7 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 ### 7.1 Stores e fluxos
 
 - Catálogo: carregar uma vez, forçar recarga, erro, retry, produto/categoria por slug e somente destaques disponíveis.
-- Home: estados de carregando, vazio, erro e sucesso; navegação para o cardápio com categoria.
+- Home: estados de carregando, vazio, erro e sucesso; navegação para o cardápio com categoria; rotação do hero com múltiplos destaques (ciclo a cada 6 s, pausa/retomada, pontos com reinício do tempo de exposição, pausa por interação/aba oculta, movimento reduzido e ausência de controles com um só destaque).
 - Cardápio: busca sem acento/caixa, filtro por categoria, contagem, busca sem resultado e produto esgotado.
 - Personalização: obrigatoriedade, mínimo/máximo, adicionais, observação, preço estimado, esgotado e produto não encontrado.
 - Carrinho: adicionar, somar quantidade, remover, limpar, persistir, migrar versão.

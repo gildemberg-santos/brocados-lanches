@@ -1,9 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { HERO_ROTATION_INTERVAL_MS } from '../features/home/useHeroRotation'
 import { fetchMenu } from '../services/menu'
 import { fetchStoreStatus } from '../services/store'
 import { useCartStore } from '../stores/cart'
@@ -276,5 +277,147 @@ describe('HomeView', () => {
 
     expect(wrapper.text()).toContain('Cardápio em preparação')
     expect(wrapper.text()).toContain('Tentar novamente')
+  })
+
+  describe('rotação dos destaques no hero', () => {
+    const twoFeaturedMenu = makeMenu({
+      categories: [
+        makeCategory({
+          id: 'category-1',
+          products: [
+            makeProduct({ id: 'p1', slug: 'combo', name: 'Combo', featured: true }),
+            makeProduct({ id: 'p2', slug: 'normal', name: 'Normal', featured: false }),
+          ],
+        }),
+        makeCategory({
+          id: 'category-2',
+          products: [makeProduct({ id: 'p3', slug: 'batata', name: 'Batata', featured: true })],
+        }),
+      ],
+    })
+
+    beforeEach(() => {
+      vi.useFakeTimers()
+      mockedFetchMenu.mockResolvedValue(twoFeaturedMenu)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      vi.unstubAllGlobals()
+    })
+
+    it('alterna todos os destaques em ciclo e mantém a grade completa', async () => {
+      const { wrapper } = await mountHome()
+      await flushPromises()
+
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/combo')
+      expect(wrapper.get('.home-hero__spotlight-label').text()).toContain('1/2')
+      expect(wrapper.findAll('.home-hero__dot')).toHaveLength(2)
+      expect(wrapper.findAll('.featured-grid > a')).toHaveLength(2)
+
+      vi.advanceTimersByTime(HERO_ROTATION_INTERVAL_MS)
+      await nextTick()
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/batata')
+      expect(wrapper.get('.home-hero__spotlight-label').text()).toContain('2/2')
+
+      vi.advanceTimersByTime(HERO_ROTATION_INTERVAL_MS)
+      await nextTick()
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/combo')
+    })
+
+    it('pausa e retoma a rotação pelo botão', async () => {
+      const { wrapper } = await mountHome()
+      await flushPromises()
+
+      expect(wrapper.get('.home-hero__pause').text()).toBe('Pausar rotação')
+
+      await wrapper.get('.home-hero__pause').trigger('click')
+      expect(wrapper.get('.home-hero__pause').attributes('aria-pressed')).toBe('true')
+
+      vi.advanceTimersByTime(HERO_ROTATION_INTERVAL_MS * 2)
+      await nextTick()
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/combo')
+
+      await wrapper.get('.home-hero__pause').trigger('click')
+      expect(wrapper.get('.home-hero__pause').text()).toBe('Pausar rotação')
+
+      vi.advanceTimersByTime(HERO_ROTATION_INTERVAL_MS)
+      await nextTick()
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/batata')
+    })
+
+    it('escolhe um destaque pelos pontos e reinicia o tempo de exposição', async () => {
+      const { wrapper } = await mountHome()
+      await flushPromises()
+
+      const dots = wrapper.findAll('.home-hero__dot')
+      expect(dots[1].attributes('aria-label')).toBe('Ver destaque 2: Batata')
+
+      await dots[1].trigger('click')
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/batata')
+
+      vi.advanceTimersByTime(HERO_ROTATION_INTERVAL_MS - 1)
+      await nextTick()
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/batata')
+
+      vi.advanceTimersByTime(1)
+      await nextTick()
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/combo')
+    })
+
+    it('não gira automaticamente com movimento reduzido, mas permite escolher pelos pontos', async () => {
+      vi.stubGlobal(
+        'matchMedia',
+        vi.fn(() => ({
+          matches: true,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+        })),
+      )
+
+      const { wrapper } = await mountHome()
+      await flushPromises()
+
+      expect(wrapper.find('.home-hero__pause').exists()).toBe(false)
+      expect(wrapper.findAll('.home-hero__dot')).toHaveLength(2)
+
+      vi.advanceTimersByTime(HERO_ROTATION_INTERVAL_MS * 2)
+      await nextTick()
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/combo')
+
+      await wrapper.findAll('.home-hero__dot')[1].trigger('click')
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/batata')
+    })
+
+    it('não mostra controles quando há apenas um destaque disponível', async () => {
+      mockedFetchMenu.mockResolvedValue(successMenu)
+
+      const { wrapper } = await mountHome()
+      await flushPromises()
+
+      expect(wrapper.find('.home-hero__controls').exists()).toBe(false)
+      expect(wrapper.get('.home-hero__spotlight-label').text()).toBe('Destaque')
+    })
+
+    it('não cria controles para produtos que não são destaques', async () => {
+      mockedFetchMenu.mockResolvedValue(
+        makeMenu({
+          categories: [
+            makeCategory({
+              products: [
+                makeProduct({ id: 'p1', slug: 'esgotado', featured: true, available: false }),
+                makeProduct({ id: 'p2', slug: 'normal', featured: false, available: true }),
+              ],
+            }),
+          ],
+        }),
+      )
+
+      const { wrapper } = await mountHome()
+      await flushPromises()
+
+      expect(wrapper.get('.home-hero__spotlight').attributes('href')).toBe('/produto/normal')
+      expect(wrapper.find('.home-hero__controls').exists()).toBe(false)
+    })
   })
 })
