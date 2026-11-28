@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import AdminCatalogFilters from '../../components/admin/AdminCatalogFilters.vue'
 import AdminProductForm from '../../components/admin/AdminProductForm.vue'
 import BaseButton from '../../components/BaseButton.vue'
+import BaseModal from '../../components/BaseModal.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import ErrorState from '../../components/ErrorState.vue'
 import LoadingSkeleton from '../../components/LoadingSkeleton.vue'
@@ -24,6 +25,8 @@ const categories = useAdminCategoriesStore()
 const addons = useAdminAddonsStore()
 const editing = ref<AdminProduct | null>(null)
 const showForm = ref(false)
+
+const modalTitle = computed(() => (editing.value ? 'Editar produto' : 'Novo produto'))
 
 const categoryNames = computed(() => {
   const names = new Map<string, string>()
@@ -115,17 +118,18 @@ onMounted(() => {
       <AdminCatalogFilters :filters="products.filters" @apply="applyFilters" />
     </div>
 
-    <AdminProductForm
-      v-if="showForm"
-      :item="editing"
-      :categories="categories.items"
-      :addons="addons.items"
-      :saving="products.saving"
-      :error="products.saveError"
-      :success="products.saveSuccess"
-      @submit="submit"
-      @cancel="cancel"
-    />
+    <BaseModal :open="showForm" :title="modalTitle" @close="cancel">
+      <AdminProductForm
+        :item="editing"
+        :categories="categories.items"
+        :addons="addons.items"
+        :saving="products.saving"
+        :error="products.saveError"
+        :success="products.saveSuccess"
+        @submit="submit"
+        @cancel="cancel"
+      />
+    </BaseModal>
 
     <LoadingSkeleton v-if="products.state === 'loading'" label="Carregando produtos" :count="3" />
 

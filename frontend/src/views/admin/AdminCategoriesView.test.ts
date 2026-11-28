@@ -63,6 +63,10 @@ describe('AdminCategoriesView', () => {
       .findAll('button')
       .filter((button) => button.text() === 'Nova categoria')[0]
       ?.trigger('click')
+
+    expect(wrapper.get('[role="dialog"]').attributes('aria-modal')).toBe('true')
+    expect(wrapper.get('[data-testid="admin-modal"] h2').text()).toBe('Nova categoria')
+
     await wrapper.find('#catalog-name').setValue('Novo item')
     await wrapper.find('#catalog-slug').setValue('novo-item')
     await wrapper.find('.catalog-form').trigger('submit')

@@ -123,9 +123,28 @@ describe('AdminProductsView', () => {
       .filter((button) => button.text() === 'Editar')[0]
       ?.trigger('click')
 
+    expect(wrapper.get('[role="dialog"]').attributes('aria-modal')).toBe('true')
+    expect(wrapper.get('[data-testid="admin-modal"] h2').text()).toBe('Editar produto')
     expect((wrapper.find('#product-price').element as HTMLInputElement).value).toBe('29,90')
     expect(wrapper.find('#product-category').findAll('option').length).toBe(2)
     expect(wrapper.find('fieldset').text()).toContain('Cheddar')
+  })
+
+  it('fecha o modal com ESC sem salvar', async () => {
+    const wrapper = mount(AdminProductsView)
+    await flushPromises()
+
+    await wrapper
+      .findAll('.product-row__button')
+      .filter((button) => button.text() === 'Editar')[0]
+      ?.trigger('click')
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(updateAdminProduct).not.toHaveBeenCalled()
   })
 
   it('filtra por categoria', async () => {

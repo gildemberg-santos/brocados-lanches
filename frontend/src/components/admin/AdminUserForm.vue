@@ -76,8 +76,6 @@ function submit(): void {
 
 <template>
   <form class="user-form" @submit.prevent="submit">
-    <h2>{{ item ? 'Editar usuário' : 'Novo usuário' }}</h2>
-
     <div class="user-form__field">
       <label for="admin-user-name">Nome</label>
       <input
@@ -151,11 +149,6 @@ function submit(): void {
   border: 1px solid var(--bg-border);
   border-radius: 18px;
   background: var(--bg-surface);
-}
-
-.user-form h2 {
-  margin: 0;
-  font-size: var(--font-size-h2);
 }
 
 .user-form__field {

@@ -2,7 +2,7 @@
 
 **Versão:** 1.2  
 **Atualizado em:** 26/11/2026  
-**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-067 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual.
+**Status:** Épico 1 em andamento (CI, seed e harness E2E entregues; preview por PR pendente); Épico 2 com US-020, US-021, US-023, US-024 e US-025 concluídas; Épico 3 com US-030 a US-034 concluídas; Épico 4 com US-040 a US-043 concluídas; Épico 6 com US-060 a US-067 concluídas (API e painel); Épico 7 com US-070 a US-074 concluídas (API e painel); Épico 8 parcial (rotas institucionais/legais com texto provisório, SEO básico, mídia otimizada e ajustes de acessibilidade entregues; textos aprovados, axe, sitemap e canonical pendentes); Épico 12 com US-123, US-120, US-121 e US-122 concluídas a partir da auditoria de conformidade visual; Épico 14 com US-140 concluída em 28/11/2026.
 
 **Relacionados:** `03-prd.md`, `04-arquitetura.md`, `05-modelo-de-dados.md`, `06-contrato-api.md`, `07-design-system-e-experiencia.md`, `09-qualidade-e-testes.md`, `11-roadmap.md`, `13-decisoes-e-pendencias.md`, `14-auditoria-design-system.md`.
 
@@ -515,7 +515,27 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 ---
 
-## 18. Rastreabilidade requisito → história
+## 18. Épico 14 — Cadastro do painel em modal
+
+**Origem:** pedido do solicitante em 28/11/2026 para disponibilizar criação e edição em modal centralizado, sem sair da tela da lista.
+**Objetivo:** manter a listagem visível e padronizar a abertura dos formulários com foco e fechamento acessíveis.
+**Fora do escopo:** rotas próprias de criação/edição, mudança de contrato da API e alteração nas telas de configuração da loja, integrações ou conta.
+
+| ID | História | Prioridade | Tam. | Depende de | Aceite |
+|---|---|---|---|---|---|
+| US-140 | Modal de cadastro no painel | P2 | M | US-062, US-066 | Produto, categoria, adicional, local/taxa e usuário abrem em `BaseModal` centralizado sobre a listagem; `role="dialog"` e `aria-modal`; ESC, overlay e botão fechar cancelam sem salvar; foco vai ao primeiro campo e retorna ao botão de origem; rolagem travada durante o modal; testes Vitest das cinco telas e do modal, e E2E de centramento/ESC em 375/1280 px |
+
+**Tarefas técnicas:**
+
+- [x] CAD-01: componente `BaseModal` com overlay, `role="dialog"`, `aria-modal`, `aria-labelledby`, foco preso, ESC, travamento da rolagem e retorno de foco.
+- [x] CAD-02: remover títulos duplicados dos formulários e envolver os cinco formulários no modal.
+- [x] CAD-03: atualizar testes das views para verificar título, diálogo e cancelamento por ESC.
+
+**Status em 28/11/2026:** US-140 implementada. Nenhuma rota, payload ou regra de negócio mudou; decisão registrada em D-054.
+
+---
+
+## 19. Rastreabilidade requisito → história
 
 | Requisito | Histórias |
 |---|---|
@@ -539,10 +559,11 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 | FR-OPS-01 | US-011, US-103 |
 | Auditoria de conformidade AUD-01..14 | US-120 a US-126 |
 | Histórico do cliente por token (D-041) | US-130, US-131, US-132 |
+| Cadastro do painel em modal (D-054) | US-140 |
 
 ---
 
-## 19. Bloqueios atuais
+## 20. Bloqueios atuais
 
 | Bloqueio | Histórias afetadas | Ação |
 |---|---|---|
@@ -556,7 +577,7 @@ E6 (admin auth/catálogo) pode começar em paralelo a E2/E3, mas E7 depende de E
 
 ---
 
-## 20. Regras de gestão
+## 21. Regras de gestão
 
 - Uma história por PR; se crescer, divida.
 - Não iniciar P1 antes de fechar P0 do mesmo fluxo.

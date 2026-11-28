@@ -56,12 +56,6 @@ function errorAttrs(key: string) {
   }
 }
 
-const titles: Record<AdminCatalogKind, string> = {
-  category: 'categoria',
-  addon: 'adicional',
-  zone: 'local e taxa',
-}
-
 function centsToInput(cents: number): string {
   return (cents / 100).toFixed(2).replace('.', ',')
 }
@@ -129,8 +123,6 @@ function submit(): void {
 
 <template>
   <form class="catalog-form" aria-label="Formulário de cadastro" @submit.prevent="submit">
-    <h2>{{ props.item ? `Editar ${titles[props.kind]}` : `Novo ${titles[props.kind]}` }}</h2>
-
     <div class="catalog-form__field">
       <label for="catalog-name">Nome</label>
       <input
@@ -247,12 +239,6 @@ function submit(): void {
   border: 1px solid var(--bg-border);
   border-radius: 18px;
   background: var(--bg-surface);
-}
-
-.catalog-form h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-h2);
 }
 
 .catalog-form__field {

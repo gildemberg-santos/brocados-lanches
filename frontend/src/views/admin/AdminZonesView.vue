@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import AdminCatalogFilters from '../../components/admin/AdminCatalogFilters.vue'
 import AdminCatalogForm from '../../components/admin/AdminCatalogForm.vue'
 import AdminCatalogList from '../../components/admin/AdminCatalogList.vue'
 import type { AdminCatalogRow } from '../../components/admin/AdminCatalogList.vue'
 import BaseButton from '../../components/BaseButton.vue'
+import BaseModal from '../../components/BaseModal.vue'
 import { useAdminZonesStore } from '../../stores/adminCatalog'
 import type { AdminCatalogInput, AdminCatalogListQuery, AdminZone } from '../../types/adminCatalog'
 
 const store = useAdminZonesStore()
 const editing = ref<AdminZone | null>(null)
 const showForm = ref(false)
+
+const modalTitle = computed(() => (editing.value ? 'Editar local e taxa' : 'Novo local e taxa'))
 
 function applyFilters(filters: Partial<AdminCatalogListQuery>): void {
   void store.applyFilters(filters)
@@ -72,16 +75,17 @@ onMounted(() => {
 
     <AdminCatalogFilters :filters="store.filters" @apply="applyFilters" />
 
-    <AdminCatalogForm
-      v-if="showForm"
-      kind="zone"
-      :item="editing"
-      :saving="store.saving"
-      :error="store.saveError"
-      :success="store.saveSuccess"
-      @submit="submit"
-      @cancel="cancel"
-    />
+    <BaseModal :open="showForm" :title="modalTitle" @close="cancel">
+      <AdminCatalogForm
+        kind="zone"
+        :item="editing"
+        :saving="store.saving"
+        :error="store.saveError"
+        :success="store.saveSuccess"
+        @submit="submit"
+        @cancel="cancel"
+      />
+    </BaseModal>
 
     <AdminCatalogList
       kind="zone"

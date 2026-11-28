@@ -413,7 +413,8 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 - `AdminCatalogForm`: slug gerado, validação, edição e conversão de reais para centavos.
 - `AdminProductForm`: grupos/opções, adicionais, alergênicos e validação.
 - `AdminStoreView`: horários, dias da semana, validação de WhatsApp e salvamento.
-- `Modal`/`Drawer`: foco, ESC, retorno de foco.
+- `BaseModal`: fechado, `role="dialog"`, `aria-modal`, título, foco no primeiro campo, foco preso, ESC, backdrop, botão fechar, retorno de foco e travamento da rolagem; cinco views de cadastro verificam abertura e título, e o E2E valida o centramento e o ESC em 375/1280 px.
+- `Drawer`: foco, ESC, retorno de foco.
 
 ### 7.3 Services
 

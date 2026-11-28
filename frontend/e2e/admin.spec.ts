@@ -121,6 +121,27 @@ test.describe('acesso ao painel administrativo', () => {
     await expect(page).toHaveURL(/\/admin\/login$/)
   })
 
+  test('cadastro abre em modal centralizado e ESC fecha sem sair da lista', async ({ page }) => {
+    await useAdminSession(page)
+    await page.goto('/admin/categorias')
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Categorias' })).toBeVisible()
+    await page.getByRole('button', { name: 'Nova categoria' }).click()
+
+    const dialog = page.getByRole('dialog', { name: 'Nova categoria' })
+    await expect(dialog).toBeVisible()
+    const box = await dialog.boundingBox()
+    const viewport = page.viewportSize()
+    if (!box || !viewport) {
+      throw new Error('Modal sem dimensões para validar o centramento')
+    }
+    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThan(2)
+
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    expect(new URL(page.url()).pathname).toBe('/admin/categorias')
+  })
+
   test('pedido criado aparece na fila e muda de status pelo painel', async ({ page, request }) => {
     const created = await createTestOrder(request)
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import AdminUserForm from '../../components/admin/AdminUserForm.vue'
 import AdminUserList from '../../components/admin/AdminUserList.vue'
 import BaseButton from '../../components/BaseButton.vue'
+import BaseModal from '../../components/BaseModal.vue'
 import { useAdminAuthStore } from '../../stores/adminAuth'
 import { useAdminUsersStore } from '../../stores/adminUsers'
 import type { AdminUser, AdminUserCreateInput } from '../../types/adminUsers'
@@ -13,6 +14,8 @@ const auth = useAdminAuthStore()
 const editing = ref<AdminUser | null>(null)
 const showForm = ref(false)
 const search = ref('')
+
+const modalTitle = computed(() => (editing.value ? 'Editar usuário' : 'Novo usuário'))
 
 function startNew(): void {
   editing.value = null
@@ -72,15 +75,16 @@ onMounted(() => {
       </div>
     </form>
 
-    <AdminUserForm
-      v-if="showForm"
-      :item="editing"
-      :saving="store.saving"
-      :error="store.saveError"
-      :success="store.saveSuccess"
-      @submit="submit"
-      @cancel="cancel"
-    />
+    <BaseModal :open="showForm" :title="modalTitle" @close="cancel">
+      <AdminUserForm
+        :item="editing"
+        :saving="store.saving"
+        :error="store.saveError"
+        :success="store.saveSuccess"
+        @submit="submit"
+        @cancel="cancel"
+      />
+    </BaseModal>
 
     <AdminUserList
       :items="store.items"

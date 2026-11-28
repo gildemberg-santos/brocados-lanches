@@ -59,6 +59,8 @@ describe('AdminAddonsView', () => {
       .filter((button) => button.text() === 'Editar')[0]
       ?.trigger('click')
 
+    expect(wrapper.get('[role="dialog"]').attributes('aria-modal')).toBe('true')
+    expect(wrapper.get('[data-testid="admin-modal"] h2').text()).toBe('Editar adicional')
     expect((wrapper.find('#catalog-amount').element as HTMLInputElement).value).toBe('3,50')
   })
 

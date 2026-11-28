@@ -50,6 +50,8 @@ describe('AdminUsersView', () => {
       .find((button) => button.text() === 'Novo usuário')
       ?.trigger('click')
 
+    expect(wrapper.get('[role="dialog"]').attributes('aria-modal')).toBe('true')
+    expect(wrapper.get('[data-testid="admin-modal"] h2').text()).toBe('Novo usuário')
     expect(wrapper.find('#admin-user-password').exists()).toBe(true)
   })
 

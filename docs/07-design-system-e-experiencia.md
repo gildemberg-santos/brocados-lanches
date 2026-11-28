@@ -138,7 +138,7 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 | `PriceText` | normal, destaque, riscado | Formatar BRL; nunca calcular no componente |
 | `StatusBadge` | aberto, fechado, pending, confirmed, preparing, ready, out_for_delivery, delivered, picked_up, cancelled | Texto + cor/ícone; não só cor |
 | `Toast` / `StatusToast` | sucesso, erro, info | `aria-live`; não substitui erro de formulário; o toast de status some em 4 s ou por fechamento manual |
-| `Modal` / `ConfirmDialog` | default, danger | Foco preso; ESC fecha; retorna foco |
+| `Modal` / `ConfirmDialog` | default, danger | Foco preso; ESC fecha; retorna foco — `BaseModal` implementado para os cadastros do painel |
 | `Drawer` / `BottomSheet` | carrinho, filtros, admin | Foco preso; scroll lock; fechar por gesto e botão |
 | `EmptyState` | catálogo, carrinho, pedidos | Explica o vazio e oferece ação |
 | `ErrorState` | rede, servidor, não encontrado | Mensagem em português; botão “Tentar novamente” |
@@ -182,6 +182,8 @@ Enquanto não houver aprovação, use os valores derivados do protótipo e regis
 | `OrderStatusActions` | Ações válidas para o status atual; confirmação de cancelamento — **implementado em US-072** |
 | `AuditLogTable` | Ator, ação, entidade, data; sem PII |
 | `UserForm` | Nome, e-mail, papel, ativo |
+
+Desde 28/11/2026, criar ou editar produto, categoria, adicional, local/taxa e usuário abre o formulário em `BaseModal`, centralizado na viewport, com overlay, foco preso, ESC para fechar, travamento da rolagem e retorno de foco ao botão de origem. A listagem permanece na mesma rota; o modal não substitui as páginas de configuração da loja, integrações ou conta.
 
 ---
 

@@ -230,8 +230,6 @@ function submit(): void {
 
 <template>
   <form class="product-form" aria-label="Formulário de produto" @submit.prevent="submit">
-    <h2>{{ props.item ? 'Editar produto' : 'Novo produto' }}</h2>
-
     <div class="product-form__grid">
       <div class="product-form__field">
         <label for="product-category">Categoria</label>
@@ -597,12 +595,6 @@ function submit(): void {
   border: 1px solid var(--bg-border);
   border-radius: 18px;
   background: var(--bg-surface);
-}
-
-.product-form h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-h2);
 }
 
 .product-form__grid {

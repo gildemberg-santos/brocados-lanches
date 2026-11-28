@@ -329,7 +329,7 @@ handler → service → repository → MongoDB
 - `make design-check` é obrigatório: bloqueia cor literal, CDN e divergência entre `tokens.css` e `tokens.json`.
 - O frontend consome os tokens por alias/import do `design-system/` ou por cópia gerada. Nunca edite a cópia à mão.
 - Fonte Bebas Neue e Inter self-hosted em produção, com `font-display: swap`. Sem Google Fonts em produção.
-- Reaproveite componentes (`BaseButton`, `ProductCard`, `QuantityStepper`, `PriceText`) antes de criar variante nova.
+- Reaproveite componentes (`BaseButton`, `ProductCard`, `QuantityStepper`, `PriceText`) antes de criar variante nova. Desde 28/11/2026, criar ou editar produto, categoria, adicional, local/taxa e usuário do painel usa `BaseModal` centralizado, com overlay, foco preso, ESC e retorno de foco, sem trocar de rota (D-054).
 - Mobile-first, referência de 375 px; valide também em 1280 px.
 - Formate dinheiro com `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })` apenas na exibição.
 - Imagens em WebP/AVIF, com `width`, `height`, `loading="lazy"` e `alt` real. Não use o ícone genérico do protótipo como foto de produto.
