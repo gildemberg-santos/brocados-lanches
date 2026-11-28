@@ -85,7 +85,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <main id="conteudo" tabindex="-1" class="page-shell home">
+  <main
+    id="conteudo"
+    tabindex="-1"
+    class="page-shell home"
+    :class="{ 'home--with-cart-bar': !cart.isEmpty }"
+  >
     <section class="home-hero" :class="{ 'home-hero--with-feature': heroProduct }">
       <div class="home-hero__copy">
         <p class="eyebrow">Brocados Lanches</p>
@@ -413,7 +418,9 @@ onMounted(() => {
   max-width: 100%;
   gap: 8px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding-bottom: 4px;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
 }
 
@@ -424,6 +431,10 @@ onMounted(() => {
 .featured-grid {
   display: grid;
   gap: 10px;
+}
+
+.home--with-cart-bar {
+  padding-bottom: calc(160px + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 640px) {
@@ -448,6 +459,12 @@ onMounted(() => {
 
   .featured-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .home--with-cart-bar {
+    padding-bottom: 80px;
   }
 }
 

@@ -66,6 +66,7 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: 40;
+  padding-top: env(safe-area-inset-top);
   border-bottom: 1px solid var(--bg-border);
   background: var(--bg-primary);
 }
@@ -152,21 +153,19 @@ onUnmounted(() => {
   font-weight: 800;
 }
 
-@media (max-width: 519px) {
+@media (max-width: 767px) {
+  .site-header__inner {
+    min-height: 56px;
+    padding-block: 6px;
+  }
+
+  /* No mobile a navegação principal fica na barra inferior fixa. */
+  .site-header__nav {
+    display: none;
+  }
+
   .site-header__brand-name {
-    font-size: 24px;
-  }
-
-  .site-header__brand-accent {
-    display: none;
-  }
-
-  .site-header__link {
-    padding-inline: 6px;
-  }
-
-  .site-header__nav .site-header__link:first-child {
-    display: none;
+    font-size: 26px;
   }
 }
 

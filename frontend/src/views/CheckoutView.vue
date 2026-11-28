@@ -454,6 +454,8 @@ onUnmounted(() => {
               name="customerName"
               type="text"
               autocomplete="name"
+              autocapitalize="words"
+              enterkeyhint="next"
               :aria-invalid="errors.customerName ? 'true' : undefined"
               :aria-describedby="errors.customerName ? 'checkout-customerName-error' : undefined"
             />
@@ -470,6 +472,7 @@ onUnmounted(() => {
               type="tel"
               inputmode="tel"
               autocomplete="tel"
+              enterkeyhint="next"
               placeholder="(85) 99999-9999"
               :aria-invalid="errors.phone ? 'true' : undefined"
               :aria-describedby="errors.phone ? 'checkout-phone-error' : undefined"
@@ -540,7 +543,8 @@ onUnmounted(() => {
                 id="checkout-street"
                 name="street"
                 type="text"
-                autocomplete="street-address"
+                autocomplete="address-line1"
+                autocapitalize="words"
                 :aria-invalid="errors.street ? 'true' : undefined"
                 :aria-describedby="errors.street ? 'checkout-street-error' : undefined"
               />
@@ -564,7 +568,13 @@ onUnmounted(() => {
             </label>
             <label class="field">
               <span>Complemento</span>
-              <input v-model="form.complement" name="complement" type="text" />
+              <input
+                v-model="form.complement"
+                name="complement"
+                type="text"
+                autocomplete="address-line2"
+                autocapitalize="words"
+              />
             </label>
             <label class="field field--wide">
               <span>Bairro</span>
@@ -573,6 +583,8 @@ onUnmounted(() => {
                 id="checkout-district"
                 name="district"
                 type="text"
+                autocomplete="address-level3"
+                autocapitalize="words"
                 :aria-invalid="errors.district ? 'true' : undefined"
                 :aria-describedby="errors.district ? 'checkout-district-error' : undefined"
               />
@@ -588,6 +600,7 @@ onUnmounted(() => {
                 name="zipCode"
                 type="text"
                 inputmode="numeric"
+                autocomplete="postal-code"
                 :aria-invalid="errors.zipCode ? 'true' : undefined"
                 :aria-describedby="errors.zipCode ? 'checkout-zipCode-error' : undefined"
               />
@@ -602,6 +615,8 @@ onUnmounted(() => {
                 id="checkout-city"
                 name="city"
                 type="text"
+                autocomplete="address-level2"
+                autocapitalize="words"
                 :aria-invalid="errors.city ? 'true' : undefined"
                 :aria-describedby="errors.city ? 'checkout-city-error' : undefined"
               />
@@ -616,6 +631,8 @@ onUnmounted(() => {
                 id="checkout-state"
                 name="state"
                 type="text"
+                autocomplete="address-level1"
+                autocapitalize="characters"
                 maxlength="2"
                 :aria-invalid="errors.state ? 'true' : undefined"
                 :aria-describedby="errors.state ? 'checkout-state-error' : undefined"
@@ -870,6 +887,13 @@ onUnmounted(() => {
   gap: 12px;
 }
 
+/* Em telas estreitas, número, complemento, CEP e cidade ficam legíveis em uma coluna. */
+@media (max-width: 519px) {
+  .field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .field--wide {
   grid-column: 1 / -1;
 }
@@ -930,8 +954,14 @@ onUnmounted(() => {
 
 .checkout-actions {
   display: grid;
+  width: 100%;
   gap: 8px;
   justify-items: center;
+}
+
+.checkout-actions :deep(.base-button) {
+  width: 100%;
+  max-width: 420px;
 }
 
 .checkout-summary {

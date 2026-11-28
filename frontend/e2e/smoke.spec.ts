@@ -30,6 +30,50 @@ test.describe('smoke da base', () => {
     expect(await ready.json()).toMatchObject({ status: 'ok', checks: { mongo: 'ok' } })
   })
 
+  test('viewport cobre a safe-area do dispositivo', async ({ page }) => {
+    await page.goto('/')
+
+    const content = await page.locator('meta[name="viewport"]').getAttribute('content')
+    expect(content).toContain('viewport-fit=cover')
+  })
+
+  test('navegação inferior aparece só no mobile e leva ao cardápio', async ({ page }, testInfo) => {
+    await page.goto('/')
+    const tabBar = page.getByTestId('mobile-tab-bar')
+
+    if (testInfo.project.name === 'mobile') {
+      await expect(tabBar).toBeVisible()
+      await tabBar.getByRole('link', { name: 'Cardápio' }).click()
+      await expect(page).toHaveURL(/\/cardapio$/)
+    } else {
+      await expect(tabBar).toBeHidden()
+    }
+  })
+
+  test('rodapé termina acima da barra fixa no mobile', async ({ page }, testInfo) => {
+    if (testInfo.project.name !== 'mobile') {
+      test.skip()
+    }
+
+    await page.goto('/cardapio')
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+
+    const layout = await page.evaluate(() => {
+      const footer = document.querySelector('.site-footer')
+      const tab = document.querySelector('[data-testid="mobile-tab-bar"]')
+      const spacer = document.querySelector('[data-testid="mobile-bottom-spacer"]')
+      return {
+        footerBottom: footer?.getBoundingClientRect().bottom ?? 0,
+        tabTop: tab?.getBoundingClientRect().top ?? 0,
+        spacerBg: spacer ? getComputedStyle(spacer).backgroundColor : '',
+        bodyBg: getComputedStyle(document.body).backgroundColor,
+      }
+    })
+
+    expect(layout.footerBottom).toBeLessThan(layout.tabTop)
+    expect(layout.spacerBg).toBe(layout.bodyBg)
+  })
+
   test('CTA principal tem alvo de toque e não cria rolagem horizontal', async ({ page }) => {
     await page.goto('/')
 

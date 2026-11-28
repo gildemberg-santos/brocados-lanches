@@ -162,6 +162,7 @@ async function logout(): Promise<void> {
 <style scoped>
 .admin-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
 }
 
@@ -174,7 +175,7 @@ async function logout(): Promise<void> {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 16px;
+  padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
   border-bottom: 1px solid var(--bg-border);
   background: var(--bg-primary);
 }
@@ -286,7 +287,7 @@ async function logout(): Promise<void> {
   width: min(320px, 85vw);
   flex-direction: column;
   overflow-y: auto;
-  padding: 16px;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
   border-left: 1px solid var(--bg-border);
   background: var(--bg-surface);
 }

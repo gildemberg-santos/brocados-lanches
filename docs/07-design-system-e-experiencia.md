@@ -187,6 +187,8 @@ Desde 28/11/2026, criar ou editar produto, categoria, adicional, local/taxa e us
 
 Desde 28/11/2026, todo checkbox usa o “Checkbox Neon” do protótipo: controle nativo de 18×18 px com `accent-color: var(--brand-primary)` e label com alvo de toque de 44 px. Seletores genéricos de `input` não aplicam largura, altura, padding ou fundo de campo de texto ao checkbox (D-055). Esse padrão cobre disponibilidade, destaque, ativo, vínculo de adicionais, obrigatoriedade de grupo, eventos de webhook, Pix, loja, horários e opt-in do checkout; listagens e kill switch mantêm seus controles atuais até decisão de padronização.
 
+Desde 28/11/2026, o cliente tem fundação mobile própria (D-056): o viewport usa `viewport-fit=cover` e `safe-area` no header, barra de carrinho, toast e drawer; a altura mínima usa `100dvh`; campos de texto têm 16 px abaixo de 768 px para o Safari do iOS não dar zoom ao focar; e a navegação principal vira uma barra inferior fixa (`MobileTabBar`) com Início, Cardápio, Pedidos e Carrinho. A home mantém a `CartSummaryBar` acima da barra; produto e checkout escondem a navegação para priorizar o CTA. No fim da página, o rodapé termina acima das barras fixas: um spacer em fluxo, com o fundo da página, reserva 72 px para a navegação ou 140 px para a navegação mais a barra de carrinho, mais o `safe-area-inset-bottom`. Assim a superfície do rodapé não continua atrás da barra e as duas faixas não parecem uma só. O desktop continua com os links no header.
+
 ---
 
 ## 5. Telas do cliente
@@ -202,7 +204,7 @@ Desde 28/11/2026, todo checkbox usa o “Checkbox Neon” do protótipo: control
 - Cartão de endereço, WhatsApp e horário.
 - Barra fixa de carrinho no mobile; sidebar no desktop (a sidebar fica pendente de decisão em §14).
 
-Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummaryBar` aparece somente com itens, exibe contagem e subtotal calculados a partir do catálogo e leva a `/carrinho`; some a partir de 768 px para não concorrer com a navegação desktop.
+Implementado em `frontend/src/views/HomeView.vue` (US-125): a barra `CartSummaryBar` aparece somente com itens, exibe contagem e subtotal calculados a partir do catálogo e leva a `/carrinho`; some a partir de 768 px para não concorrer com a navegação desktop. No mobile, ela fica acima da navegação inferior fixa e o spacer em fluxo reserva espaço para as duas após o rodapé (D-056).
 
 **Estados:**
 
@@ -573,6 +575,9 @@ Regras:
 - [ ] Textos em português e sem jargão.
 - [ ] Preços formatados em BRL.
 - [ ] Imagens com alt e dimensões.
+- [ ] Barra inferior não cobre conteúdo, toast ou CTA em aparelhos com safe-area; o rodapé termina acima dela e da barra de carrinho, sem superfície estendida atrás das duas.
+- [ ] Campos de texto com 16 px no mobile, sem zoom automático no iOS.
+- [ ] `100dvh` mantém o layout correto com a barra do navegador mobile visível.
 - [ ] Modal/drawer com foco preso.
 - [ ] `prefers-reduced-motion` testado.
 - [ ] `make design-check` passando.

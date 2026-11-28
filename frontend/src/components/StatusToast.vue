@@ -49,8 +49,8 @@ onUnmounted(clearTimer)
 .status-toast {
   position: fixed;
   right: 16px;
-  bottom: 16px;
-  z-index: 40;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 46;
   display: flex;
   width: min(360px, calc(100% - 32px));
   align-items: flex-start;
@@ -88,5 +88,11 @@ onUnmounted(clearTimer)
   color: var(--text-main);
   font-family: var(--font-sans);
   font-size: var(--font-size-h2);
+}
+
+@media (min-width: 768px) {
+  .status-toast {
+    bottom: 16px;
+  }
 }
 </style>

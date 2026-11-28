@@ -45,6 +45,8 @@ async function clearSearch(): Promise<void> {
       :aria-label="label"
       :placeholder="placeholder"
       autocomplete="off"
+      autocapitalize="none"
+      enterkeyhint="search"
       @input="handleInput"
     />
     <button

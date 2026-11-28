@@ -415,6 +415,7 @@ MONGO_TEST_URI=mongodb://localhost:27017 go test -race ./internal/repository -v
 - `AdminStoreView`: horários, dias da semana, validação de WhatsApp e salvamento.
 - `BaseModal`: fechado, `role="dialog"`, `aria-modal`, título, foco no primeiro campo, foco preso, ESC, backdrop, botão fechar, retorno de foco e travamento da rolagem; cinco views de cadastro verificam abertura e título, e o E2E valida o centramento e o ESC em 375/1280 px.
 - Checkbox: E2E valida `accent-color` da marca e 18×18 px nos formulários de produto, categoria e loja; a regra global cobre também os demais checkboxes (D-055).
+- `MobileTabBar`: quatro destinos, rota ativa, badge e rótulo acessível do carrinho; `App` esconde a barra em admin e nas rotas com `hideTabBar`, e o spacer em fluxo reserva a navegação ou a barra de carrinho sem estender a superfície do rodapé atrás delas (D-056).
 - `Drawer`: foco, ESC, retorno de foco.
 
 ### 7.3 Services

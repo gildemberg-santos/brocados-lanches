@@ -91,8 +91,9 @@ async function submit(): Promise<void> {
 .admin-login {
   display: grid;
   min-height: 100vh;
+  min-height: 100dvh;
   place-items: center;
-  padding: 24px 16px 64px;
+  padding: calc(24px + env(safe-area-inset-top)) 16px calc(64px + env(safe-area-inset-bottom));
 }
 
 .admin-login__card {

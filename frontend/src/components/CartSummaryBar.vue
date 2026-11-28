@@ -20,14 +20,16 @@ defineProps<{
 .cart-summary-bar {
   position: fixed;
   right: 12px;
-  bottom: 12px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
   left: 12px;
-  z-index: 30;
+  z-index: 41;
   display: flex;
+  width: min(560px, calc(100% - 24px));
   min-height: 56px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  margin-inline: auto;
   padding: 12px 20px;
   border: 1px solid var(--bg-border);
   border-radius: 999px;

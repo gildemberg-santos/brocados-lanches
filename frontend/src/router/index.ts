@@ -23,7 +23,7 @@ const publicRoutes: RouteRecordRaw[] = [
     path: '/produto/:slug',
     name: 'product',
     component: () => import('../views/ProductView.vue'),
-    meta: { title: 'Detalhes do produto', noindex: true },
+    meta: { title: 'Detalhes do produto', noindex: true, hideTabBar: true },
   },
   {
     path: '/carrinho',
@@ -35,7 +35,7 @@ const publicRoutes: RouteRecordRaw[] = [
     path: '/checkout',
     name: 'checkout',
     component: () => import('../views/CheckoutView.vue'),
-    meta: { title: 'Finalizar pedido', noindex: true },
+    meta: { title: 'Finalizar pedido', noindex: true, hideTabBar: true },
   },
   {
     path: '/pedido/:publicId',
