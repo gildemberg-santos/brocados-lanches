@@ -158,9 +158,15 @@ describe('AdminDashboardView', () => {
     }))
     mockedFetchAdminOrders.mockImplementation(async (query = {}) => {
       const status = query.status ?? ''
-      const total = status ? (totals[status] ?? 0) : 13
+      const fulfillment = query.fulfillment ?? ''
+      const fulfillmentTotals: Record<string, number> = { delivery: 8, pickup: 5 }
+      const total = status
+        ? (totals[status] ?? 0)
+        : fulfillment
+          ? (fulfillmentTotals[fulfillment] ?? 0)
+          : 13
       return {
-        data: status ? [] : [recentOrder],
+        data: status || fulfillment ? [] : [recentOrder],
         meta: {
           page: query.page ?? 1,
           pageSize: query.pageSize ?? 20,
@@ -182,7 +188,7 @@ describe('AdminDashboardView', () => {
     ])
   })
 
-  it('mostra atalhos, indicadores e pedidos recentes sem PII', async () => {
+  it('mostra atalhos, indicadores, gráficos e pedidos recentes sem PII', async () => {
     const wrapper = await mountDashboard()
 
     expect(wrapper.get('h1').text()).toBe('Olá, Dono')
@@ -192,12 +198,16 @@ describe('AdminDashboardView', () => {
 
     expect(metric(wrapper, 'metric-store-status')).toBe('Aberta')
     expect(metric(wrapper, 'metric-queued-orders')).toBe('7')
+    expect(wrapper.get('[data-testid="metric-total-orders"]').text()).toBe('13')
     expect(metric(wrapper, 'metric-active-products')).toBe('30 / 37')
     expect(metric(wrapper, 'metric-active-zones')).toBe('5')
     expect(metric(wrapper, 'metric-delivery-time')).toBe('30-90 min')
     expect(metric(wrapper, 'metric-status-pending')).toBe('2')
     expect(metric(wrapper, 'metric-status-delivered')).toBe('4')
 
+    expect(wrapper.findAll('.status-chart__row')).toHaveLength(8)
+    expect(wrapper.text()).toContain('Entrega')
+    expect(wrapper.text()).toContain('Retirada')
     expect(wrapper.text()).toContain('Pedidos recentes')
     expect(wrapper.get('.recent-orders__link').text()).toContain('1042')
     expect(wrapper.get('.recent-orders__link').attributes('href')).toContain(
@@ -233,7 +243,7 @@ describe('AdminDashboardView', () => {
     const wrapper = await mountDashboard()
 
     expect(metric(wrapper, 'metric-store-status')).toBe('Fechada')
-    expect(wrapper.text()).toContain('Controle da loja')
+    expect(wrapper.text()).toContain('Controle rápido')
   })
 
   it('usa travessão quando as fontes falham', async () => {
@@ -247,10 +257,12 @@ describe('AdminDashboardView', () => {
 
     expect(metric(wrapper, 'metric-store-status')).toBe('—')
     expect(metric(wrapper, 'metric-queued-orders')).toBe('—')
+    expect(wrapper.get('[data-testid="metric-total-orders"]').text()).toBe('—')
     expect(metric(wrapper, 'metric-active-products')).toBe('—')
     expect(metric(wrapper, 'metric-active-zones')).toBe('—')
     expect(metric(wrapper, 'metric-delivery-time')).toBe('—')
     expect(metric(wrapper, 'metric-status-pending')).toBe('—')
+    expect(wrapper.text()).toContain('Contagens por status indisponíveis')
     expect(wrapper.text()).not.toContain('boom')
   })
 
