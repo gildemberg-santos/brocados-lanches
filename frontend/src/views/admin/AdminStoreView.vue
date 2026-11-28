@@ -112,18 +112,41 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo</p>
-    <h1>Loja</h1>
-    <p class="admin-page__lead">
-      O interruptor manual e os horários precisam permitir o pedido. A operação usa
-      <strong>America/Fortaleza</strong>; alterações de taxa não afetam pedidos antigos.
-    </p>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo</p>
+        <h1>Loja</h1>
+        <p class="admin-page__lead">
+          O interruptor manual e os horários precisam permitir o pedido. A operação usa
+          <strong>America/Fortaleza</strong>; alterações de taxa não afetam pedidos antigos.
+        </p>
+      </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Status efetivo</span>
+        <strong
+          class="admin-hero__meta-value"
+          :class="statusStore.status?.status === 'open' ? 'is-open' : ''"
+        >
+          {{
+            statusStore.status?.status === 'open' ? 'Aberta' : statusStore.status ? 'Fechada' : '—'
+          }}
+        </strong>
+        <span class="admin-hero__meta-note">Calculado pelo servidor</span>
+      </div>
+    </header>
 
     <div
       v-if="statusStore.state === 'success' && statusStore.status"
-      class="store-status"
+      class="store-status admin-panel"
       data-testid="store-effective-status"
     >
+      <div class="admin-section-head">
+        <div>
+          <p class="admin-section__eyebrow">Operação</p>
+          <h2>Status atual</h2>
+        </div>
+        <span class="admin-badge">{{ statusStore.status.timezone }}</span>
+      </div>
       <strong :class="statusStore.status.status === 'open' ? 'is-open' : 'is-closed is-neutral'">
         {{ statusStore.status.status === 'open' ? 'Loja aberta' : 'Loja fechada' }}
       </strong>
@@ -306,39 +329,15 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
+.hero-status.is-open .hero-status__value,
+.admin-hero__meta-value.is-open,
+.store-status .is-open {
+  color: var(--status-open);
 }
 
 .store-status {
   display: grid;
-  gap: 4px;
-  padding: 12px;
-  border: 1px solid var(--bg-border);
-  border-radius: 12px;
-  background: var(--bg-surface);
+  gap: 8px;
   font-size: var(--font-size-caption);
 }
 

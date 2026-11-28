@@ -58,22 +58,39 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo</p>
-    <h1>Usuários</h1>
-    <p class="admin-page__lead">
-      Somente donos podem criar e editar contas do painel. A senha temporária deve ter pelo menos 12
-      caracteres.
-    </p>
-
-    <BaseButton @click="startNew">Novo usuário</BaseButton>
-
-    <form class="admin-page__search" @submit.prevent="applySearch">
-      <label for="admin-users-search">Buscar por nome ou e-mail</label>
+    <header class="admin-hero">
       <div>
-        <input id="admin-users-search" v-model="search" type="search" maxlength="120" />
-        <button type="submit">Buscar</button>
+        <p class="admin-page__kicker">Painel administrativo</p>
+        <h1>Usuários</h1>
+        <p class="admin-page__lead">
+          Somente donos podem criar e editar contas do painel. Senhas temporárias devem ter ao menos
+          12 caracteres.
+        </p>
       </div>
-    </form>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Usuários no filtro</span>
+        <strong class="admin-hero__meta-value">{{ store.meta.total }}</strong>
+        <span class="admin-hero__meta-note">Gestão restrita a donos</span>
+      </div>
+    </header>
+
+    <section class="admin-panel">
+      <div class="admin-section-head">
+        <div>
+          <p class="admin-section__eyebrow">Acesso</p>
+          <h2>Gerenciar usuários</h2>
+        </div>
+        <BaseButton @click="startNew">Novo usuário</BaseButton>
+      </div>
+
+      <form class="admin-page__search" @submit.prevent="applySearch">
+        <label for="admin-users-search">Buscar por nome ou e-mail</label>
+        <div>
+          <input id="admin-users-search" v-model="search" type="search" maxlength="120" />
+          <button type="submit">Buscar</button>
+        </div>
+      </form>
+    </section>
 
     <BaseModal :open="showForm" :title="modalTitle" @close="cancel">
       <AdminUserForm
@@ -102,31 +119,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
-}
+/* layout herdado de admin.css */
 
 .admin-page__search {
   display: grid;

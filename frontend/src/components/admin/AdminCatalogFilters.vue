@@ -55,8 +55,8 @@ function clear(): void {
   gap: 12px;
   padding: 16px;
   border: 1px solid var(--bg-border);
-  border-radius: 18px;
-  background: var(--bg-surface);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-input) 55%, var(--bg-surface));
 }
 
 .catalog-filters__field {

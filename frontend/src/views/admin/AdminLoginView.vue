@@ -49,7 +49,9 @@ async function submit(): Promise<void> {
     <section class="admin-login__card" aria-labelledby="admin-login-title">
       <p class="admin-login__kicker">Área da operação</p>
       <h1 id="admin-login-title">Acessar painel</h1>
-      <p class="admin-login__hint">Use o e-mail e a senha fornecidos pela gestão da loja.</p>
+      <p class="admin-login__hint">
+        Entre com o e-mail e a senha fornecidos pela gestão. A autorização é validada no servidor.
+      </p>
 
       <form class="admin-login__form" @submit.prevent="submit">
         <div class="admin-login__field">

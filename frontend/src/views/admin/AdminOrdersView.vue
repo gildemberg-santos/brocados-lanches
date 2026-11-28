@@ -89,33 +89,47 @@ onUnmounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo</p>
-    <h1>Pedidos</h1>
-    <p class="admin-page__lead">
-      A fila mostra dados mascarados. Abra o pedido para ver os dados completos e atualizar o
-      status.
-    </p>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo</p>
+        <h1>Pedidos</h1>
+        <p class="admin-page__lead">
+          Acompanhe a fila em tempo real. A lista mostra dados mascarados; abra o pedido para
+          detalhes completos e atualização de status.
+        </p>
+      </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Pedidos no filtro</span>
+        <strong class="admin-hero__meta-value">{{ store.meta.total }}</strong>
+        <span class="admin-hero__meta-note">
+          {{
+            connectionStatus === 'connected'
+              ? 'Atualização automática ativa'
+              : 'Reconectando em tempo real'
+          }}
+        </span>
+      </div>
+    </header>
 
-    <p class="admin-page__live" role="status">
-      {{
-        connectionStatus === 'connected'
-          ? 'Fila atualizada automaticamente.'
-          : 'Conexão em tempo real indisponível. Tentando reconectar.'
-      }}
-    </p>
-
-    <p
-      v-if="store.deleteError"
-      class="admin-page__feedback admin-page__feedback--error"
-      role="alert"
-    >
+    <p v-if="store.deleteError" class="admin-feedback admin-feedback--error" role="alert">
       {{ store.deleteError }}
     </p>
-    <p v-else-if="store.deleteSuccess" class="admin-page__feedback" role="status">
+    <p v-else-if="store.deleteSuccess" class="admin-feedback" role="status">
       {{ store.deleteSuccess }}
     </p>
 
-    <AdminOrderFilters :filters="store.filters" @apply="applyFilters" />
+    <section class="admin-panel">
+      <div class="admin-section-head">
+        <div>
+          <p class="admin-section__eyebrow">Fila</p>
+          <h2>Filtrar pedidos</h2>
+        </div>
+        <span class="admin-badge" role="status">
+          {{ connectionStatus === 'connected' ? 'Ao vivo' : 'Reconectando' }}
+        </span>
+      </div>
+      <AdminOrderFilters :filters="store.filters" @apply="applyFilters" />
+    </section>
 
     <LoadingSkeleton v-if="store.state === 'loading'" label="Carregando pedidos" :count="4" />
 
@@ -239,37 +253,10 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-  letter-spacing: 0.02em;
-}
-
-.admin-page__lead {
-  margin: 0 0 8px;
-  color: var(--text-sub);
-}
-
-.admin-page__live {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: var(--font-size-caption);
+.admin-panel :deep(.admin-order-filters) {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .order-list {

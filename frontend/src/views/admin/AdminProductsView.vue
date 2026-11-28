@@ -97,26 +97,45 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo</p>
-    <h1>Produtos</h1>
-    <p class="admin-page__lead">
-      Cadastre preço, opções obrigatórias, adicionais permitidos e disponibilidade.
-    </p>
-
-    <BaseButton @click="startNew">Novo produto</BaseButton>
-
-    <div class="admin-page__filters">
-      <div class="admin-page__field">
-        <label for="product-category-filter">Categoria</label>
-        <select id="product-category-filter" @change="selectCategory">
-          <option value="">Todas</option>
-          <option v-for="category in categories.items" :key="category.id" :value="category.id">
-            {{ category.name }}
-          </option>
-        </select>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo</p>
+        <h1>Produtos</h1>
+        <p class="admin-page__lead">
+          Cadastre preço, opções obrigatórias, adicionais permitidos e disponibilidade.
+        </p>
       </div>
-      <AdminCatalogFilters :filters="products.filters" @apply="applyFilters" />
-    </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Total no filtro</span>
+        <strong class="admin-hero__meta-value">{{ products.meta.total }}</strong>
+        <span class="admin-hero__meta-note">
+          {{ products.items.filter((i) => i.available).length }} disponível(is) nesta página
+        </span>
+      </div>
+    </header>
+
+    <section class="admin-panel">
+      <div class="admin-section-head">
+        <div>
+          <p class="admin-section__eyebrow">Catálogo</p>
+          <h2>Gerenciar produtos</h2>
+        </div>
+        <BaseButton @click="startNew">Novo produto</BaseButton>
+      </div>
+
+      <div class="admin-page__filters">
+        <div class="admin-page__field">
+          <label for="product-category-filter">Categoria</label>
+          <select id="product-category-filter" @change="selectCategory">
+            <option value="">Todas</option>
+            <option v-for="category in categories.items" :key="category.id" :value="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+        </div>
+        <AdminCatalogFilters :filters="products.filters" @apply="applyFilters" />
+      </div>
+    </section>
 
     <BaseModal :open="showForm" :title="modalTitle" @close="cancel">
       <AdminProductForm
@@ -207,30 +226,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
+.admin-panel :deep(.catalog-filters) {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .admin-page__filters {

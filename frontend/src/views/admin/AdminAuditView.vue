@@ -30,37 +30,54 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo</p>
-    <h1>Auditoria</h1>
-    <p class="admin-page__lead">
-      Registro somente leitura das alterações feitas no painel, sem dados pessoais.
-    </p>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo</p>
+        <h1>Auditoria</h1>
+        <p class="admin-page__lead">
+          Registro somente leitura das alterações feitas no painel, sem dados pessoais.
+        </p>
+      </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Registros no filtro</span>
+        <strong class="admin-hero__meta-value">{{ store.auditMeta.total }}</strong>
+        <span class="admin-hero__meta-note">Somente leitura</span>
+      </div>
+    </header>
 
-    <form class="audit-filters" @submit.prevent="applyFilters">
-      <div class="audit-filters__field">
-        <label for="audit-entity">Entidade</label>
-        <select id="audit-entity" v-model="entity">
-          <option value="">Todas</option>
-          <option value="products">Produtos</option>
-          <option value="categories">Categorias</option>
-          <option value="addons">Adicionais</option>
-          <option value="delivery_zones">Zonas de entrega</option>
-          <option value="store_settings">Configuração da loja</option>
-          <option value="orders">Pedidos</option>
-          <option value="admin_users">Usuários do painel</option>
-        </select>
+    <section class="admin-panel">
+      <div class="admin-section-head">
+        <div>
+          <p class="admin-section__eyebrow">Rastreabilidade</p>
+          <h2>Filtrar registros</h2>
+        </div>
       </div>
-      <div class="audit-filters__field">
-        <label for="audit-action">Ação</label>
-        <select id="audit-action" v-model="action">
-          <option value="">Todas</option>
-          <option value="create">Criação</option>
-          <option value="update">Atualização</option>
-        </select>
-      </div>
-      <button type="submit">Filtrar</button>
-      <button type="button" @click="clearFilters">Limpar</button>
-    </form>
+      <form class="audit-filters" @submit.prevent="applyFilters">
+        <div class="audit-filters__field">
+          <label for="audit-entity">Entidade</label>
+          <select id="audit-entity" v-model="entity">
+            <option value="">Todas</option>
+            <option value="products">Produtos</option>
+            <option value="categories">Categorias</option>
+            <option value="addons">Adicionais</option>
+            <option value="delivery_zones">Zonas de entrega</option>
+            <option value="store_settings">Configuração da loja</option>
+            <option value="orders">Pedidos</option>
+            <option value="admin_users">Usuários do painel</option>
+          </select>
+        </div>
+        <div class="audit-filters__field">
+          <label for="audit-action">Ação</label>
+          <select id="audit-action" v-model="action">
+            <option value="">Todas</option>
+            <option value="create">Criação</option>
+            <option value="update">Atualização</option>
+          </select>
+        </div>
+        <button type="submit">Filtrar</button>
+        <button type="button" @click="clearFilters">Limpar</button>
+      </form>
+    </section>
 
     <AdminAuditList
       :items="store.audits"
@@ -75,31 +92,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
-}
+/* layout herdado de admin.css */
 
 .audit-filters {
   display: flex;

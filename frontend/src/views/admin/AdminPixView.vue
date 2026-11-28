@@ -65,14 +65,26 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo · Configurações da loja</p>
-    <h1>Pix estático</h1>
-    <p class="admin-page__lead">
-      Após gravar o pedido, a confirmação gera localmente um BR Code com o total do pedido. Sem
-      integração com PSP, o pagamento não tem confirmação automática: confira o comprovante ou o
-      extrato antes de confirmar o pedido. Use uma chave aleatória (EVP) para não expor CPF, e-mail
-      ou telefone.
-    </p>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo · Integrações</p>
+        <h1>Pix estático</h1>
+        <p class="admin-page__lead">
+          Após gravar o pedido, a confirmação gera localmente um BR Code com o total. Sem PSP, não
+          há confirmação automática: confira comprovante ou extrato antes de confirmar. Prefira
+          chave aleatória (EVP) para não expor CPF, e-mail ou telefone.
+        </p>
+      </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Checkout</span>
+        <strong class="admin-hero__meta-value" :class="form.active ? 'is-open' : ''">
+          {{ form.active ? 'Oferecido' : 'Desligado' }}
+        </strong>
+        <span class="admin-hero__meta-note">{{
+          form.key ? 'Chave configurada' : 'Sem chave'
+        }}</span>
+      </div>
+    </header>
 
     <LoadingSkeleton v-if="store.state === 'loading'" label="Carregando Pix" :count="2" />
 
@@ -159,30 +171,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
+.admin-hero__meta-value.is-open {
+  color: var(--status-open);
 }
 
 .pix-form {

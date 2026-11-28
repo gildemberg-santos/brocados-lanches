@@ -29,7 +29,7 @@ describe('AdminPixView', () => {
 
     expect(wrapper.get('h1').text()).toBe('Pix estático')
     expect((wrapper.get('#pix-key').element as HTMLInputElement).value).toBe('')
-    expect(wrapper.text()).toContain('confira o comprovante')
+    expect(wrapper.text()).toContain('confira comprovante ou extrato')
   })
 
   it('salva chave, nome e cidade do recebedor', async () => {

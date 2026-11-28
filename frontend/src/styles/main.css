@@ -1,5 +1,6 @@
 @import '../../../design-system/tokens.css';
 @import 'tailwindcss';
+@import './admin.css';
 
 /* Fontes self-hosted (SIL OFL); licenças em public/fonts/. */
 @font-face {

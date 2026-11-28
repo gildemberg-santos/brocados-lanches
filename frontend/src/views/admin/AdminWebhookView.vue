@@ -52,13 +52,24 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo · Configurações da loja</p>
-    <h1>Integrações · Webhook de notificações</h1>
-    <p class="admin-page__lead">
-      O servidor envia um POST com número e mensagem apenas para os eventos habilitados abaixo. O
-      envio é assíncrono e não bloqueia o pedido. A URL e o corpo podem conter dados pessoais:
-      configure apenas um destino confiável.
-    </p>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo · Integrações</p>
+        <h1>Webhook de notificações</h1>
+        <p class="admin-page__lead">
+          O servidor envia um POST com número e mensagem apenas para os eventos habilitados. O envio
+          é assíncrono e não bloqueia o pedido. A URL e o corpo podem conter dados pessoais:
+          configure apenas um destino confiável.
+        </p>
+      </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Status</span>
+        <strong class="admin-hero__meta-value" :class="form.active ? 'is-open' : ''">
+          {{ form.active ? 'Ativo' : 'Inativo' }}
+        </strong>
+        <span class="admin-hero__meta-note">{{ form.events.length }} evento(s) selecionado(s)</span>
+      </div>
+    </header>
 
     <LoadingSkeleton v-if="store.state === 'loading'" label="Carregando integração" :count="2" />
 
@@ -126,30 +137,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
+.admin-hero__meta-value.is-open {
+  color: var(--status-open);
 }
 
 .webhook-form {

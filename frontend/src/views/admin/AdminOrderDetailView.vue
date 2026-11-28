@@ -104,8 +104,9 @@ watch(orderId, (next) => {
 
 <template>
   <main class="admin-page">
-    <RouterLink class="admin-page__back" :to="{ name: 'admin-orders' }"> Voltar à fila </RouterLink>
-    <p class="admin-page__kicker">Painel administrativo</p>
+    <RouterLink class="admin-page__back" :to="{ name: 'admin-orders' }">
+      ← Voltar à fila
+    </RouterLink>
 
     <LoadingSkeleton v-if="store.detailState === 'loading'" label="Carregando pedido" :count="3" />
 
@@ -116,26 +117,37 @@ watch(orderId, (next) => {
     />
 
     <template v-else-if="order">
-      <div class="admin-page__head">
-        <h1>Pedido #{{ order.orderNumber }}</h1>
-        <OrderStatusBadge :status="order.status" />
-      </div>
-      <p class="admin-page__lead">
-        {{ FULFILLMENT_LABELS[order.fulfillment] }} · aberto em
-        {{ formatOrderDateTime(order.createdAt) }} · status: {{ statusLabel }}
-      </p>
-      <p class="admin-page__live" role="status">
-        {{
-          connectionStatus === 'connected'
-            ? 'Status atualizado automaticamente.'
-            : 'Conexão em tempo real indisponível. Tentando reconectar.'
-        }}
-      </p>
+      <header class="admin-hero">
+        <div>
+          <p class="admin-page__kicker">Painel administrativo</p>
+          <div class="admin-page__head">
+            <h1>Pedido #{{ order.orderNumber }}</h1>
+            <OrderStatusBadge :status="order.status" />
+          </div>
+          <p class="admin-page__lead">
+            {{ FULFILLMENT_LABELS[order.fulfillment] }} · aberto em
+            {{ formatOrderDateTime(order.createdAt) }} · {{ statusLabel }}
+          </p>
+        </div>
+        <div class="admin-hero__meta">
+          <span class="admin-hero__meta-label">Total do pedido</span>
+          <strong class="admin-hero__meta-value"
+            ><PriceText :value-cents="order.totalCents"
+          /></strong>
+          <span class="admin-hero__meta-note">
+            {{ connectionStatus === 'connected' ? 'Status ao vivo' : 'Reconectando em tempo real' }}
+          </span>
+        </div>
+      </header>
 
-      <p v-if="store.actionSuccess" class="admin-page__success" role="status">
+      <p v-if="store.actionSuccess" class="admin-feedback admin-page__success" role="status">
         {{ store.actionSuccess }}
       </p>
-      <p v-if="store.actionError" class="admin-page__error" role="alert">
+      <p
+        v-if="store.actionError"
+        class="admin-feedback admin-feedback--error admin-page__error"
+        role="alert"
+      >
         {{ store.actionError }}
       </p>
 
@@ -304,23 +316,6 @@ watch(orderId, (next) => {
   text-decoration: none;
 }
 
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-  letter-spacing: 0.02em;
-}
-
 .admin-page__head {
   display: flex;
   flex-wrap: wrap;
@@ -328,30 +323,16 @@ watch(orderId, (next) => {
   gap: 12px;
 }
 
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
+.admin-page__head h1 {
+  margin: 8px 0 0;
 }
 
-.admin-page__live {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: var(--font-size-caption);
-}
-
-.admin-page__success,
-.admin-page__error {
-  margin: 0;
-  padding: 12px 16px;
-  border: 1px solid var(--status-open);
-  border-radius: 12px;
-  font-size: var(--font-size-caption);
-  font-weight: 700;
-}
-
-.admin-page__error {
-  border-color: var(--status-error);
-  color: var(--status-error);
+.admin-hero__meta-value :deep(.price-text) {
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-size: var(--font-size-h1);
+  font-weight: 400;
+  line-height: 1.1;
 }
 
 .admin-page__hint {

@@ -65,15 +65,33 @@ onMounted(() => {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo</p>
-    <h1>Locais e taxas</h1>
-    <p class="admin-page__lead">
-      A taxa vale para novos pedidos; pedidos antigos mantêm o valor congelado no snapshot.
-    </p>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo</p>
+        <h1>Locais e taxas</h1>
+        <p class="admin-page__lead">
+          A taxa vale para novos pedidos; pedidos antigos mantêm o valor congelado no snapshot.
+        </p>
+      </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Total no filtro</span>
+        <strong class="admin-hero__meta-value">{{ store.meta.total }}</strong>
+        <span class="admin-hero__meta-note"
+          >{{ store.items.filter((i) => i.active).length }} ativo(s) nesta página</span
+        >
+      </div>
+    </header>
 
-    <BaseButton @click="startNew">Novo local</BaseButton>
-
-    <AdminCatalogFilters :filters="store.filters" @apply="applyFilters" />
+    <section class="admin-panel">
+      <div class="admin-section-head">
+        <div>
+          <p class="admin-section__eyebrow">Entrega</p>
+          <h2>Gerenciar locais e taxas</h2>
+        </div>
+        <BaseButton @click="startNew">Novo local</BaseButton>
+      </div>
+      <AdminCatalogFilters :filters="store.filters" @apply="applyFilters" />
+    </section>
 
     <BaseModal :open="showForm" :title="modalTitle" @close="cancel">
       <AdminCatalogForm
@@ -103,29 +121,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.admin-page__lead {
-  margin: 0;
-  color: var(--text-sub);
+.admin-panel :deep(.catalog-filters) {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 </style>

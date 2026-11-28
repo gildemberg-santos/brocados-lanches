@@ -15,11 +15,28 @@ async function logout(): Promise<void> {
 
 <template>
   <main class="admin-page">
-    <p class="admin-page__kicker">Painel administrativo</p>
-    <h1>Minha conta</h1>
+    <header class="admin-hero">
+      <div>
+        <p class="admin-page__kicker">Painel administrativo</p>
+        <h1>Minha conta</h1>
+        <p class="admin-page__lead">Dados da sessão atual e acesso rápido para sair do painel.</p>
+      </div>
+      <div class="admin-hero__meta">
+        <span class="admin-hero__meta-label">Papel</span>
+        <strong class="admin-hero__meta-value">{{
+          auth.role === 'owner' ? 'Dono' : auth.role === 'operator' ? 'Operador' : '—'
+        }}</strong>
+        <span class="admin-hero__meta-note">{{ auth.user?.email ?? '—' }}</span>
+      </div>
+    </header>
 
-    <section class="account-card">
-      <h2>Dados da sessão</h2>
+    <section class="admin-panel account-card">
+      <div class="admin-section-head">
+        <div>
+          <p class="admin-section__eyebrow">Sessão</p>
+          <h2>Dados da conta</h2>
+        </div>
+      </div>
       <dl>
         <div>
           <dt>Nome</dt>
@@ -36,51 +53,18 @@ async function logout(): Promise<void> {
           </dd>
         </div>
       </dl>
-      <p class="account-card__note">
+      <p class="account-card__note admin-empty-inline">
         A troca de senha e o MFA não fazem parte da V1. Para alterar seus dados, peça a um dono no
         painel de usuários.
       </p>
-      <BaseButton :loading="auth.loading" @click="logout">Sair do painel</BaseButton>
+      <div class="admin-toolbar">
+        <BaseButton :loading="auth.loading" @click="logout">Sair do painel</BaseButton>
+      </div>
     </section>
   </main>
 </template>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  gap: 16px;
-}
-
-.admin-page__kicker {
-  margin: 0;
-  color: var(--brand-neon);
-  font-size: var(--font-size-caption);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.admin-page h1 {
-  margin: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--font-size-display);
-  line-height: var(--line-height-display);
-}
-
-.account-card {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--bg-border);
-  border-radius: 18px;
-  background: var(--bg-surface);
-}
-
-.account-card h2 {
-  margin: 0;
-  font-size: var(--font-size-h2);
-}
-
 .account-card dl {
   display: grid;
   gap: 10px;
@@ -90,6 +74,13 @@ async function logout(): Promise<void> {
 .account-card dl div {
   display: grid;
   gap: 2px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--bg-border);
+}
+
+.account-card dl div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .account-card dt {
@@ -100,11 +91,10 @@ async function logout(): Promise<void> {
 .account-card dd {
   margin: 0;
   overflow-wrap: anywhere;
+  font-weight: 700;
 }
 
 .account-card__note {
   margin: 0;
-  color: var(--text-sub);
-  font-size: var(--font-size-caption);
 }
 </style>

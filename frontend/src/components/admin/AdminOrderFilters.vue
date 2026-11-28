@@ -89,9 +89,9 @@ function clear(): void {
 .admin-order-filters {
   display: grid;
   gap: 12px;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid var(--bg-border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--bg-surface);
 }
 
