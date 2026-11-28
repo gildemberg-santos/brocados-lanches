@@ -9,6 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CONNECTION_MAP = "brocados_connection_upgrade"
+# Domínio do túnel de desenvolvimento liberado em vite.config.ts.
+DEV_TUNNEL_HOST = "overhelpful-readily-lynell.ngrok-free.dev"
 
 
 def check_nginx(text: str, label: str = "nginx.conf") -> list[str]:
@@ -40,10 +42,18 @@ def check_nginx(text: str, label: str = "nginx.conf") -> list[str]:
 
 
 def check_vite(text: str) -> list[str]:
-    """Confere se o proxy do Vite aceita upgrade WebSocket."""
-    if re.search(r"ws:\s*true", text):
-        return []
-    return ["vite.config.ts: o proxy da API precisa de 'ws: true'"]
+    """Confere o upgrade WebSocket e a allowlist de hosts do Vite."""
+    errors: list[str] = []
+    if not re.search(r"ws:\s*true", text):
+        errors.append("vite.config.ts: o proxy da API precisa de 'ws: true'")
+
+    allowed = re.search(r"allowedHosts:\s*\[(?P<hosts>[^\]]*)\]", text)
+    if allowed is None or DEV_TUNNEL_HOST not in allowed.group("hosts"):
+        errors.append(
+            "vite.config.ts: server.allowedHosts precisa incluir "
+            f"'{DEV_TUNNEL_HOST}' para o túnel de desenvolvimento"
+        )
+    return errors
 
 
 def collect_errors(root: Path = ROOT) -> list[str]:

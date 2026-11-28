@@ -46,6 +46,11 @@ const apiProxy = {
   target: 'http://127.0.0.1:8080',
   ws: true,
 }
+export default defineConfig({
+  server: {
+    allowedHosts: ['overhelpful-readily-lynell.ngrok-free.dev'],
+  },
+})
 """
 
 NGINX_ERROR = "nginx.conf"
@@ -137,6 +142,16 @@ class CheckRealtimeProxyTest(unittest.TestCase):
         errors = check_realtime_proxy.collect_errors(self.root)
 
         self.assertTrue(any(VITE_ERROR in error for error in errors))
+
+    def test_tunnel_host_ausente_e_rejeitado(self) -> None:
+        self.configure(vite=VALID_VITE.replace(
+            "allowedHosts: ['overhelpful-readily-lynell.ngrok-free.dev'],",
+            "allowedHosts: [],",
+        ))
+
+        errors = check_realtime_proxy.collect_errors(self.root)
+
+        self.assertTrue(any(VITE_ERROR in error and "ngrok-free.dev" in error for error in errors))
 
     def test_arquivo_ausente_e_reportado(self) -> None:
         self.configure()

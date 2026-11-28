@@ -236,6 +236,18 @@ make dev-api
 make dev-web
 ```
 
+#### Acesso por túnel (ngrok)
+
+Para abrir o desenvolvimento fora da máquina, aponte o túnel para o Vite na porta 5173:
+
+```bash
+ngrok http 5173
+```
+
+O host `overhelpful-readily-lynell.ngrok-free.dev` está liberado em `server.allowedHosts` de `frontend/vite.config.ts`. A aplicação funciona por esse domínio como no `localhost`: as rotas `/api`, `/healthz` e `/readyz` continuam passando pelo proxy do Vite para a API, os canais WebSocket seguem com `ws: true`, o CSP usa `'self'` no domínio do túnel e o proxy alinha `Origin`/`Host` para o CSRF administrativo. A sessão do painel usa o mesmo cookie `SameSite=Lax`, sem `Secure` em desenvolvimento; o túnel serve HTTPS, então o navegador a envia normalmente.
+
+A liberação é apenas uma allowlist explícita — não use `allowedHosts: true`. Se o domínio do túnel mudar, atualize `frontend/vite.config.ts`, `scripts/check_realtime_proxy.py` e o teste correspondente, e rode `make config-check`. Essa configuração é somente de desenvolvimento; em produção o nginx serve a SPA com `server_name _`, repassa `X-Forwarded-Proto` ao proxy de `/api/` e não depende dessa allowlist — o domínio público é definido no DNS/proxy da plataforma.
+
 ### Variáveis de ambiente
 
 `cp .env.example .env` cria a configuração local. O arquivo `.env` não é versionado e é carregado automaticamente pelo `Makefile`.
